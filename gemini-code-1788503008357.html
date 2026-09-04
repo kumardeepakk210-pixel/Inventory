@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishrite | AI Inventory OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        #app-container { display: none; }
+        #auth-wrapper { display: flex; }
+        #login-container { display: block; }
+        #register-container { display: none; }
+    </style>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { primary: '#4f46e5', sidebar: '#0f172a' } } } }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden">
+
+    <!-- AUTHENTICATION WRAPPER -->
+    <div id="auth-wrapper" class="h-full w-full items-center justify-center bg-slate-900 absolute inset-0 z-50 overflow-y-auto py-10">
+        
+        <!-- LOGIN SCREEN -->
+        <div id="login-container" class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative my-auto">
+            
+            <button onclick="toggleDbSetup()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-indigo-600 font-bold flex items-center gap-1">
+                ⚙️ DB Setup
+            </button>
+
+            <div class="text-center mb-8">
+                <span class="block text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
+                <p class="text-slate-500 text-sm mt-2">Enterprise Resource Planning OS</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">User ID</label>
+                    <input type="text" id="login-user-id" placeholder="e.g. DEWR00001" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none uppercase" required>
+                </div>
+                <div class="mb-4 relative">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••" class="w-full border border-slate-300 rounded-lg p-3 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                    <button type="button" onclick="togglePasswordVis('login-password')" class="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    </button>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Role</label>
+                    <select id="login-role" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        <option value="Admin">Admin</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Agent">Agent</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-between items-center mb-6 px-1">
+                    <a href="#" onclick="alert('Please contact your System Administrator to reset or change your password.')" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 mb-4">Secure Login</button>
+            </form>
+
+            <!-- Initial Master Admin Setup Form (Hidden by default) -->
+            <form id="initial-setup-form" onsubmit="handleInitialSetup(event)" class="hidden">
+                <div class="mb-4 bg-rose-50 border border-rose-200 p-4 rounded-lg">
+                    <p class="text-xs font-bold text-rose-700">No users found in database.</p>
+                    <p class="text-xs text-rose-600 mt-1">Please create the Master Admin account to unlock the system.</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">First Name</label>
+                    <input type="text" id="setup-fname" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Phone Number</label>
+                    <input type="text" id="setup-phone" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                </div>
+                <div class="mb-6 relative">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Master Password</label>
+                    <input type="password" id="setup-password" class="w-full border border-slate-300 rounded-lg p-3 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                    <button type="button" onclick="togglePasswordVis('setup-password')" class="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    </button>
+                    <p class="text-[10px] text-slate-500 mt-1 font-medium">Must be 8+ chars with 1 uppercase, 1 lowercase, 1 number, and 1 special character.</p>
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200">Create Master Admin</button>
+            </form>
+
+            <!-- Hidden DB Setup Form -->
+            <form id="db-setup-form" onsubmit="saveDbSetup(event)" class="hidden mt-6 pt-6 border-t border-slate-200">
+                <p class="text-xs font-bold text-rose-600 mb-3 uppercase">Supabase Connection</p>
+                <input type="text" id="setup-supa-url" placeholder="Supabase URL" class="w-full border border-slate-300 rounded-lg p-2 mb-2 text-xs" required>
+                <input type="password" id="setup-supa-key" placeholder="Supabase Anon Key" class="w-full border border-slate-300 rounded-lg p-2 mb-3 text-xs" required>
+                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2 rounded-lg text-xs hover:bg-slate-900 transition-colors">Save Keys</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container" class="h-full w-full">
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-sidebar text-slate-300 flex flex-col justify-between flex-shrink-0">
+            <div>
+                <div class="h-20 flex items-center justify-center px-6 border-b border-slate-800">
+                    <span class="text-white font-semibold text-2xl tracking-[0.3em]">WISHRITE</span>
+                </div>
+                <nav class="p-4 space-y-1">
+                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="dashboard">📊 Dashboard</button>
+                    
+                    <button onclick="navigate('inventory')" id="nav-inventory" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="inventory">📦 Full Inventory</button>
+                    
+                    <button onclick="navigate('stock-in')" id="nav-stock-in" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-in">📥 Stock In (Receive)</button>
+                    <button onclick="navigate('stock-out')" id="nav-stock-out" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-out">📤 Stock Out (Adjust)</button>
+                    <button onclick="navigate('invoice')" id="nav-invoice" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="invoice">🧾 Sales & Invoice</button>
+                    
+                    <!-- ADMIN ONLY: USER MANAGEMENT -->
+                    <button onclick="navigate('employees')" id="nav-employees" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="employees">👥 Manage Users</button>
+
+                    <button onclick="navigate('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="settings">⚙️ Settings</button>
+                    
+                    <div class="pt-4 mt-4 border-t border-slate-800">
+                        <a href="https://www.wishrite.com" target="_blank" class="w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-white">
+                            🌐 www.wishrite.com
+                        </a>
+                    </div>
+                </nav>
+            </div>
+            <div class="p-4 border-t border-slate-800">
+                <div class="flex items-center justify-between w-full">
+                    <div class="flex items-center gap-3 px-2">
+                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white uppercase" id="ui-avatar">XX</div>
+                        <div class="text-xs text-left">
+                            <p class="text-white font-medium" id="ui-name">User Name</p>
+                            <p class="text-slate-500" id="ui-role">Role</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="text-slate-500 hover:text-rose-500 transition-colors" title="Logout">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN WORKSPACE -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 flex-shrink-0">
+                <div class="text-sm font-medium text-slate-500">
+                    Global DB Status: <span id="db-status" class="px-2 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold ml-2">🔴 Disconnected</span>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-auto p-8 relative bg-slate-50">
+                
+                <!-- DASHBOARD -->
+                <div id="dashboard" class="page active">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Inventory Master Dashboard</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Units</h3>
+                            <div class="text-3xl font-bold text-slate-900" id="dash-qty">0</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Inventory Value (Cost)</h3>
+                            <div class="text-3xl font-bold text-slate-900" id="dash-val">₹0</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-primary">
+                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Expected Sale Value</h3>
+                            <div class="text-3xl font-bold text-slate-900" id="dash-sale-val">₹0</div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
+                                    <th class="p-4 font-semibold">Code</th>
+                                    <th class="p-4 font-semibold">Product Name</th>
+                                    <th class="p-4 font-semibold">Category</th>
+                                    <th class="p-4 font-semibold">Stock</th>
+                                    <th class="p-4 font-semibold">Purchase (₹)</th>
+                                    <th class="p-4 font-semibold">Sale (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-table-body" class="text-sm">
+                                <tr><td colspan="6" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- FULL INVENTORY TAB -->
+                <div id="inventory" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Inventory Explorer</h1>
+                    
+                    <!-- Filters -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Min Price (₹)</label>
+                            <input type="number" id="filter-min" class="w-32 border border-slate-300 rounded-lg p-2 text-sm" placeholder="0" oninput="renderFullInventory()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Max Price (₹)</label>
+                            <input type="number" id="filter-max" class="w-32 border border-slate-300 rounded-lg p-2 text-sm" placeholder="999999" oninput="renderFullInventory()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                            <select id="filter-cat" class="w-40 border border-slate-300 rounded-lg p-2 text-sm" onchange="renderFullInventory()">
+                                <option value="">All Categories</option>
+                                <option value="Chain">Chain</option>
+                                <option value="Ring">Ring</option>
+                                <option value="Earring">Earring</option>
+                                <option value="Pendant">Pendant</option>
+                                <option value="Bracelet">Bracelet</option>
+                                <option value="Necklace">Necklace</option>
+                                <option value="Packaging">Packaging</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Shop Name</label>
+                            <input type="text" id="filter-shop" class="w-48 border border-slate-300 rounded-lg p-2 text-sm" placeholder="Search Shop..." oninput="renderFullInventory()">
+                        </div>
+                        <button onclick="clearFilters()" class="text-sm font-medium text-slate-500 hover:text-rose-500 underline ml-auto">Clear Filters</button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-[600px] overflow-y-auto">
+                        <table class="w-full text-left border-collapse relative">
+                            <thead class="sticky top-0 bg-slate-50 shadow-sm z-10">
+                                <tr class="border-b border-slate-200 text-xs uppercase text-slate-500">
+                                    <th class="p-4 font-semibold">Code</th>
+                                    <th class="p-4 font-semibold">Product Details</th>
+                                    <th class="p-4 font-semibold">Category</th>
+                                    <th class="p-4 font-semibold">Shop Name</th>
+                                    <th class="p-4 font-semibold">Stock</th>
+                                    <th class="p-4 font-semibold">Price (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="full-inventory-body" class="text-sm">
+                                <tr><td colspan="6" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- NEW: MANAGE USERS (ADMIN ONLY) -->
+                <div id="employees" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">User Management</h1>
+                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
+                        <div class="mb-6 border-b border-slate-200 pb-4">
+                            <h2 class="text-lg font-bold text-slate-800">Register New Employee</h2>
+                            <p class="text-sm text-slate-500">Only administrators can add new staff members to the system.</p>
+                        </div>
+                        
+                        <form id="register-form" onsubmit="handleRegister(event)">
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">First Name *</label>
+                                    <input type="text" id="reg-fname" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Last Name</label>
+                                    <input type="text" id="reg-lname" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Phone Number *</label>
+                                    <input type="text" id="reg-phone" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Email ID</label>
+                                    <input type="email" id="reg-email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Full Address</label>
+                                    <input type="text" id="reg-address" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">City</label>
+                                    <input type="text" id="reg-city" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">State</label>
+                                    <input type="text" id="reg-state" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">PIN Code</label>
+                                    <input type="text" id="reg-pin" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Assign Role *</label>
+                                    <select id="reg-role" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Manager">Manager</option>
+                                        <option value="Agent">Agent</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2 relative">
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Secure Password *</label>
+                                    <input type="password" id="reg-password" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" required>
+                                    <button type="button" onclick="togglePasswordVis('reg-password')" class="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </button>
+                                    <p class="text-[10px] text-slate-500 mt-1 font-medium">Must be 8+ chars with 1 uppercase, 1 lowercase, 1 number, and 1 special character.</p>
+                                </div>
+                            </div>
+            
+                            <button type="submit" class="w-full mt-4 bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">Add New Employee</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- SETTINGS -->
+                <div id="settings" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Database Settings</h1>
+                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
+                        <div class="flex justify-between items-start mb-6">
+                            <p class="text-sm text-slate-600">Update your Supabase credentials to sync inventory in real-time.</p>
+                            <div class="text-sm font-medium border px-3 py-1.5 rounded-lg bg-slate-50">
+                                Connection: <span id="settings-db-status" class="text-rose-600 font-bold ml-1">Disconnected</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase URL</label>
+                            <input type="text" id="settings-supa-url" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="https://xyz.supabase.co">
+                        </div>
+                        <div class="mb-6 relative">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase API Key (anon public)</label>
+                            <input type="password" id="settings-supa-key" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" placeholder="eyJh...">
+                            <button type="button" onclick="togglePasswordVis('settings-supa-key')" class="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </button>
+                        </div>
+                        <button onclick="updateSettingsDB()" class="bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-600">Save & Connect</button>
+                    </div>
+                </div>
+
+                <!-- STOCK IN -->
+                <div id="stock-in" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Stock In (Receive)</h1>
+                    
+                    <!-- BULK IMPORT SECTION -->
+                    <div class="mb-8 bg-indigo-50 border border-indigo-200 p-6 rounded-xl max-w-4xl">
+                        <h2 class="font-bold text-indigo-900 mb-2">Bulk Import Inventory</h2>
+                        <p class="text-sm text-indigo-700 mb-4">Upload an Excel (.xlsx) file to add or update multiple products at once in the database.</p>
+                        <div class="flex gap-4">
+                            <button type="button" onclick="downloadSampleSheet()" class="bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors shadow-sm">
+                                📄 Download Sample Sheet
+                            </button>
+                            <label class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors cursor-pointer shadow-sm">
+                                📁 Upload Data File
+                                <input type="file" id="bulk-upload-file" accept=".xlsx, .csv" class="hidden" onchange="handleBulkImport(event)">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-4xl">
+                        <form id="stockInForm" onsubmit="handleStockIn(event)">
+                            
+                            <div class="mb-6 bg-slate-50 border border-slate-200 p-4 rounded-lg flex items-center gap-3">
+                                <input type="checkbox" id="update-old-stock" class="w-5 h-5 text-primary rounded" onchange="toggleStockInMode()">
+                                <label for="update-old-stock" class="font-bold text-slate-700 cursor-pointer">Yes, add stock to an EXISTING product</label>
+                            </div>
+
+                            <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Purchase Details</h3>
+                            <div class="grid grid-cols-2 gap-6 mb-6">
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Purchased Shop Name</label><input type="text" id="in-shop" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Purchase Date</label><input type="date" id="in-date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div class="col-span-2"><label class="block text-sm font-medium text-slate-700 mb-1">Shop Address</label><input type="text" id="in-address" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                            </div>
+                            
+                            <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Product Details</h3>
+                            <div class="grid grid-cols-3 gap-6 mb-6">
+                                <div class="col-span-3">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Product Name</label>
+                                    <input type="text" id="in-name" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Enter new product name" required>
+                                    <select id="in-name-select" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm hidden" onchange="autoFillExistingProduct()">
+                                        <option value="">-- Select Existing Product --</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                                    <select id="in-cat" onchange="generateProductCode()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                        <option value="">-- Select --</option>
+                                        <option value="Chain">Chain</option>
+                                        <option value="Ring">Ring</option>
+                                        <option value="Earring">Earring</option>
+                                        <option value="Pendant">Pendant</option>
+                                        <option value="Bracelet">Bracelet</option>
+                                        <option value="Toe Ring">Toe Ring</option>
+                                        <option value="Necklace">Necklace</option>
+                                        <option value="Packaging">Packaging</option>
+                                    </select>
+                                </div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Product Code</label><input type="text" id="in-code" readonly class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2.5 text-sm font-bold text-primary"></div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Size</label><input type="text" id="in-size" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Weight</label><input type="number" step="0.001" id="in-weight" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                                
+                                <div class="col-span-3"><label class="block text-sm font-medium text-slate-700 mb-1">Product Description</label><textarea id="in-desc" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></textarea></div>
+                            </div>
+                            
+                            <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Pricing & Quantity</h3>
+                            <div class="grid grid-cols-3 gap-6 mb-8">
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Purchase Price (₹)</label><input type="number" id="in-buy" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Selling Price (₹)</label><input type="number" id="in-sale" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Stock Quantity</label><input type="number" id="in-qty" min="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold" required></div>
+                            </div>
+                            <button type="submit" class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors">📥 Save & Sync to Supabase</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- STOCK OUT -->
+                <div id="stock-out" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Stock Adjustments (Non-Sale)</h1>
+                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-xl">
+                        <form onsubmit="handleStockOut(event)" class="mb-6">
+                            <div class="mb-5">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Select Product by Code & Size</label>
+                                <select id="out-product" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required onchange="checkStockAvailability()"><option value="">-- Choose Product --</option></select>
+                            </div>
+                            <div class="mb-5">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Quantity to Deduct</label>
+                                <input type="number" id="out-qty" min="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                <p id="out-avail" class="text-xs text-slate-500 mt-2 font-medium"></p>
+                            </div>
+                            <button type="submit" class="w-full bg-orange-500 text-white px-4 py-3 rounded-lg text-sm font-bold hover:bg-orange-600 transition-colors">📤 Confirm Stock Deduction</button>
+                        </form>
+                        
+                        <div class="pt-6 border-t border-slate-200">
+                            <label class="block text-sm font-bold text-rose-600 mb-2">Danger Zone</label>
+                            <button type="button" onclick="deleteProduct()" class="w-full bg-white border border-rose-500 text-rose-600 px-4 py-3 rounded-lg text-sm font-bold hover:bg-rose-50 transition-colors flex justify-center items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                Delete Product Completely
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INVOICE GENERATOR & SALES -->
+                <div id="invoice" class="page">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Sales & Invoice Generator</h1>
+                            <p class="text-sm text-slate-500 mt-1">Process a sale to automatically update inventory and log the transaction.</p>
+                        </div>
+                        <button onclick="processSaleAndDownload()" class="bg-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm">
+                            ✅ Complete Sale & Download PDF
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 h-fit">
+                            <h3 class="font-bold text-slate-800 mb-4">1. Add Item to Sale</h3>
+                            <p class="text-xs text-rose-600 font-medium mb-4">Note: Items added will be instantly deducted from DB inventory.</p>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Product Code</label>
+                                <select id="inv-product" class="w-full border border-slate-300 rounded-lg p-2 text-sm" onchange="autoFillInvoiceItem()"><option value="">-- Select SKU --</option></select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                                <input type="text" id="inv-desc" readonly class="w-full border border-slate-200 bg-slate-50 rounded-lg p-2 text-sm">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Selling Price (₹)</label><input type="number" id="inv-price" readonly class="w-full border border-slate-200 bg-slate-50 rounded-lg p-2 text-sm"></div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Qty</label><input type="number" id="inv-qty" min="1" value="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Discount (₹)</label><input type="number" id="inv-discount" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Tax (₹)</label><input type="number" id="inv-tax" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
+                            </div>
+                            <button onclick="addItemToInvoice()" class="w-full bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors">➕ Add to Invoice List</button>
+                        </div>
+
+                        <div class="col-span-2">
+                            <div id="invoice-document" class="bg-white p-10 border border-slate-200 shadow-lg mx-auto" style="min-height: 297mm; max-width: 210mm;">
+                                <div class="flex justify-between border-b-2 border-slate-800 pb-6 mb-6">
+                                    <div>
+                                        <span class="block text-4xl font-semibold tracking-[0.3em] text-[#5A2C31] mb-2">WISHRITE</span>
+                                        <p class="text-sm text-slate-500 mt-1">Premium Jewelry & Accessories</p>
+                                        <p class="text-sm text-slate-500 font-medium text-indigo-600">www.wishrite.com</p>
+                                        <p class="text-sm text-slate-500">support@wishrite.com | GSTIN: 19AWBPX1234</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <h2 class="text-2xl font-bold text-indigo-600 mb-2">INVOICE</h2>
+                                        <p class="text-sm"><strong>Invoice #:</strong> <span id="inv-number">...</span></p>
+                                        <p class="text-sm"><strong>Date:</strong> <span id="inv-date"></span></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-8">
+                                    <h3 class="font-bold text-slate-700 border-b border-slate-200 mb-2 pb-1">BILL TO:</h3>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" id="cust-name" placeholder="Customer Name *" class="block w-full font-medium text-slate-900 border-b outline-none focus:border-indigo-500 p-1 text-sm" required>
+                                        <input type="text" id="cust-phone" placeholder="Phone Number" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
+                                        <input type="email" id="cust-email" placeholder="Email Address" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm col-span-2">
+                                        <input type="text" id="cust-address" placeholder="Address" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm col-span-2">
+                                        <input type="text" id="cust-city" placeholder="City" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
+                                        <input type="text" id="cust-state" placeholder="State" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
+                                        <input type="text" id="cust-pin" placeholder="PIN Code" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
+                                        <input type="text" id="cust-country" placeholder="Country" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
+                                    </div>
+                                </div>
+
+                                <table class="w-full text-left mb-8">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-700 text-xs">
+                                            <th class="p-2 font-semibold">SKU</th>
+                                            <th class="p-2 font-semibold">Description</th>
+                                            <th class="p-2 font-semibold text-center">Qty</th>
+                                            <th class="p-2 font-semibold text-right">Price</th>
+                                            <th class="p-2 font-semibold text-right">Disc.</th>
+                                            <th class="p-2 font-semibold text-right">Tax</th>
+                                            <th class="p-2 font-semibold text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="invoice-items-body" class="text-sm"></tbody>
+                                </table>
+                                <div class="flex justify-end">
+                                    <div class="w-1/2">
+                                        <div class="flex justify-between py-2 border-b border-slate-200 text-sm">
+                                            <span class="text-slate-600">Subtotal (Items):</span><span class="font-medium" id="inv-subtotal">₹0</span>
+                                        </div>
+                                        <div class="flex justify-between py-2 border-b border-slate-200 text-sm">
+                                            <span class="text-slate-600">Total Tax:</span><span class="font-medium" id="inv-totaltax">₹0</span>
+                                        </div>
+                                        <div class="flex justify-between py-2 border-b border-slate-200 text-sm text-emerald-600">
+                                            <span>Total Discount:</span><span class="font-medium" id="inv-totaldiscount">-₹0</span>
+                                        </div>
+                                        <div class="flex justify-between py-3 text-lg font-bold text-slate-900">
+                                            <span>Grand Total:</span><span id="inv-grandtotal">₹0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('in-date').valueAsDate = new Date();
+        document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
+        document.getElementById('inv-number').innerText = Math.floor(100000 + Math.random() * 900000);
+
+        let supaClient = null;
+        let currentUser = null;
+        let inventoryData = [];
+        let invoiceItems = [];
+        const categoryPrefixes = { 'Chain': 'CHN', 'Toe Ring': 'TRNG', 'Bracelet': 'BRLT', 'Pendant': 'PNDT', 'Ring': 'RNG', 'Necklace': 'NCK', 'Earring': 'EAR', 'Packaging': 'PKG' };
+
+        // --- AUTH & VIEW SWITCHING ---
+        function togglePasswordVis(inputId) {
+            const el = document.getElementById(inputId);
+            if (el.type === "password") {
+                el.type = "text";
+            } else {
+                el.type = "password";
+            }
+        }
+
+        function toggleDbSetup() {
+            const form = document.getElementById('db-setup-form');
+            form.classList.toggle('hidden');
+        }
+
+        function saveDbSetup(e) {
+            e.preventDefault();
+            const url = document.getElementById('setup-supa-url').value;
+            const key = document.getElementById('setup-supa-key').value;
+            localStorage.setItem('supa_url', url);
+            localStorage.setItem('supa_key', key);
+            initSupabase(url, key);
+            alert("Database credentials saved! Checking system status...");
+            toggleDbSetup();
+        }
+
+        // Handles the unique edge case where DB is totally empty
+        async function handleInitialSetup(e) {
+            e.preventDefault();
+            if(!supaClient) return alert("Database not connected.");
+            
+            const pwd = document.getElementById('setup-password').value;
+            const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if(!regex.test(pwd)) return alert("Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.");
+
+            const payload = {
+                first_name: document.getElementById('setup-fname').value,
+                phone_number: document.getElementById('setup-phone').value,
+                role: 'Admin', // Force Admin for first user
+                password: pwd 
+            };
+            
+            const { data, error } = await supaClient.from('employees').insert([payload]).select();
+            
+            if(error) return alert("Setup Error: " + error.message);
+            
+            alert(`🎉 SYSTEM UNLOCKED!\n\nYour Master Admin ID is: ${data[0].user_id}\n\nPlease write this down. You will now be redirected to login.`);
+            
+            document.getElementById('initial-setup-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('login-title').innerText = "WISHRITE";
+            document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
+        }
+
+        // Only Admin can add users via the inside application "Manage Users" tab
+        async function handleRegister(e) {
+            e.preventDefault();
+            if(!supaClient) return alert("Database connection error.");
+            
+            if(currentUser?.role !== 'Admin') return alert("Unauthorized. Only System Administrators can register new employees.");
+            
+            const pwd = document.getElementById('reg-password').value;
+            const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if(!regex.test(pwd)) {
+                return alert("Registration Failed:\nPassword must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.");
+            }
+            
+            const payload = {
+                first_name: document.getElementById('reg-fname').value,
+                last_name: document.getElementById('reg-lname').value || null,
+                role: document.getElementById('reg-role').value,
+                phone_number: document.getElementById('reg-phone').value,
+                email_id: document.getElementById('reg-email').value || null,
+                address: document.getElementById('reg-address').value || null,
+                city: document.getElementById('reg-city').value || null,
+                state: document.getElementById('reg-state').value || null,
+                pin: document.getElementById('reg-pin').value || null,
+                password: pwd 
+            };
+            
+            const { data, error } = await supaClient.from('employees').insert([payload]).select();
+            
+            if(error) return alert("Error registering employee: " + error.message);
+            
+            alert(`🎉 Employee registered successfully!\n\nTheir System User ID is: ${data[0].user_id}\n\nPlease share this with the employee so they can log in.`);
+            document.getElementById('register-form').reset();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const url = localStorage.getItem('supa_url');
+            const key = localStorage.getItem('supa_key');
+            
+            if(!url || !key) return alert("Please configure the Database using the 'DB Setup' button first.");
+            
+            if(!supaClient) initSupabase(url, key);
+
+            const userId = document.getElementById('login-user-id').value.toUpperCase();
+            const passwordInput = document.getElementById('login-password').value;
+            const role = document.getElementById('login-role').value;
+            
+            const { data, error } = await supaClient.from('employees').select('*').eq('user_id', userId).single();
+            
+            if(error || !data) {
+                return alert("Login Failed: User ID not found in database.");
+            }
+
+            if(data.password !== passwordInput) {
+                return alert("Login Failed: Incorrect password.");
+            }
+
+            if(data.role !== role) {
+                return alert(`Login Failed: User found, but role does not match. Expected ${data.role}, got ${role}.`);
+            }
+
+            currentUser = data;
+            document.getElementById('auth-wrapper').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            
+            document.getElementById('ui-name').innerText = `${data.first_name} ${data.last_name || ''}`;
+            document.getElementById('ui-role').innerText = data.role;
+            document.getElementById('ui-avatar').innerText = data.first_name.substring(0,2);
+            
+            applyRolePermissions(data.role);
+            navigate('dashboard');
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('auth-wrapper').style.display = 'flex';
+            document.getElementById('login-form').reset();
+        }
+
+        function applyRolePermissions(role) {
+            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-stock-out', 'nav-invoice', 'nav-settings', 'nav-employees'];
+            buttons.forEach(id => {
+                if(document.getElementById(id)) document.getElementById(id).style.display = 'flex';
+            });
+
+            if (role === 'Manager') {
+                document.getElementById('nav-settings').style.display = 'none';
+                document.getElementById('nav-employees').style.display = 'none';
+            } 
+            else if (role === 'Agent') {
+                document.getElementById('nav-stock-in').style.display = 'none';
+                document.getElementById('nav-stock-out').style.display = 'none';
+                document.getElementById('nav-invoice').style.display = 'none';
+                document.getElementById('nav-settings').style.display = 'none';
+                document.getElementById('nav-employees').style.display = 'none';
+            }
+        }
+
+        // --- CORE NAVIGATION & DB ---
+        function navigate(targetId) {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('hover:bg-slate-800');
+            });
+            
+            const activeBtn = document.querySelector(`.nav-btn[data-target="${targetId}"]`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-primary', 'text-white');
+                activeBtn.classList.remove('hover:bg-slate-800');
+            }
+
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+
+            if (targetId === 'inventory') renderFullInventory();
+            if (supaClient) fetchInventory();
+        }
+
+        function updateSettingsDB() {
+            const url = document.getElementById('settings-supa-url').value;
+            const key = document.getElementById('settings-supa-key').value;
+            if(!url || !key) return alert("Please fill both URL and Key");
+            
+            localStorage.setItem('supa_url', url);
+            localStorage.setItem('supa_key', key);
+            initSupabase(url, key);
+        }
+
+        async function initSupabase(url, key) {
+            supaClient = window.supabase.createClient(url, key);
+            
+            // Check if DB is empty to trigger initial setup mode
+            const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
+            
+            if(!error && count === 0) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('initial-setup-form').style.display = 'block';
+                document.getElementById('login-title').innerText = "SYSTEM SETUP";
+                document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
+            } else {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('initial-setup-form').style.display = 'none';
+                document.getElementById('login-title').innerText = "WISHRITE";
+                document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
+            }
+
+            document.getElementById('db-status').className = "px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold ml-2";
+            document.getElementById('db-status').innerText = "🟢 Auto-Syncing Enabled";
+            if(document.getElementById('settings-db-status')) {
+                document.getElementById('settings-db-status').className = "text-emerald-600 font-bold ml-1";
+                document.getElementById('settings-db-status').innerText = "Connected & Syncing";
+            }
+
+            fetchInventory();
+
+            supaClient.channel('inventory-sync-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+                    fetchInventory(); 
+                })
+                .subscribe();
+        }
+
+        async function fetchInventory() {
+            if(!supaClient) return;
+            const { data, error } = await supaClient.from('inventory').select('*').order('created_at', { ascending: false });
+            if(!error) {
+                inventoryData = data || [];
+                renderDashboard();
+                renderFullInventory();
+                populateSelects();
+            } else {
+                document.getElementById('db-status').className = "px-2 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold ml-2";
+                document.getElementById('db-status').innerText = "🔴 Sync Failed";
+                console.error("Fetch error: ", error);
+            }
+        }
+
+        function renderFullInventory() {
+            const minPrice = parseFloat(document.getElementById('filter-min').value) || 0;
+            const maxPrice = parseFloat(document.getElementById('filter-max').value) || Infinity;
+            const category = document.getElementById('filter-cat').value.toLowerCase();
+            const shop = document.getElementById('filter-shop').value.toLowerCase();
+
+            const filteredData = inventoryData.filter(item => {
+                const price = item.selling_price;
+                const matchesPrice = price >= minPrice && price <= maxPrice;
+                const matchesCat = category === '' || (item.category && item.category.toLowerCase() === category);
+                const matchesShop = shop === '' || (item.shop_name && item.shop_name.toLowerCase().includes(shop));
+                return matchesPrice && matchesCat && matchesShop;
+            });
+
+            const tbody = document.getElementById('full-inventory-body');
+            
+            if(filteredData.length === 0) {
+                return tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">No products found matching filters.</td></tr>`;
+            }
+
+            tbody.innerHTML = '';
+            filteredData.forEach(item => {
+                const sizeBadge = item.size ? `<span class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded ml-2">Size: ${item.size}</span>` : '';
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td class="p-4 font-medium text-primary">${item.product_code}</td>
+                        <td class="p-4 font-bold text-slate-900">${item.product_name} ${sizeBadge}</td>
+                        <td class="p-4 text-slate-500">${item.category}</td>
+                        <td class="p-4 text-slate-600">${item.shop_name || '-'}</td>
+                        <td class="p-4 font-bold ${item.stock_quantity === 0 ? 'text-rose-500 bg-rose-50 rounded' : 'text-slate-800'}">${item.stock_quantity}</td>
+                        <td class="p-4 text-emerald-600 font-medium">₹${item.selling_price.toLocaleString('en-IN')}</td>
+                    </tr>`;
+            });
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-min').value = '';
+            document.getElementById('filter-max').value = '';
+            document.getElementById('filter-cat').value = '';
+            document.getElementById('filter-shop').value = '';
+            renderFullInventory();
+        }
+
+        function populateSelects() {
+            const options = '<option value="">-- Choose Product --</option>' + inventoryData.map(item => {
+                const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
+                return `<option value="${item.product_code}">${item.product_code} - ${item.product_name}${sizeLabel}</option>`;
+            }).join('');
+            
+            document.getElementById('out-product').innerHTML = options;
+            document.getElementById('inv-product').innerHTML = options;
+            
+            const inNameSelectOptions = '<option value="">-- Select Existing Product --</option>' + 
+                                  inventoryData.map(item => {
+                                      const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
+                                      return `<option value="${item.product_code}">${item.product_name}${sizeLabel} - [${item.product_code}]</option>`;
+                                  }).join('');
+            
+            const currentSelection = document.getElementById('in-name-select').value;
+            document.getElementById('in-name-select').innerHTML = inNameSelectOptions;
+            document.getElementById('in-name-select').value = currentSelection;
+        }
+
+        function toggleStockInMode() {
+            const isUpdatingOld = document.getElementById('update-old-stock').checked;
+            const nameInput = document.getElementById('in-name');
+            const nameSelect = document.getElementById('in-name-select');
+            
+            if(isUpdatingOld) {
+                nameInput.classList.add('hidden');
+                nameInput.required = false;
+                nameSelect.classList.remove('hidden');
+                nameSelect.required = true;
+                
+                document.getElementById('stockInForm').reset();
+                document.getElementById('update-old-stock').checked = true; 
+                document.getElementById('in-date').valueAsDate = new Date();
+                
+                document.getElementById('in-cat').disabled = true;
+                document.getElementById('in-size').readOnly = true;
+                document.getElementById('in-weight').readOnly = true;
+                document.getElementById('in-address').readOnly = true;
+                document.getElementById('in-desc').readOnly = true;
+                document.getElementById('in-buy').readOnly = true;
+                document.getElementById('in-sale').readOnly = true;
+            } else {
+                nameSelect.classList.add('hidden');
+                nameSelect.required = false;
+                nameInput.classList.remove('hidden');
+                nameInput.required = true;
+                
+                document.getElementById('stockInForm').reset();
+                document.getElementById('in-date').valueAsDate = new Date();
+                document.getElementById('in-cat').disabled = false;
+                document.getElementById('in-size').readOnly = false;
+                document.getElementById('in-weight').readOnly = false;
+                document.getElementById('in-address').readOnly = false;
+                document.getElementById('in-desc').readOnly = false;
+                document.getElementById('in-buy').readOnly = false;
+                document.getElementById('in-sale').readOnly = false;
+                document.getElementById('in-code').value = '';
+            }
+        }
+
+        function autoFillExistingProduct() {
+            const selectedCode = document.getElementById('in-name-select').value;
+            const product = inventoryData.find(i => i.product_code === selectedCode);
+            
+            if(product) {
+                document.getElementById('in-cat').value = product.category;
+                document.getElementById('in-code').value = product.product_code;
+                document.getElementById('in-size').value = product.size || '';
+                document.getElementById('in-weight').value = product.weight;
+                document.getElementById('in-desc').value = product.product_description;
+                document.getElementById('in-buy').value = product.purchase_price;
+                document.getElementById('in-sale').value = product.selling_price;
+            }
+        }
+
+        function generateProductCode() {
+            const isUpdatingOld = document.getElementById('update-old-stock').checked;
+            if(isUpdatingOld) return; 
+            
+            const cat = document.getElementById('in-cat').value;
+            if(!cat) {
+                document.getElementById('in-code').value = '';
+                return;
+            }
+            const prefix = categoryPrefixes[cat] || 'PRD';
+            let maxId = 0;
+            inventoryData.forEach(item => {
+                if(item.product_code && item.product_code.startsWith(prefix)) {
+                    let num = parseInt(item.product_code.split('-')[1]);
+                    if(num > maxId) maxId = num;
+                }
+            });
+            document.getElementById('in-code').value = `${prefix}-${(maxId + 1).toString().padStart(4, '0')}`;
+        }
+
+        async function handleStockIn(e) {
+            e.preventDefault();
+            if(!supaClient) return alert("Please connect database in Settings first.");
+
+            const isUpdatingOld = document.getElementById('update-old-stock').checked;
+            const code = document.getElementById('in-code').value;
+            const qty = parseInt(document.getElementById('in-qty').value);
+            const weightVal = parseFloat(document.getElementById('in-weight').value);
+            
+            const payload = {
+                product_code: code,
+                category: document.getElementById('in-cat').value,
+                size: document.getElementById('in-size').value || null,
+                purchase_price: parseFloat(document.getElementById('in-buy').value),
+                selling_price: parseFloat(document.getElementById('in-sale').value),
+                shop_name: document.getElementById('in-shop').value,
+                shop_address: document.getElementById('in-address').value || null,
+                purchase_date: document.getElementById('in-date').value,
+                product_description: document.getElementById('in-desc').value || null,
+                weight: isNaN(weightVal) ? null : weightVal
+            };
+
+            if (isUpdatingOld) {
+                const selectElement = document.getElementById('in-name-select');
+                payload.product_name = selectElement.options[selectElement.selectedIndex].text.split(' (')[0];
+            } else {
+                payload.product_name = document.getElementById('in-name').value;
+            }
+
+            let responseError = null;
+
+            if (isUpdatingOld) {
+                const existing = inventoryData.find(i => i.product_code === code);
+                if(!existing) return alert("Error: Could not find existing product to update.");
+                
+                const { error } = await supaClient.from('inventory').update({ stock_quantity: existing.stock_quantity + qty, ...payload }).eq('product_code', code);
+                responseError = error;
+            } else {
+                payload.stock_quantity = qty;
+                const { error } = await supaClient.from('inventory').insert([payload]);
+                responseError = error;
+            }
+
+            if (responseError) {
+                alert("Database Error: " + responseError.message);
+                return;
+            }
+
+            alert("Inventory successfully saved to Supabase!");
+            document.getElementById('update-old-stock').checked = false;
+            toggleStockInMode();
+        }
+
+        function checkStockAvailability() {
+            const code = document.getElementById('out-product').value;
+            const product = inventoryData.find(i => i.product_code === code);
+            if (product) {
+                document.getElementById('out-qty').max = product.stock_quantity;
+                document.getElementById('out-avail').innerHTML = `Available DB Stock: <strong class="text-slate-800 text-lg">${product.stock_quantity}</strong>`;
+            }
+        }
+
+        async function handleStockOut(e) {
+            e.preventDefault();
+            if(!supaClient) return alert("Please connect database in Settings first.");
+            const code = document.getElementById('out-product').value;
+            const qty = parseInt(document.getElementById('out-qty').value);
+            
+            let product = inventoryData.find(i => i.product_code === code);
+            if (product && qty <= product.stock_quantity) {
+                const { error } = await supaClient.from('inventory').update({ stock_quantity: product.stock_quantity - qty }).eq('product_code', code);
+                if(error) return alert("DB Error: " + error.message);
+                
+                alert(`Dispatched ${qty} units. DB updated!`);
+                e.target.reset();
+                document.getElementById('out-avail').innerText = '';
+            } else {
+                alert("Insufficient stock!");
+            }
+        }
+
+        async function deleteProduct() {
+            const code = document.getElementById('out-product').value;
+            if(!code) return alert("Please select a product from the dropdown first.");
+            
+            const confirmDelete = confirm(`⚠️ DANGER: Are you absolutely sure you want to delete ${code} entirely from the database? This cannot be undone.`);
+            if(!confirmDelete) return;
+
+            if(!supaClient) return alert("Please connect database in Settings first.");
+            
+            const { error } = await supaClient.from('inventory').delete().eq('product_code', code);
+            
+            if(error) {
+                alert("DB Error: " + error.message);
+            } else {
+                alert(`Product ${code} successfully deleted!`);
+                document.getElementById('out-product').value = '';
+                document.getElementById('out-qty').value = '';
+                document.getElementById('out-avail').innerText = '';
+            }
+        }
+
+        function autoFillInvoiceItem() {
+            const product = inventoryData.find(i => i.product_code === document.getElementById('inv-product').value);
+            if (product) {
+                let desc = product.product_name;
+                if(product.size) desc += ` (Size: ${product.size})`;
+                document.getElementById('inv-desc').value = desc;
+                document.getElementById('inv-price').value = product.selling_price;
+            }
+        }
+
+        function addItemToInvoice() {
+            const code = document.getElementById('inv-product').value;
+            const qty = parseInt(document.getElementById('inv-qty').value);
+            const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
+            const tax = parseFloat(document.getElementById('inv-tax').value) || 0;
+            
+            const product = inventoryData.find(i => i.product_code === code);
+
+            if (product && product.stock_quantity >= qty) {
+                const price = parseFloat(document.getElementById('inv-price').value);
+                const subtotal = price * qty;
+                const finalTotal = subtotal - discount + tax;
+
+                invoiceItems.push({ 
+                    code: code, 
+                    name: product.product_name,
+                    category: product.category,
+                    weight: product.weight,
+                    size: product.size || null,
+                    desc: document.getElementById('inv-desc').value, 
+                    price: price, 
+                    qty: qty, 
+                    discount: discount,
+                    tax: tax,
+                    total: finalTotal 
+                });
+                
+                renderInvoiceTable();
+                
+                document.getElementById('inv-product').value = '';
+                document.getElementById('inv-desc').value = '';
+                document.getElementById('inv-price').value = '';
+                document.getElementById('inv-qty').value = '1';
+                document.getElementById('inv-discount').value = '0';
+                document.getElementById('inv-tax').value = '0';
+            } else {
+                alert("Insufficient stock in Database or missing data!");
+            }
+        }
+
+        function renderInvoiceTable() {
+            const tbody = document.getElementById('invoice-items-body');
+            tbody.innerHTML = '';
+            let totalItems = 0;
+            let totalTax = 0;
+            let totalDiscount = 0;
+            let grandTotal = 0;
+
+            invoiceItems.forEach(item => {
+                totalItems += (item.price * item.qty);
+                totalTax += item.tax;
+                totalDiscount += item.discount;
+                grandTotal += item.total;
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100">
+                        <td class="p-2 text-slate-500">${item.code}</td>
+                        <td class="p-2 font-medium text-slate-900">${item.desc}</td>
+                        <td class="p-2 text-center">${item.qty}</td>
+                        <td class="p-2 text-right">₹${item.price.toFixed(2)}</td>
+                        <td class="p-2 text-right text-emerald-600">-₹${item.discount.toFixed(2)}</td>
+                        <td class="p-2 text-right">₹${item.tax.toFixed(2)}</td>
+                        <td class="p-2 text-right font-medium">₹${item.total.toFixed(2)}</td>
+                    </tr>`;
+            });
+            document.getElementById('inv-subtotal').innerText = '₹' + totalItems.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('inv-totaltax').innerText = '₹' + totalTax.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('inv-totaldiscount').innerText = '-₹' + totalDiscount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('inv-grandtotal').innerText = '₹' + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        }
+
+        async function processSaleAndDownload() {
+            if(invoiceItems.length === 0) return alert("Please add at least one item to the invoice.");
+            if(!supaClient) return alert("Please connect database in Settings first.");
+
+            const custName = document.getElementById('cust-name').value;
+            if(!custName) return alert("Customer Name is required to save the sale.");
+
+            const salesPayload = invoiceItems.map(item => ({
+                product_code: item.code,
+                product_name: item.name,
+                product_description: item.desc,
+                category: item.category,
+                quantity: item.qty,
+                selling_price: item.price,
+                discount: item.discount,
+                tax: item.tax,
+                weight: item.weight,
+                size: item.size,
+                customer_name: custName,
+                customer_phone: document.getElementById('cust-phone').value || null,
+                customer_email: document.getElementById('cust-email').value || null,
+                customer_address: document.getElementById('cust-address').value || null,
+                customer_city: document.getElementById('cust-city').value || null,
+                customer_state: document.getElementById('cust-state').value || null,
+                customer_pin: document.getElementById('cust-pin').value || null,
+                customer_country: document.getElementById('cust-country').value || null
+            }));
+
+            const { error: salesError } = await supaClient.from('sales').insert(salesPayload);
+            if(salesError) return alert("Error saving to Sales table: " + salesError.message);
+
+            for (const item of invoiceItems) {
+                const product = inventoryData.find(i => i.product_code === item.code);
+                if (product) {
+                    await supaClient.from('inventory').update({ stock_quantity: product.stock_quantity - item.qty }).eq('product_code', item.code);
+                }
+            }
+
+            alert("Sale completed and database successfully updated!");
+
+            const element = document.getElementById('invoice-document');
+            html2pdf()
+                .set({ margin: 0, filename: `Wishrite_INV_${document.getElementById('inv-number').innerText}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } })
+                .from(element)
+                .save()
+                .then(() => {
+                    invoiceItems = [];
+                    renderInvoiceTable();
+                    document.getElementById('inv-number').innerText = Math.floor(100000 + Math.random() * 900000);
+                    ['cust-name', 'cust-phone', 'cust-email', 'cust-address', 'cust-city', 'cust-state', 'cust-pin', 'cust-country'].forEach(id => document.getElementById(id).value = '');
+                    fetchInventory();
+                });
+        }
+
+        function renderDashboard() {
+            const tbody = document.getElementById('dashboard-table-body');
+            if(inventoryData.length === 0) return tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Inventory is empty.</td></tr>`;
+
+            tbody.innerHTML = '';
+            let totalQty = 0, totalVal = 0, expectedSale = 0;
+
+            inventoryData.forEach(item => {
+                totalQty += item.stock_quantity;
+                totalVal += (item.stock_quantity * item.purchase_price);
+                expectedSale += (item.stock_quantity * item.selling_price);
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-4 font-medium text-primary">${item.product_code}</td>
+                        <td class="p-4 font-bold text-slate-900">${item.product_name}</td>
+                        <td class="p-4 text-slate-500">${item.category}</td>
+                        <td class="p-4 font-bold ${item.stock_quantity === 0 ? 'text-rose-500' : 'text-slate-800'}">${item.stock_quantity}</td>
+                        <td class="p-4">₹${item.purchase_price.toLocaleString('en-IN')}</td>
+                        <td class="p-4 text-emerald-600 font-medium">₹${item.selling_price.toLocaleString('en-IN')}</td>
+                    </tr>`;
+            });
+
+            document.getElementById('dash-qty').innerText = totalQty;
+            document.getElementById('dash-val').innerText = '₹' + totalVal.toLocaleString('en-IN');
+            document.getElementById('dash-sale-val').innerText = '₹' + expectedSale.toLocaleString('en-IN');
+        }
+
+        function downloadSampleSheet() {
+            const ws_data = [
+                ["product_code", "product_name", "product_description", "category", "size", "stock_quantity", "purchase_price", "selling_price", "weight", "purchase_date", "shop_name", "shop_address"],
+                ["CHN-0001", "Gold Snake Chain", "Premium snake chain", "Chain", "18 inch", 50, 1500, 2500, 2.50, "2026-09-04", "OM Jewellers", "Kolkata, WB"],
+                ["RNG-0001", "Diamond Solitaire", "Size 7 solitaire", "Ring", "7", 10, 5000, 8500, 1.20, "2026-09-04", "OM Jewellers", "Kolkata, WB"],
+                ["RNG-0002", "Diamond Solitaire", "Size 8 solitaire", "Ring", "8", 15, 5000, 8500, 1.20, "2026-09-04", "OM Jewellers", "Kolkata, WB"]
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+            XLSX.writeFile(wb, "Wishrite_Sample_Import.xlsx");
+        }
+
+        async function handleBulkImport(event) {
+            if(!supaClient) return alert("Please connect database in Settings first.");
+            
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheet];
+                    
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if(json.length === 0) return alert("File is empty or formatted incorrectly.");
+                    
+                    const payload = json.map(row => ({
+                        product_code: row.product_code,
+                        product_name: row.product_name || 'Unknown',
+                        product_description: row.product_description || null,
+                        category: row.category || 'Other',
+                        size: row.size || null,
+                        stock_quantity: parseInt(row.stock_quantity) || 0,
+                        purchase_price: parseFloat(row.purchase_price) || 0,
+                        selling_price: parseFloat(row.selling_price) || 0,
+                        weight: parseFloat(row.weight) || null,
+                        purchase_date: row.purchase_date || null,
+                        shop_name: row.shop_name || 'Unknown',
+                        shop_address: row.shop_address || null
+                    })).filter(row => row.product_code); 
+                    
+                    if(payload.length === 0) return alert("No valid product_code column found in uploaded file.");
+
+                    const { error } = await supaClient.from('inventory').upsert(payload, { onConflict: 'product_code' });
+                    
+                    if(error) {
+                        alert("Bulk Upload Database Error: " + error.message);
+                    } else {
+                        alert(`Successfully imported ${payload.length} products!`);
+                        event.target.value = ''; 
+                        fetchInventory(); 
+                    }
+                } catch(err) {
+                    alert("Error parsing file: " + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        window.onload = function() {
+            const url = localStorage.getItem('supa_url');
+            const key = localStorage.getItem('supa_key');
+            if(url) document.getElementById('setup-supa-url').value = url;
+            if(key) document.getElementById('setup-supa-key').value = key;
+            if(url && key) initSupabase(url, key);
+        };
+    </script>
+</body>
+</html>
