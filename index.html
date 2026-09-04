@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wishrite | AI Inventory OS</title>
+    <title>Wishrite | Inventory </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -46,7 +46,7 @@
 
             <div class="text-center mb-8">
                 <span id="login-title" class="block text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
-                <p id="login-subtitle" class="text-slate-500 text-sm mt-2">Enterprise Resource Planning OS</p>
+                <p id="login-subtitle" class="text-slate-500 text-sm mt-2">YOUR WISH OUR COMMAND</p>
             </div>
 
             <!-- Standard Login Form -->
@@ -157,14 +157,14 @@
                 
                 <!-- DASHBOARD -->
                 <div id="dashboard" class="page active">
-                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Inventory Master Dashboard</h1>
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Available Inventory Dashboard</h1>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Units</h3>
+                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Available Units</h3>
                             <div class="text-3xl font-bold text-slate-900" id="dash-qty">0</div>
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Inventory Value (Cost)</h3>
+                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Available Value (Cost)</h3>
                             <div class="text-3xl font-bold text-slate-900" id="dash-val">₹0</div>
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-primary">
@@ -513,7 +513,6 @@
         </main>
     </div>
 
-    <!-- MAIN SCRIPT LOGIC -->
     <script>
         document.getElementById('in-date').valueAsDate = new Date();
         document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
@@ -525,59 +524,6 @@
         let invoiceItems = [];
         const categoryPrefixes = { 'Chain': 'CHN', 'Toe Ring': 'TRNG', 'Bracelet': 'BRLT', 'Pendant': 'PNDT', 'Ring': 'RNG', 'Necklace': 'NCK', 'Earring': 'EAR', 'Packaging': 'PKG' };
 
-        // Ensure config.js successfully loaded
-        if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
-            try {
-                supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            } catch(e) {
-                console.error("Supabase client creation failed:", e);
-            }
-        }
-
-        // Run connection checks automatically on startup
-        window.onload = async function() {
-            setDbStatus(false, "Checking DB...");
-            if(!supaClient) {
-                setDbStatus(false, "DB Config Missing");
-                return console.error("config.js with SUPABASE_URL and SUPABASE_ANON_KEY is missing.");
-            }
-
-            try {
-                // Check if employees table exists and check count for initial setup
-                const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
-                
-                if(error) throw error;
-                
-                setDbStatus(true, "DB Connected");
-
-                if(count === 0) {
-                    document.getElementById('login-form').style.display = 'none';
-                    document.getElementById('initial-setup-form').style.display = 'block';
-                    document.getElementById('login-title').innerText = "SYSTEM SETUP";
-                    document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
-                }
-            } catch (err) {
-                console.error("Database connection failed:", err.message);
-                setDbStatus(false, "DB Disconnected");
-            }
-        };
-
-        function setDbStatus(isConnected, message) {
-            const loginDot = document.getElementById('login-db-dot');
-            const loginText = document.getElementById('login-db-text');
-            const headerStatus = document.getElementById('db-status');
-            
-            if(isConnected) {
-                if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-sm";
-                if(loginText) loginText.innerText = "";
-                if(headerStatus) { headerStatus.className = "px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold ml-2"; headerStatus.innerText = "🟢 Connected"; }
-            } else {
-                if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-rose-500 shadow-sm";
-                if(loginText) loginText.innerText = message || "DB Disconnected";
-                if(headerStatus) { headerStatus.className = "px-2 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold ml-2"; headerStatus.innerText = "🔴 Disconnected"; }
-            }
-        }
-
         // --- AUTH & VIEW SWITCHING ---
         function togglePasswordVis(inputId) {
             const el = document.getElementById(inputId);
@@ -588,6 +534,23 @@
             }
         }
 
+        function toggleDbSetup() {
+            const form = document.getElementById('db-setup-form');
+            form.classList.toggle('hidden');
+        }
+
+        function saveDbSetup(e) {
+            e.preventDefault();
+            const url = document.getElementById('setup-supa-url').value;
+            const key = document.getElementById('setup-supa-key').value;
+            localStorage.setItem('supa_url', url);
+            localStorage.setItem('supa_key', key);
+            initSupabase(url, key);
+            alert("Database credentials saved! Checking system status...");
+            toggleDbSetup();
+        }
+
+        // Handles the unique edge case where DB is totally empty
         async function handleInitialSetup(e) {
             e.preventDefault();
             if(!supaClient) return alert("Database not connected.");
@@ -599,7 +562,7 @@
             const payload = {
                 first_name: document.getElementById('setup-fname').value,
                 phone_number: document.getElementById('setup-phone').value,
-                role: 'Admin',
+                role: 'Admin', // Force Admin for first user
                 password: pwd 
             };
             
@@ -615,9 +578,11 @@
             document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
         }
 
+        // Only Admin can add users via the inside application "Manage Users" tab
         async function handleRegister(e) {
             e.preventDefault();
             if(!supaClient) return alert("Database connection error.");
+            
             if(currentUser?.role !== 'Admin') return alert("Unauthorized. Only System Administrators can register new employees.");
             
             const pwd = document.getElementById('reg-password').value;
@@ -649,7 +614,12 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            if(!supaClient) return alert("System not connected to database. Check config.js");
+            const url = localStorage.getItem('supa_url');
+            const key = localStorage.getItem('supa_key');
+            
+            if(!url || !key) return alert("Please configure the Database using the 'DB Setup' button first.");
+            
+            if(!supaClient) initSupabase(url, key);
 
             const userId = document.getElementById('login-user-id').value.toUpperCase();
             const passwordInput = document.getElementById('login-password').value;
@@ -660,9 +630,11 @@
             if(error || !data) {
                 return alert("Login Failed: User ID not found in database.");
             }
+
             if(data.password !== passwordInput) {
                 return alert("Login Failed: Incorrect password.");
             }
+
             if(data.role !== role) {
                 return alert(`Login Failed: User found, but role does not match. Expected ${data.role}, got ${role}.`);
             }
@@ -676,14 +648,6 @@
             document.getElementById('ui-avatar').innerText = data.first_name.substring(0,2);
             
             applyRolePermissions(data.role);
-            
-            // Connect realtime updates
-            supaClient.channel('inventory-sync-channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
-                    fetchInventory(); 
-                }).subscribe();
-                
-            fetchInventory();
             navigate('dashboard');
         }
 
@@ -695,18 +659,20 @@
         }
 
         function applyRolePermissions(role) {
-            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-stock-out', 'nav-invoice', 'nav-employees'];
+            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-stock-out', 'nav-invoice', 'nav-settings', 'nav-employees'];
             buttons.forEach(id => {
                 if(document.getElementById(id)) document.getElementById(id).style.display = 'flex';
             });
 
             if (role === 'Manager') {
+                document.getElementById('nav-settings').style.display = 'none';
                 document.getElementById('nav-employees').style.display = 'none';
             } 
             else if (role === 'Agent') {
                 document.getElementById('nav-stock-in').style.display = 'none';
                 document.getElementById('nav-stock-out').style.display = 'none';
                 document.getElementById('nav-invoice').style.display = 'none';
+                document.getElementById('nav-settings').style.display = 'none';
                 document.getElementById('nav-employees').style.display = 'none';
             }
         }
@@ -731,6 +697,50 @@
             if (supaClient) fetchInventory();
         }
 
+        function updateSettingsDB() {
+            const url = document.getElementById('settings-supa-url').value;
+            const key = document.getElementById('settings-supa-key').value;
+            if(!url || !key) return alert("Please fill both URL and Key");
+            
+            localStorage.setItem('supa_url', url);
+            localStorage.setItem('supa_key', key);
+            initSupabase(url, key);
+        }
+
+        async function initSupabase(url, key) {
+            supaClient = window.supabase.createClient(url, key);
+            
+            // Check if DB is empty to trigger initial setup mode
+            const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
+            
+            if(!error && count === 0) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('initial-setup-form').style.display = 'block';
+                document.getElementById('login-title').innerText = "SYSTEM SETUP";
+                document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
+            } else {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('initial-setup-form').style.display = 'none';
+                document.getElementById('login-title').innerText = "WISHRITE";
+                document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
+            }
+
+            document.getElementById('db-status').className = "px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold ml-2";
+            document.getElementById('db-status').innerText = "🟢 Auto-Syncing Enabled";
+            if(document.getElementById('settings-db-status')) {
+                document.getElementById('settings-db-status').className = "text-emerald-600 font-bold ml-1";
+                document.getElementById('settings-db-status').innerText = "Connected & Syncing";
+            }
+
+            fetchInventory();
+
+            supaClient.channel('inventory-sync-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+                    fetchInventory(); 
+                })
+                .subscribe();
+        }
+
         async function fetchInventory() {
             if(!supaClient) return;
             const { data, error } = await supaClient.from('inventory').select('*').order('created_at', { ascending: false });
@@ -740,7 +750,8 @@
                 renderFullInventory();
                 populateSelects();
             } else {
-                setDbStatus(false, "Sync Failed");
+                document.getElementById('db-status').className = "px-2 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold ml-2";
+                document.getElementById('db-status').innerText = "🔴 Sync Failed";
                 console.error("Fetch error: ", error);
             }
         }
@@ -1121,24 +1132,34 @@
                 });
         }
 
+        // --- DASHBOARD LOGIC (AVAILABLE ONLY) ---
         function renderDashboard() {
             const tbody = document.getElementById('dashboard-table-body');
-            if(inventoryData.length === 0) return tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Inventory is empty.</td></tr>`;
+            
+            // Filter out items with 0 stock
+            const availableInventory = inventoryData.filter(item => item.stock_quantity > 0);
+            
+            if(availableInventory.length === 0) {
+                document.getElementById('dash-qty').innerText = '0';
+                document.getElementById('dash-val').innerText = '₹0';
+                document.getElementById('dash-sale-val').innerText = '₹0';
+                return tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">No available inventory.</td></tr>`;
+            }
 
             tbody.innerHTML = '';
             let totalQty = 0, totalVal = 0, expectedSale = 0;
 
-            inventoryData.forEach(item => {
+            availableInventory.forEach(item => {
                 totalQty += item.stock_quantity;
                 totalVal += (item.stock_quantity * item.purchase_price);
                 expectedSale += (item.stock_quantity * item.selling_price);
 
                 tbody.innerHTML += `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                         <td class="p-4 font-medium text-primary">${item.product_code}</td>
                         <td class="p-4 font-bold text-slate-900">${item.product_name}</td>
                         <td class="p-4 text-slate-500">${item.category}</td>
-                        <td class="p-4 font-bold ${item.stock_quantity === 0 ? 'text-rose-500' : 'text-slate-800'}">${item.stock_quantity}</td>
+                        <td class="p-4 font-bold text-slate-800">${item.stock_quantity}</td>
                         <td class="p-4">₹${item.purchase_price.toLocaleString('en-IN')}</td>
                         <td class="p-4 text-emerald-600 font-medium">₹${item.selling_price.toLocaleString('en-IN')}</td>
                     </tr>`;
@@ -1226,6 +1247,14 @@
             };
             reader.readAsArrayBuffer(file);
         }
+
+        window.onload = function() {
+            const url = localStorage.getItem('supa_url');
+            const key = localStorage.getItem('supa_key');
+            if(url) document.getElementById('setup-supa-url').value = url;
+            if(key) document.getElementById('setup-supa-key').value = key;
+            if(url && key) initSupabase(url, key);
+        };
     </script>
 </body>
 </html>
