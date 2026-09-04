@@ -93,7 +93,7 @@
                 <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">Secure Login</button>
             </form>
 
-            <!-- Initial Master Admin Setup Form (Hidden by default) -->
+            <!-- Initial Master Admin Setup Form -->
             <form id="initial-setup-form" onsubmit="handleInitialSetup(event)" class="hidden">
                 <div class="mb-4 bg-rose-50 border border-rose-200 p-4 rounded-lg">
                     <p class="text-xs font-bold text-rose-700">No users found in database.</p>
@@ -129,7 +129,7 @@
     </div>
 
     <!-- MAIN APP CONTAINER -->
-    <div id="app-container" class="h-full w-full">
+    <div id="app-container" class="h-full w-full flex">
         <!-- SIDEBAR -->
         <aside class="w-64 bg-sidebar text-slate-300 flex flex-col justify-between flex-shrink-0">
             <div>
@@ -137,13 +137,14 @@
                     <span class="text-white font-semibold text-2xl tracking-[0.3em]">WISHRITE</span>
                 </div>
                 <nav class="p-4 space-y-1">
-                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="dashboard">📊 Dashboard</button>
+                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 bg-primary text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="dashboard">📊 Inventory Dashboard</button>
+                    <button onclick="navigate('sales-dashboard')" id="nav-sales-dash" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="sales-dashboard">📈 Sales Dashboard</button>
+                    <button onclick="navigate('influencers')" id="nav-influencers" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="influencers">🌟 Influencers</button>
                     <button onclick="navigate('inventory')" id="nav-inventory" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="inventory">📦 Full Inventory</button>
                     <button onclick="navigate('stock-in')" id="nav-stock-in" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-in">📥 Stock In (Receive)</button>
                     <button onclick="navigate('stock-out')" id="nav-stock-out" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-out">📤 Stock Out (Adjust)</button>
-                    <button onclick="navigate('invoice')" id="nav-invoice" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="invoice">🧾 Sales & Invoice</button>
+                    <button onclick="navigate('invoice')" id="nav-invoice" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="invoice">🧾 Create Invoice</button>
                     <button onclick="navigate('employees')" id="nav-employees" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="employees">👥 Manage Users</button>
-                    <button onclick="navigate('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="settings">⚙️ Settings</button>
                     
                     <div class="pt-4 mt-4 border-t border-slate-800">
                         <a href="https://www.wishrite.com" target="_blank" class="w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-white">
@@ -155,7 +156,7 @@
         </aside>
 
         <!-- MAIN WORKSPACE -->
-        <main class="flex-1 flex flex-col overflow-hidden bg-slate-50">
+        <main class="flex-1 flex flex-col overflow-hidden bg-slate-50 relative">
             
             <!-- STYLED HEADER -->
             <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 flex-shrink-0 relative z-40">
@@ -171,12 +172,6 @@
                 </div>
                 
                 <div class="flex items-center gap-5">
-                    <button class="text-slate-400 hover:text-slate-600 transition-colors relative">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                        <span class="absolute 0 right-0.5 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span></span>
-                    </button>
-                    <button class="text-slate-400 hover:text-slate-600 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button>
-                    
                     <!-- USER DROPDOWN -->
                     <div class="relative group cursor-pointer">
                         <div class="flex items-center gap-3 pl-5 border-l border-slate-200 hover:bg-slate-50 py-1 px-2 rounded-lg transition-colors">
@@ -236,9 +231,8 @@
                     </div>
                 </div>
 
-                <!-- DASHBOARD -->
+                <!-- INVENTORY DASHBOARD -->
                 <div id="dashboard" class="page active">
-                    
                     <div class="flex justify-between items-end mb-8">
                         <div>
                             <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight" id="dash-welcome">Welcome back! 👋</h1>
@@ -256,7 +250,7 @@
                             <div>
                                 <h3 class="text-slate-500 text-sm font-medium mb-3">Total Inventory Value</h3>
                                 <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-val">₹0</div>
-                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Live Update</div>
+                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Live Value</div>
                             </div>
                             <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -267,7 +261,7 @@
                             <div>
                                 <h3 class="text-slate-500 text-sm font-medium mb-3">Total Products In Stock</h3>
                                 <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-products">0</div>
-                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Active SKUs</div>
+                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Unique SKUs</div>
                             </div>
                             <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-sm border border-blue-100">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
@@ -298,7 +292,7 @@
                     </div>
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="px-6 py-4 border-b border-slate-200">
+                        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                             <h2 class="font-bold text-slate-800">Available Products Preview</h2>
                         </div>
                         <table class="w-full text-left border-collapse">
@@ -308,14 +302,101 @@
                                     <th class="p-4 font-semibold">Product Name</th>
                                     <th class="p-4 font-semibold">Category</th>
                                     <th class="p-4 font-semibold">Stock</th>
-                                    <th class="p-4 font-semibold">Purchase (₹)</th>
-                                    <th class="p-4 font-semibold">Sale (₹)</th>
+                                    <th class="p-4 font-semibold">Selling Price (Per Unit)</th>
                                 </tr>
                             </thead>
                             <tbody id="dashboard-table-body" class="text-sm">
-                                <tr><td colspan="6" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
+                                <tr><td colspan="5" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- NEW: SALES DASHBOARD TAB -->
+                <div id="sales-dashboard" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Sales Analytics Dashboard</h1>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
+                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Revenue</h3>
+                            <div class="text-3xl font-extrabold text-slate-900" id="sales-total-revenue">₹0</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Units Sold</h3>
+                            <div class="text-3xl font-extrabold text-slate-900" id="sales-total-units">0</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Tax Collected</h3>
+                            <div class="text-3xl font-extrabold text-slate-900" id="sales-total-tax">₹0</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Discounts Given</h3>
+                            <div class="text-3xl font-extrabold text-rose-600" id="sales-total-discount">₹0</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-200">
+                            <h2 class="font-bold text-slate-800">Recent Sales Log</h2>
+                        </div>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
+                                    <th class="p-4 font-semibold">Date</th>
+                                    <th class="p-4 font-semibold">Customer</th>
+                                    <th class="p-4 font-semibold">Product</th>
+                                    <th class="p-4 font-semibold text-center">Qty</th>
+                                    <th class="p-4 font-semibold text-right">Revenue (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-table-body" class="text-sm">
+                                <tr><td colspan="5" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- NEW: INFLUENCER TAB -->
+                <div id="influencers" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Influencer Marketing Analytics</h1>
+                    
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6 max-w-xl">
+                        <div class="flex items-end gap-4">
+                            <div class="w-full">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Instagram Username / ID</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2.5 text-slate-400 font-bold">@</span>
+                                    <input type="text" id="insta-id" class="w-full border border-slate-300 rounded-lg py-2 pl-8 pr-3 text-sm focus:ring-2 focus:ring-pink-500 outline-none transition-shadow" placeholder="e.g. dkuma71">
+                                </div>
+                            </div>
+                            <button onclick="fetchInfluencer()" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:shadow-lg transition-all whitespace-nowrap">Fetch Profile</button>
+                        </div>
+                    </div>
+
+                    <!-- Influencer Post Card -->
+                    <div id="influencer-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden max-w-sm transition-all transform hover:-translate-y-1">
+                         <div class="h-24 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 relative"></div>
+                         <div class="px-6 pb-6 relative">
+                             <img id="inf-pic" src="" class="w-20 h-20 rounded-full border-4 border-white absolute -top-10 bg-slate-100 object-cover shadow-sm">
+                             <div class="flex justify-end pt-3">
+                                 <span id="inf-status" class="px-3 py-1 text-xs font-bold bg-emerald-100 text-emerald-700 rounded-full shadow-sm border border-emerald-200">Verified</span>
+                             </div>
+                             <div class="mt-2">
+                                 <h2 id="inf-name" class="text-xl font-bold text-slate-900">Name</h2>
+                                 <p id="inf-handle" class="text-sm text-slate-500 font-medium">@handle</p>
+                                 <p id="inf-category" class="text-xs text-pink-600 font-bold mt-1 uppercase tracking-wider bg-pink-50 inline-block px-2 py-0.5 rounded">Category</p>
+                             </div>
+                             <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-100">
+                                 <div>
+                                     <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Total Followers</p>
+                                     <p id="inf-followers" class="text-2xl font-black text-slate-800">0</p>
+                                 </div>
+                                 <div>
+                                     <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Avg. Reel Views</p>
+                                     <p id="inf-views" class="text-2xl font-black text-slate-800">0</p>
+                                 </div>
+                             </div>
+                         </div>
                     </div>
                 </div>
 
@@ -686,6 +767,7 @@
         let currentUser = null;
         let inventoryData = [];
         let invoiceItems = [];
+        let salesData = [];
         const categoryPrefixes = { 'Chain': 'CHN', 'Toe Ring': 'TRNG', 'Bracelet': 'BRLT', 'Pendant': 'PNDT', 'Ring': 'RNG', 'Necklace': 'NCK', 'Earring': 'EAR', 'Packaging': 'PKG' };
 
         // --- AUTH & VIEW SWITCHING ---
@@ -696,6 +778,22 @@
             } else {
                 el.type = "password";
             }
+        }
+
+        function toggleDbSetup() {
+            const form = document.getElementById('db-setup-form');
+            form.classList.toggle('hidden');
+        }
+
+        function saveDbSetup(e) {
+            e.preventDefault();
+            const url = document.getElementById('setup-supa-url').value;
+            const key = document.getElementById('setup-supa-key').value;
+            localStorage.setItem('supa_url', url);
+            localStorage.setItem('supa_key', key);
+            initSupabase(url, key);
+            alert("Database credentials saved! Checking system status...");
+            toggleDbSetup();
         }
 
         async function handleInitialSetup(e) {
@@ -722,7 +820,7 @@
             document.getElementById('initial-setup-form').style.display = 'none';
             document.getElementById('login-form').style.display = 'block';
             document.getElementById('login-title').innerText = "WISHRITE";
-            document.getElementById('login-subtitle').innerText = "YOUR WISH OUR COMMAND";
+            document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
         }
 
         async function handleRegister(e) {
@@ -817,7 +915,7 @@
         }
 
         function applyRolePermissions(role) {
-            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-stock-out', 'nav-invoice', 'nav-employees'];
+            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
             buttons.forEach(id => {
                 if(document.getElementById(id)) document.getElementById(id).style.display = 'flex';
             });
@@ -830,6 +928,7 @@
                 document.getElementById('nav-stock-out').style.display = 'none';
                 document.getElementById('nav-invoice').style.display = 'none';
                 document.getElementById('nav-employees').style.display = 'none';
+                document.getElementById('nav-sales-dash').style.display = 'none';
             }
         }
 
@@ -850,7 +949,67 @@
             document.getElementById(targetId).classList.add('active');
 
             if (targetId === 'inventory') renderFullInventory();
-            if (supaClient) fetchInventory();
+            if (targetId === 'sales-dashboard') renderSalesDashboard();
+            if (supaClient) { fetchInventory(); fetchSales(); }
+        }
+
+        function updateSettingsDB() {
+            const url = document.getElementById('settings-supa-url').value;
+            const key = document.getElementById('settings-supa-key').value;
+            if(!url || !key) return alert("Please fill both URL and Key");
+            
+            localStorage.setItem('supa_url', url);
+            localStorage.setItem('supa_key', key);
+            initSupabase(url, key);
+        }
+
+        async function initSupabase(url, key) {
+            supaClient = window.supabase.createClient(url, key);
+            
+            const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
+            
+            if(!error && count === 0) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('initial-setup-form').style.display = 'block';
+                document.getElementById('login-title').innerText = "SYSTEM SETUP";
+                document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
+            } else {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('initial-setup-form').style.display = 'none';
+                document.getElementById('login-title').innerText = "WISHRITE";
+                document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
+            }
+
+            document.getElementById('db-status').className = "px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold ml-2";
+            document.getElementById('db-status').innerText = "🟢 Auto-Syncing Enabled";
+            if(document.getElementById('settings-db-status')) {
+                document.getElementById('settings-db-status').className = "text-emerald-600 font-bold ml-1";
+                document.getElementById('settings-db-status').innerText = "Connected & Syncing";
+            }
+
+            fetchInventory();
+            fetchSales();
+
+            supaClient.channel('inventory-sync-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+                    fetchInventory(); 
+                }).subscribe();
+                
+            supaClient.channel('sales-sync-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, payload => {
+                    fetchSales(); 
+                }).subscribe();
+        }
+
+        async function fetchSales() {
+            if(!supaClient) return;
+            const { data, error } = await supaClient.from('sales').select('*').order('created_at', { ascending: false });
+            if(!error) {
+                salesData = data || [];
+                if(document.getElementById('sales-dashboard').classList.contains('active')) renderSalesDashboard();
+            } else {
+                console.error("Sales fetch error: ", error);
+            }
         }
 
         async function fetchInventory() {
@@ -875,6 +1034,45 @@
                 document.getElementById('filter-shop').value = document.getElementById('global-search').value;
                 renderFullInventory();
             }
+        }
+
+        function renderSalesDashboard() {
+            const tbody = document.getElementById('sales-table-body');
+            
+            if(salesData.length === 0) {
+                document.getElementById('sales-total-revenue').innerText = '₹0';
+                document.getElementById('sales-total-units').innerText = '0';
+                document.getElementById('sales-total-tax').innerText = '₹0';
+                document.getElementById('sales-total-discount').innerText = '₹0';
+                return tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No sales recorded yet.</td></tr>`;
+            }
+
+            let tRev = 0, tUnits = 0, tTax = 0, tDisc = 0;
+            tbody.innerHTML = '';
+
+            salesData.forEach(sale => {
+                const itemRev = (sale.quantity * sale.selling_price) - sale.discount + sale.tax;
+                tRev += itemRev;
+                tUnits += sale.quantity;
+                tTax += sale.tax;
+                tDisc += sale.discount;
+
+                const dateStr = new Date(sale.created_at).toLocaleDateString('en-IN', {day:'numeric', month:'short'});
+                
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td class="p-4 text-slate-500">${dateStr}</td>
+                        <td class="p-4 font-bold text-slate-900">${sale.customer_name}</td>
+                        <td class="p-4 text-slate-600">${sale.product_name} <span class="text-xs text-slate-400 block">${sale.product_code}</span></td>
+                        <td class="p-4 font-bold text-center">${sale.quantity}</td>
+                        <td class="p-4 text-emerald-600 font-medium text-right">₹${itemRev.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                    </tr>`;
+            });
+
+            document.getElementById('sales-total-revenue').innerText = '₹' + tRev.toLocaleString('en-IN', {minimumFractionDigits:2});
+            document.getElementById('sales-total-units').innerText = tUnits.toLocaleString('en-IN');
+            document.getElementById('sales-total-tax').innerText = '₹' + tTax.toLocaleString('en-IN', {minimumFractionDigits:2});
+            document.getElementById('sales-total-discount').innerText = '₹' + tDisc.toLocaleString('en-IN', {minimumFractionDigits:2});
         }
 
         function renderFullInventory() {
@@ -966,8 +1164,7 @@
                 document.getElementById('update-old-stock').checked = true; 
                 document.getElementById('in-date').valueAsDate = new Date();
                 
-                // Allow editing of details for existing products as requested
-                document.getElementById('in-code').disabled = true; // Still can't change the locked code
+                document.getElementById('in-code').disabled = true; 
             } else {
                 nameSelect.classList.add('hidden');
                 nameSelect.required = false;
@@ -1282,13 +1479,13 @@
                 totalVal += (item.stock_quantity * item.purchase_price);
                 expectedSale += (item.stock_quantity * item.selling_price);
 
+                const sizeBadge = item.size ? `<span class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded ml-2">Size: ${item.size}</span>` : '';
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                         <td class="p-4 font-medium text-primary">${item.product_code}</td>
-                        <td class="p-4 font-bold text-slate-900">${item.product_name}</td>
+                        <td class="p-4 font-bold text-slate-900">${item.product_name} ${sizeBadge}</td>
                         <td class="p-4 text-slate-500">${item.category}</td>
-                        <td class="p-4 font-bold text-slate-800">${item.stock_quantity}</td>
-                        <td class="p-4">₹${item.purchase_price.toLocaleString('en-IN')}</td>
+                        <td class="p-4 font-bold ${item.stock_quantity === 0 ? 'text-rose-500' : 'text-slate-800'}">${item.stock_quantity}</td>
                         <td class="p-4 text-emerald-600 font-medium">₹${item.selling_price.toLocaleString('en-IN')}</td>
                     </tr>`;
             });
@@ -1298,6 +1495,32 @@
             if(document.getElementById('dash-products')) document.getElementById('dash-products').innerText = availableInventory.length.toLocaleString('en-IN');
             if(document.getElementById('dash-low')) document.getElementById('dash-low').innerText = availableInventory.filter(i => i.stock_quantity < 5).length.toLocaleString('en-IN');
             if(document.getElementById('dash-sale-val')) document.getElementById('dash-sale-val').innerText = '₹' + expectedSale.toLocaleString('en-IN');
+        }
+
+        // --- MOCK INFLUENCER API LOGIC ---
+        function fetchInfluencer() {
+            const handle = document.getElementById('insta-id').value.trim().replace('@', '');
+            if(!handle) return alert("Please enter an Instagram ID.");
+            
+            const card = document.getElementById('influencer-card');
+            
+            // Mocking Data (Real IG Graph API requires Business Auth/Tokens)
+            const mockData = {
+                'dkuma71': { name: 'Deepak Kumar', category: 'Jewelry & Lifestyle', followers: '124K', views: '45.2K', pic: 'https://ui-avatars.com/api/?name=Deepak+Kumar&background=4f46e5&color=fff', status: 'High Engagement' },
+                'default': { name: 'Verified Creator', category: 'Digital Creator', followers: '89K', views: '12.4K', pic: 'https://ui-avatars.com/api/?name=Creator&background=random', status: 'Active' }
+            };
+            
+            const data = mockData[handle.toLowerCase()] || mockData['default'];
+            
+            document.getElementById('inf-name').innerText = data.name;
+            document.getElementById('inf-handle').innerText = '@' + handle;
+            document.getElementById('inf-category').innerText = data.category;
+            document.getElementById('inf-followers').innerText = data.followers;
+            document.getElementById('inf-views').innerText = data.views;
+            document.getElementById('inf-pic').src = data.pic;
+            document.getElementById('inf-status').innerText = data.status;
+            
+            card.classList.remove('hidden');
         }
 
         function downloadSampleSheet() {
