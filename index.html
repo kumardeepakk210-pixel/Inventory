@@ -25,6 +25,7 @@
         #app-container { display: none; }
         #auth-wrapper { display: flex; }
         #login-container { display: block; }
+        #register-container { display: none; }
     </style>
     <script>
         tailwind.config = { theme: { extend: { colors: { primary: '#4f46e5', sidebar: '#0f172a' } } } }
@@ -35,7 +36,7 @@
     <!-- AUTHENTICATION WRAPPER -->
     <div id="auth-wrapper" class="h-full w-full items-center justify-center bg-slate-900 absolute inset-0 z-50 overflow-y-auto py-10">
         
-        <!-- LOGIN / INITIAL SETUP SCREEN -->
+        <!-- LOGIN SCREEN -->
         <div id="login-container" class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative my-auto">
             
             <button onclick="toggleDbSetup()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-indigo-600 font-bold flex items-center gap-1">
@@ -126,7 +127,6 @@
                     <button onclick="navigate('stock-out')" id="nav-stock-out" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-out">📤 Stock Out (Adjust)</button>
                     <button onclick="navigate('invoice')" id="nav-invoice" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="invoice">🧾 Sales & Invoice</button>
                     <button onclick="navigate('employees')" id="nav-employees" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="employees">👥 Manage Users</button>
-                    <button onclick="navigate('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="settings">⚙️ Settings</button>
                     
                     <div class="pt-4 mt-4 border-t border-slate-800">
                         <a href="https://www.wishrite.com" target="_blank" class="w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-white">
@@ -432,32 +432,6 @@
                     </div>
                 </div>
 
-                <!-- SETTINGS -->
-                <div id="settings" class="page">
-                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Database Settings</h1>
-                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
-                        <div class="flex justify-between items-start mb-6">
-                            <p class="text-sm text-slate-600">Update your Supabase credentials to sync inventory in real-time.</p>
-                            <div class="text-sm font-medium border px-3 py-1.5 rounded-lg bg-slate-50">
-                                Connection: <span id="settings-db-status" class="text-rose-600 font-bold ml-1">Disconnected</span>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase URL</label>
-                            <input type="text" id="settings-supa-url" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="https://xyz.supabase.co">
-                        </div>
-                        <div class="mb-6 relative">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase API Key (anon public)</label>
-                            <input type="password" id="settings-supa-key" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" placeholder="eyJh...">
-                            <button type="button" onclick="togglePasswordVis('settings-supa-key')" class="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                            </button>
-                        </div>
-                        <button onclick="updateSettingsDB()" class="bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-600">Save & Connect</button>
-                    </div>
-                </div>
-
                 <!-- STOCK IN -->
                 <div id="stock-in" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Stock In (Receive)</h1>
@@ -708,7 +682,7 @@
             document.getElementById('initial-setup-form').style.display = 'none';
             document.getElementById('login-form').style.display = 'block';
             document.getElementById('login-title').innerText = "WISHRITE";
-            document.getElementById('login-subtitle').innerText = "YOUR WISH OUR COMMAND";
+            document.getElementById('login-subtitle').innerText = "YOUR WISH MY COMMAND";
         }
 
         async function handleRegister(e) {
@@ -858,7 +832,6 @@
             if(document.getElementById('dashboard').classList.contains('active')) {
                 renderDashboard();
             } else if (document.getElementById('inventory').classList.contains('active')) {
-                // Sync the global search bar text to the specific Shop search box for consistency
                 document.getElementById('filter-shop').value = document.getElementById('global-search').value;
                 renderFullInventory();
             }
@@ -926,7 +899,6 @@
             document.getElementById('out-product').innerHTML = options;
             document.getElementById('inv-product').innerHTML = options;
             
-            // Stock In dropdown needs all products so you can restock them
             const inNameSelectOptions = '<option value="">-- Select Existing Product --</option>' + 
                                   inventoryData.map(item => {
                                       const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
@@ -953,8 +925,7 @@
                 document.getElementById('update-old-stock').checked = true; 
                 document.getElementById('in-date').valueAsDate = new Date();
                 
-                // Allow editing of details for existing products as requested
-                document.getElementById('in-code').disabled = true; // Still can't change the locked code
+                document.getElementById('in-code').disabled = true; 
             } else {
                 nameSelect.classList.add('hidden');
                 nameSelect.required = false;
@@ -1253,18 +1224,20 @@
             });
             
             if(availableInventory.length === 0) {
-                document.getElementById('dash-qty').innerText = '0';
-                document.getElementById('dash-products').innerText = '0';
-                document.getElementById('dash-low').innerText = '0';
-                document.getElementById('dash-sale-val').innerText = '₹0';
+                if(document.getElementById('dash-qty')) document.getElementById('dash-qty').innerText = '0';
+                if(document.getElementById('dash-val')) document.getElementById('dash-val').innerText = '₹0';
+                if(document.getElementById('dash-products')) document.getElementById('dash-products').innerText = '0';
+                if(document.getElementById('dash-low')) document.getElementById('dash-low').innerText = '0';
+                if(document.getElementById('dash-sale-val')) document.getElementById('dash-sale-val').innerText = '₹0';
                 return tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">No available inventory found.</td></tr>`;
             }
 
             tbody.innerHTML = '';
-            let totalQty = 0, expectedSale = 0;
+            let totalQty = 0, totalVal = 0, expectedSale = 0;
 
             availableInventory.forEach(item => {
                 totalQty += item.stock_quantity;
+                totalVal += (item.stock_quantity * item.purchase_price);
                 expectedSale += (item.stock_quantity * item.selling_price);
 
                 tbody.innerHTML += `
@@ -1278,10 +1251,11 @@
                     </tr>`;
             });
 
-            document.getElementById('dash-qty').innerText = totalQty.toLocaleString('en-IN');
-            document.getElementById('dash-products').innerText = availableInventory.length.toLocaleString('en-IN');
-            document.getElementById('dash-low').innerText = availableInventory.filter(i => i.stock_quantity < 5).length.toLocaleString('en-IN');
-            document.getElementById('dash-sale-val').innerText = '₹' + expectedSale.toLocaleString('en-IN');
+            if(document.getElementById('dash-qty')) document.getElementById('dash-qty').innerText = totalQty.toLocaleString('en-IN');
+            if(document.getElementById('dash-val')) document.getElementById('dash-val').innerText = '₹' + totalVal.toLocaleString('en-IN');
+            if(document.getElementById('dash-products')) document.getElementById('dash-products').innerText = availableInventory.length.toLocaleString('en-IN');
+            if(document.getElementById('dash-low')) document.getElementById('dash-low').innerText = availableInventory.filter(i => i.stock_quantity < 5).length.toLocaleString('en-IN');
+            if(document.getElementById('dash-sale-val')) document.getElementById('dash-sale-val').innerText = '₹' + expectedSale.toLocaleString('en-IN');
         }
 
         function downloadSampleSheet() {
