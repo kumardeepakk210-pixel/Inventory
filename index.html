@@ -38,11 +38,9 @@
         <!-- LOGIN / INITIAL SETUP SCREEN -->
         <div id="login-container" class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative my-auto">
             
-            <!-- DB Status Indicator (Login Page) -->
-            <div class="absolute top-5 right-5 flex items-center gap-2 text-xs font-bold text-slate-500">
-                <span id="login-db-text">Checking DB...</span>
-                <span id="login-db-dot" class="w-3 h-3 rounded-full bg-amber-400 shadow-sm"></span>
-            </div>
+            <button onclick="toggleDbSetup()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-indigo-600 font-bold flex items-center gap-1">
+                ⚙️ DB Setup
+            </button>
 
             <div class="text-center mb-8">
                 <span id="login-title" class="block text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
@@ -102,6 +100,14 @@
                 </div>
                 <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200">Create Master Admin</button>
             </form>
+
+            <!-- Hidden DB Setup Form -->
+            <form id="db-setup-form" onsubmit="saveDbSetup(event)" class="hidden mt-6 pt-6 border-t border-slate-200">
+                <p class="text-xs font-bold text-rose-600 mb-3 uppercase">Supabase Connection</p>
+                <input type="text" id="setup-supa-url" placeholder="Supabase URL" class="w-full border border-slate-300 rounded-lg p-2 mb-2 text-xs" required>
+                <input type="password" id="setup-supa-key" placeholder="Supabase Anon Key" class="w-full border border-slate-300 rounded-lg p-2 mb-3 text-xs" required>
+                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2 rounded-lg text-xs hover:bg-slate-900 transition-colors">Save Keys</button>
+            </form>
         </div>
     </div>
 
@@ -120,6 +126,7 @@
                     <button onclick="navigate('stock-out')" id="nav-stock-out" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-out">📤 Stock Out (Adjust)</button>
                     <button onclick="navigate('invoice')" id="nav-invoice" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="invoice">🧾 Sales & Invoice</button>
                     <button onclick="navigate('employees')" id="nav-employees" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="employees">👥 Manage Users</button>
+                    <button onclick="navigate('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="settings">⚙️ Settings</button>
                     
                     <div class="pt-4 mt-4 border-t border-slate-800">
                         <a href="https://www.wishrite.com" target="_blank" class="w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-white">
@@ -128,27 +135,21 @@
                     </div>
                 </nav>
             </div>
-            <div class="p-4 border-t border-slate-800">
-                <div class="flex items-center justify-between w-full">
-                    <button onclick="logout()" class="w-full flex justify-center items-center gap-2 text-rose-400 hover:text-rose-500 font-bold text-sm transition-colors py-2 border border-slate-700 rounded-lg hover:bg-slate-800">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        Secure Logout
-                    </button>
-                </div>
-            </div>
         </aside>
 
         <!-- MAIN WORKSPACE -->
         <main class="flex-1 flex flex-col overflow-hidden bg-slate-50">
             
             <!-- STYLED HEADER -->
-            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 flex-shrink-0">
-                <div class="flex items-center gap-4 w-1/3">
-                    <button class="text-slate-400 hover:text-slate-600 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
-                    <div class="relative w-full max-w-sm">
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 flex-shrink-0 relative z-40">
+                <div class="flex items-center gap-4 w-1/2">
+                    <div class="relative w-full max-w-md">
                         <svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <input type="text" placeholder="Search products, orders, suppliers..." class="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:bg-white focus:border-indigo-300 transition-all placeholder:text-slate-400">
+                        <input type="text" id="global-search" oninput="handleGlobalSearch()" placeholder="Search products, categories, SKU..." class="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:bg-white focus:border-indigo-300 transition-all placeholder:text-slate-400">
                         <span class="absolute right-3 top-2.5 text-xs text-slate-400 font-medium border border-slate-200 rounded px-1.5 py-0.5 bg-white shadow-sm">⌘K</span>
+                    </div>
+                    <div class="text-xs font-medium text-slate-500 flex items-center ml-2 hidden" id="app-db-status-container">
+                        DB Status: <span id="app-db-status" class="ml-1 text-emerald-600 font-bold">🟢 Connected</span>
                     </div>
                 </div>
                 
@@ -158,19 +159,66 @@
                         <span class="absolute 0 right-0.5 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span></span>
                     </button>
                     <button class="text-slate-400 hover:text-slate-600 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button>
-                    <div class="flex items-center gap-3 pl-5 border-l border-slate-200 cursor-pointer hover:bg-slate-50 py-1 px-2 rounded-lg transition-colors">
-                        <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-sm" id="top-ui-avatar">XX</div>
-                        <div class="text-xs text-left">
-                            <p class="text-slate-900 font-bold" id="top-ui-name">User Name</p>
-                            <p class="text-slate-500 font-medium" id="top-ui-role">Role</p>
+                    
+                    <!-- USER DROPDOWN -->
+                    <div class="relative group cursor-pointer">
+                        <div class="flex items-center gap-3 pl-5 border-l border-slate-200 hover:bg-slate-50 py-1 px-2 rounded-lg transition-colors">
+                            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-sm" id="top-ui-avatar">XX</div>
+                            <div class="text-xs text-left">
+                                <p class="text-slate-900 font-bold" id="top-ui-name">User Name</p>
+                                <p class="text-slate-500 font-medium" id="top-ui-role">Role</p>
+                            </div>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
-                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        
+                        <!-- Dropdown Menu -->
+                        <div class="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-2 hidden group-hover:block">
+                            <button onclick="navigate('profile')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center gap-2 font-medium">
+                                👤 My Profile
+                            </button>
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <button onclick="logout()" class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-2 font-bold">
+                                🚪 Secure Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <div class="flex-1 overflow-auto p-8 relative">
                 
+                <!-- USER PROFILE PAGE -->
+                <div id="profile" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">My Profile</h1>
+                    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-2xl">
+                        <div class="flex items-center gap-5 mb-8 pb-8 border-b border-slate-200">
+                            <div class="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl font-bold text-indigo-700 shadow-sm" id="profile-avatar">XX</div>
+                            <div>
+                                <h2 class="text-2xl font-extrabold text-slate-900" id="profile-name">Name</h2>
+                                <p class="text-sm font-bold text-indigo-600" id="profile-role">Role</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-8">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">System User ID</p>
+                                <p class="text-sm font-medium text-slate-900 bg-slate-50 border border-slate-200 rounded p-2 inline-block" id="profile-id">-</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Phone Number</p>
+                                <p class="text-sm font-medium text-slate-900" id="profile-phone">-</p>
+                            </div>
+                            <div class="col-span-2">
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email Address</p>
+                                <p class="text-sm font-medium text-slate-900" id="profile-email">-</p>
+                            </div>
+                            <div class="col-span-2">
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Full Registered Address</p>
+                                <p class="text-sm font-medium text-slate-900 leading-relaxed" id="profile-address">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- DASHBOARD -->
                 <div id="dashboard" class="page active">
                     
@@ -381,6 +429,32 @@
             
                             <button type="submit" class="w-full mt-4 bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">Add New Employee</button>
                         </form>
+                    </div>
+                </div>
+
+                <!-- SETTINGS -->
+                <div id="settings" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Database Settings</h1>
+                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
+                        <div class="flex justify-between items-start mb-6">
+                            <p class="text-sm text-slate-600">Update your Supabase credentials to sync inventory in real-time.</p>
+                            <div class="text-sm font-medium border px-3 py-1.5 rounded-lg bg-slate-50">
+                                Connection: <span id="settings-db-status" class="text-rose-600 font-bold ml-1">Disconnected</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase URL</label>
+                            <input type="text" id="settings-supa-url" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="https://xyz.supabase.co">
+                        </div>
+                        <div class="mb-6 relative">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase API Key (anon public)</label>
+                            <input type="password" id="settings-supa-key" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" placeholder="eyJh...">
+                            <button type="button" onclick="togglePasswordVis('settings-supa-key')" class="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </button>
+                        </div>
+                        <button onclick="updateSettingsDB()" class="bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-600">Save & Connect</button>
                     </div>
                 </div>
 
@@ -696,17 +770,26 @@
             document.getElementById('auth-wrapper').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
             
-            const fullName = `${data.first_name} ${data.last_name || ''}`;
-            document.getElementById('ui-name').innerText = fullName;
-            document.getElementById('top-ui-name').innerText = fullName;
-            document.getElementById('dash-welcome').innerText = `Welcome back, ${data.first_name}! 👋`;
+            const fullName = `${data.first_name} ${data.last_name || ''}`.trim();
             
-            document.getElementById('ui-role').innerText = data.role;
+            // Set User Details across the app
+            document.getElementById('dash-welcome').innerText = `Welcome back, ${data.first_name}! 👋`;
+            document.getElementById('top-ui-name').innerText = fullName;
             document.getElementById('top-ui-role').innerText = data.role;
             
             const avatarTxt = data.first_name.substring(0,2).toUpperCase();
-            document.getElementById('ui-avatar').innerText = avatarTxt;
             document.getElementById('top-ui-avatar').innerText = avatarTxt;
+            
+            // Profile Page Populating
+            document.getElementById('profile-avatar').innerText = avatarTxt;
+            document.getElementById('profile-name').innerText = fullName;
+            document.getElementById('profile-role').innerText = data.role;
+            document.getElementById('profile-id').innerText = data.user_id;
+            document.getElementById('profile-phone').innerText = data.phone_number || '-';
+            document.getElementById('profile-email').innerText = data.email_id || '-';
+            
+            const addressParts = [data.address, data.city, data.state, data.pin, data.country].filter(Boolean);
+            document.getElementById('profile-address').innerText = addressParts.length > 0 ? addressParts.join(', ') : '-';
             
             applyRolePermissions(data.role);
             navigate('dashboard');
@@ -762,11 +845,22 @@
             if(!error) {
                 inventoryData = data || [];
                 renderDashboard();
-                renderFullInventory();
+                if(document.getElementById('inventory').classList.contains('active')) renderFullInventory();
                 populateSelects();
             } else {
                 setDbStatus(false, "Sync Failed");
                 console.error("Fetch error: ", error);
+            }
+        }
+
+        // --- SEARCH LOGIC ---
+        function handleGlobalSearch() {
+            if(document.getElementById('dashboard').classList.contains('active')) {
+                renderDashboard();
+            } else if (document.getElementById('inventory').classList.contains('active')) {
+                // Sync the global search bar text to the specific Shop search box for consistency
+                document.getElementById('filter-shop').value = document.getElementById('global-search').value;
+                renderFullInventory();
             }
         }
 
@@ -775,14 +869,18 @@
             const minPrice = parseFloat(document.getElementById('filter-min').value) || 0;
             const maxPrice = parseFloat(document.getElementById('filter-max').value) || Infinity;
             const category = document.getElementById('filter-cat').value.toLowerCase();
-            const shop = document.getElementById('filter-shop').value.toLowerCase();
+            const shopSearch = document.getElementById('filter-shop').value.toLowerCase();
 
             const filteredData = inventoryData.filter(item => {
                 const price = item.selling_price;
                 const matchesStock = stockStatus === 'all' || (stockStatus === 'in' && item.stock_quantity > 0) || (stockStatus === 'out' && item.stock_quantity === 0);
                 const matchesPrice = price >= minPrice && price <= maxPrice;
                 const matchesCat = category === '' || (item.category && item.category.toLowerCase() === category);
-                const matchesShop = shop === '' || (item.shop_name && item.shop_name.toLowerCase().includes(shop));
+                const matchesShop = shopSearch === '' || 
+                    (item.shop_name && item.shop_name.toLowerCase().includes(shopSearch)) ||
+                    (item.product_name && item.product_name.toLowerCase().includes(shopSearch)) ||
+                    (item.product_code && item.product_code.toLowerCase().includes(shopSearch));
+                    
                 return matchesStock && matchesPrice && matchesCat && matchesShop;
             });
 
@@ -813,6 +911,7 @@
             document.getElementById('filter-max').value = '';
             document.getElementById('filter-cat').value = '';
             document.getElementById('filter-shop').value = '';
+            document.getElementById('global-search').value = '';
             renderFullInventory();
         }
 
@@ -1143,16 +1242,22 @@
 
         function renderDashboard() {
             const tbody = document.getElementById('dashboard-table-body');
+            const searchStr = document.getElementById('global-search').value.toLowerCase();
             
-            // Filter out items with 0 stock
-            const availableInventory = inventoryData.filter(item => item.stock_quantity > 0);
+            const availableInventory = inventoryData.filter(item => {
+                if(item.stock_quantity <= 0) return false;
+                if(!searchStr) return true;
+                
+                const combined = `${item.product_name} ${item.product_code} ${item.category} ${item.shop_name}`.toLowerCase();
+                return combined.includes(searchStr);
+            });
             
             if(availableInventory.length === 0) {
                 document.getElementById('dash-qty').innerText = '0';
                 document.getElementById('dash-products').innerText = '0';
                 document.getElementById('dash-low').innerText = '0';
                 document.getElementById('dash-sale-val').innerText = '₹0';
-                return tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">No available inventory.</td></tr>`;
+                return tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">No available inventory found.</td></tr>`;
             }
 
             tbody.innerHTML = '';
@@ -1173,9 +1278,9 @@
                     </tr>`;
             });
 
-            document.getElementById('dash-qty').innerText = totalQty;
-            document.getElementById('dash-products').innerText = availableInventory.length;
-            document.getElementById('dash-low').innerText = availableInventory.filter(i => i.stock_quantity < 5).length;
+            document.getElementById('dash-qty').innerText = totalQty.toLocaleString('en-IN');
+            document.getElementById('dash-products').innerText = availableInventory.length.toLocaleString('en-IN');
+            document.getElementById('dash-low').innerText = availableInventory.filter(i => i.stock_quantity < 5).length.toLocaleString('en-IN');
             document.getElementById('dash-sale-val').innerText = '₹' + expectedSale.toLocaleString('en-IN');
         }
 
@@ -1295,14 +1400,17 @@
             const loginDot = document.getElementById('login-db-dot');
             const loginText = document.getElementById('login-db-text');
             const headerStatus = document.getElementById('app-db-status');
+            const headerStatusContainer = document.getElementById('app-db-status-container');
             
             if(isConnected) {
                 if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-sm";
                 if(loginText) loginText.innerText = "";
+                if(headerStatusContainer) headerStatusContainer.classList.remove('hidden');
                 if(headerStatus) { headerStatus.className = "px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold ml-2"; headerStatus.innerText = "🟢 Connected"; }
             } else {
                 if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-rose-500 shadow-sm";
                 if(loginText) loginText.innerText = message || "DB Disconnected";
+                if(headerStatusContainer) headerStatusContainer.classList.remove('hidden');
                 if(headerStatus) { headerStatus.className = "px-2 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold ml-2"; headerStatus.innerText = "🔴 Disconnected"; }
             }
         }
