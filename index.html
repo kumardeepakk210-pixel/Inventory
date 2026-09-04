@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wishrite | Inventory </title>
+    <title>Wishrite | AI Inventory OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -46,7 +46,7 @@
 
             <div class="text-center mb-8">
                 <span id="login-title" class="block text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
-                <p id="login-subtitle" class="text-slate-500 text-sm mt-2">YOUR WISH OUR COMMAND</p>
+                <p id="login-subtitle" class="text-slate-500 text-sm mt-2">Enterprise Resource Planning OS</p>
             </div>
 
             <!-- Standard Login Form -->
@@ -130,49 +130,116 @@
             </div>
             <div class="p-4 border-t border-slate-800">
                 <div class="flex items-center justify-between w-full">
-                    <div class="flex items-center gap-3 px-2">
-                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white uppercase" id="ui-avatar">XX</div>
-                        <div class="text-xs text-left">
-                            <p class="text-white font-medium" id="ui-name">User Name</p>
-                            <p class="text-slate-500" id="ui-role">Role</p>
-                        </div>
-                    </div>
-                    <button onclick="logout()" class="text-slate-500 hover:text-rose-500 transition-colors" title="Logout">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <button onclick="logout()" class="w-full flex justify-center items-center gap-2 text-rose-400 hover:text-rose-500 font-bold text-sm transition-colors py-2 border border-slate-700 rounded-lg hover:bg-slate-800">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        Secure Logout
                     </button>
                 </div>
             </div>
         </aside>
 
         <!-- MAIN WORKSPACE -->
-        <main class="flex-1 flex flex-col overflow-hidden">
+        <main class="flex-1 flex flex-col overflow-hidden bg-slate-50">
             
+            <!-- STYLED HEADER -->
             <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 flex-shrink-0">
-                <div class="text-sm font-medium text-slate-500 flex items-center">
-                    Global DB Status: <span id="app-db-status" class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold ml-2">🟡 Checking...</span>
+                <div class="flex items-center gap-4 w-1/3">
+                    <button class="text-slate-400 hover:text-slate-600 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+                    <div class="relative w-full max-w-sm">
+                        <svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" placeholder="Search products, orders, suppliers..." class="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:bg-white focus:border-indigo-300 transition-all placeholder:text-slate-400">
+                        <span class="absolute right-3 top-2.5 text-xs text-slate-400 font-medium border border-slate-200 rounded px-1.5 py-0.5 bg-white shadow-sm">⌘K</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-5">
+                    <button class="text-slate-400 hover:text-slate-600 transition-colors relative">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <span class="absolute 0 right-0.5 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span></span>
+                    </button>
+                    <button class="text-slate-400 hover:text-slate-600 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button>
+                    <div class="flex items-center gap-3 pl-5 border-l border-slate-200 cursor-pointer hover:bg-slate-50 py-1 px-2 rounded-lg transition-colors">
+                        <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-sm" id="top-ui-avatar">XX</div>
+                        <div class="text-xs text-left">
+                            <p class="text-slate-900 font-bold" id="top-ui-name">User Name</p>
+                            <p class="text-slate-500 font-medium" id="top-ui-role">Role</p>
+                        </div>
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
                 </div>
             </header>
 
-            <div class="flex-1 overflow-auto p-8 relative bg-slate-50">
+            <div class="flex-1 overflow-auto p-8 relative">
                 
                 <!-- DASHBOARD -->
                 <div id="dashboard" class="page active">
-                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Available Inventory Dashboard</h1>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Available Units</h3>
-                            <div class="text-3xl font-bold text-slate-900" id="dash-qty">0</div>
+                    
+                    <div class="flex justify-between items-end mb-8">
+                        <div>
+                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight" id="dash-welcome">Welcome back! 👋</h1>
+                            <p class="text-slate-500 mt-2 font-medium">Here's what's happening with your inventory today.</p>
                         </div>
-                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Available Value (Cost)</h3>
-                            <div class="text-3xl font-bold text-slate-900" id="dash-val">₹0</div>
-                        </div>
-                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-primary">
-                            <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Expected Sale Value</h3>
-                            <div class="text-3xl font-bold text-slate-900" id="dash-sale-val">₹0</div>
+                        <div class="border border-slate-200 bg-white rounded-lg px-4 py-2 flex items-center gap-3 text-sm font-medium text-slate-700 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span id="dash-date-range">Today</span>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                     </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <!-- Card 1 -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+                            <div>
+                                <h3 class="text-slate-500 text-sm font-medium mb-3">Total Inventory Value</h3>
+                                <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-val">₹0</div>
+                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> 12.5% vs last week</div>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 2 -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+                            <div>
+                                <h3 class="text-slate-500 text-sm font-medium mb-3">Total Products In Stock</h3>
+                                <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-products">0</div>
+                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> 8.4% vs last week</div>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-sm border border-blue-100">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            </div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+                            <div>
+                                <h3 class="text-slate-500 text-sm font-medium mb-3">Low Stock Items (<5)</h3>
+                                <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-low">0</div>
+                                <div class="text-xs font-medium text-rose-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg> Action Required</div>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shadow-sm border border-orange-100">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            </div>
+                        </div>
+
+                        <!-- Card 4 -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+                            <div>
+                                <h3 class="text-slate-500 text-sm font-medium mb-3">Expected Sale Value</h3>
+                                <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-sale-val">₹0</div>
+                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Potential Revenue</div>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-sm border border-emerald-100">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-200">
+                            <h2 class="font-bold text-slate-800">Available Products Preview</h2>
+                        </div>
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
@@ -197,16 +264,24 @@
                     
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
                         <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Stock Status</label>
+                            <select id="filter-stock" class="w-36 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" onchange="renderFullInventory()">
+                                <option value="all">All Inventory</option>
+                                <option value="in">In Stock Only</option>
+                                <option value="out">Out of Stock Only</option>
+                            </select>
+                        </div>
+                        <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Min Price (₹)</label>
-                            <input type="number" id="filter-min" class="w-32 border border-slate-300 rounded-lg p-2 text-sm" placeholder="0" oninput="renderFullInventory()">
+                            <input type="number" id="filter-min" class="w-28 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="0" oninput="renderFullInventory()">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Max Price (₹)</label>
-                            <input type="number" id="filter-max" class="w-32 border border-slate-300 rounded-lg p-2 text-sm" placeholder="999999" oninput="renderFullInventory()">
+                            <input type="number" id="filter-max" class="w-28 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="999999" oninput="renderFullInventory()">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                            <select id="filter-cat" class="w-40 border border-slate-300 rounded-lg p-2 text-sm" onchange="renderFullInventory()">
+                            <select id="filter-cat" class="w-36 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" onchange="renderFullInventory()">
                                 <option value="">All Categories</option>
                                 <option value="Chain">Chain</option>
                                 <option value="Ring">Ring</option>
@@ -219,9 +294,9 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Shop Name</label>
-                            <input type="text" id="filter-shop" class="w-48 border border-slate-300 rounded-lg p-2 text-sm" placeholder="Search Shop..." oninput="renderFullInventory()">
+                            <input type="text" id="filter-shop" class="w-40 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="Search Shop..." oninput="renderFullInventory()">
                         </div>
-                        <button onclick="clearFilters()" class="text-sm font-medium text-slate-500 hover:text-rose-500 underline ml-auto">Clear Filters</button>
+                        <button onclick="clearFilters()" class="text-sm font-medium text-slate-500 hover:text-rose-500 underline ml-auto mb-2">Clear Filters</button>
                     </div>
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-[600px] overflow-y-auto">
@@ -517,6 +592,7 @@
         document.getElementById('in-date').valueAsDate = new Date();
         document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
         document.getElementById('inv-number').innerText = Math.floor(100000 + Math.random() * 900000);
+        document.getElementById('dash-date-range').innerText = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         let supaClient = null;
         let currentUser = null;
@@ -534,23 +610,6 @@
             }
         }
 
-        function toggleDbSetup() {
-            const form = document.getElementById('db-setup-form');
-            form.classList.toggle('hidden');
-        }
-
-        function saveDbSetup(e) {
-            e.preventDefault();
-            const url = document.getElementById('setup-supa-url').value;
-            const key = document.getElementById('setup-supa-key').value;
-            localStorage.setItem('supa_url', url);
-            localStorage.setItem('supa_key', key);
-            initSupabase(url, key);
-            alert("Database credentials saved! Checking system status...");
-            toggleDbSetup();
-        }
-
-        // Handles the unique edge case where DB is totally empty
         async function handleInitialSetup(e) {
             e.preventDefault();
             if(!supaClient) return alert("Database not connected.");
@@ -562,7 +621,7 @@
             const payload = {
                 first_name: document.getElementById('setup-fname').value,
                 phone_number: document.getElementById('setup-phone').value,
-                role: 'Admin', // Force Admin for first user
+                role: 'Admin',
                 password: pwd 
             };
             
@@ -575,10 +634,9 @@
             document.getElementById('initial-setup-form').style.display = 'none';
             document.getElementById('login-form').style.display = 'block';
             document.getElementById('login-title').innerText = "WISHRITE";
-            document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
+            document.getElementById('login-subtitle').innerText = "YOUR WISH OUR COMMAND";
         }
 
-        // Only Admin can add users via the inside application "Manage Users" tab
         async function handleRegister(e) {
             e.preventDefault();
             if(!supaClient) return alert("Database connection error.");
@@ -614,12 +672,7 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            const url = localStorage.getItem('supa_url');
-            const key = localStorage.getItem('supa_key');
-            
-            if(!url || !key) return alert("Please configure the Database using the 'DB Setup' button first.");
-            
-            if(!supaClient) initSupabase(url, key);
+            if(!supaClient) return alert("System not connected to database. Check config.js");
 
             const userId = document.getElementById('login-user-id').value.toUpperCase();
             const passwordInput = document.getElementById('login-password').value;
@@ -643,9 +696,17 @@
             document.getElementById('auth-wrapper').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
             
-            document.getElementById('ui-name').innerText = `${data.first_name} ${data.last_name || ''}`;
+            const fullName = `${data.first_name} ${data.last_name || ''}`;
+            document.getElementById('ui-name').innerText = fullName;
+            document.getElementById('top-ui-name').innerText = fullName;
+            document.getElementById('dash-welcome').innerText = `Welcome back, ${data.first_name}! 👋`;
+            
             document.getElementById('ui-role').innerText = data.role;
-            document.getElementById('ui-avatar').innerText = data.first_name.substring(0,2);
+            document.getElementById('top-ui-role').innerText = data.role;
+            
+            const avatarTxt = data.first_name.substring(0,2).toUpperCase();
+            document.getElementById('ui-avatar').innerText = avatarTxt;
+            document.getElementById('top-ui-avatar').innerText = avatarTxt;
             
             applyRolePermissions(data.role);
             navigate('dashboard');
@@ -659,20 +720,18 @@
         }
 
         function applyRolePermissions(role) {
-            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-stock-out', 'nav-invoice', 'nav-settings', 'nav-employees'];
+            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-stock-out', 'nav-invoice', 'nav-employees'];
             buttons.forEach(id => {
                 if(document.getElementById(id)) document.getElementById(id).style.display = 'flex';
             });
 
             if (role === 'Manager') {
-                document.getElementById('nav-settings').style.display = 'none';
                 document.getElementById('nav-employees').style.display = 'none';
             } 
             else if (role === 'Agent') {
                 document.getElementById('nav-stock-in').style.display = 'none';
                 document.getElementById('nav-stock-out').style.display = 'none';
                 document.getElementById('nav-invoice').style.display = 'none';
-                document.getElementById('nav-settings').style.display = 'none';
                 document.getElementById('nav-employees').style.display = 'none';
             }
         }
@@ -697,50 +756,6 @@
             if (supaClient) fetchInventory();
         }
 
-        function updateSettingsDB() {
-            const url = document.getElementById('settings-supa-url').value;
-            const key = document.getElementById('settings-supa-key').value;
-            if(!url || !key) return alert("Please fill both URL and Key");
-            
-            localStorage.setItem('supa_url', url);
-            localStorage.setItem('supa_key', key);
-            initSupabase(url, key);
-        }
-
-        async function initSupabase(url, key) {
-            supaClient = window.supabase.createClient(url, key);
-            
-            // Check if DB is empty to trigger initial setup mode
-            const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
-            
-            if(!error && count === 0) {
-                document.getElementById('login-form').style.display = 'none';
-                document.getElementById('initial-setup-form').style.display = 'block';
-                document.getElementById('login-title').innerText = "SYSTEM SETUP";
-                document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
-            } else {
-                document.getElementById('login-form').style.display = 'block';
-                document.getElementById('initial-setup-form').style.display = 'none';
-                document.getElementById('login-title').innerText = "WISHRITE";
-                document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
-            }
-
-            document.getElementById('db-status').className = "px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold ml-2";
-            document.getElementById('db-status').innerText = "🟢 Auto-Syncing Enabled";
-            if(document.getElementById('settings-db-status')) {
-                document.getElementById('settings-db-status').className = "text-emerald-600 font-bold ml-1";
-                document.getElementById('settings-db-status').innerText = "Connected & Syncing";
-            }
-
-            fetchInventory();
-
-            supaClient.channel('inventory-sync-channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
-                    fetchInventory(); 
-                })
-                .subscribe();
-        }
-
         async function fetchInventory() {
             if(!supaClient) return;
             const { data, error } = await supaClient.from('inventory').select('*').order('created_at', { ascending: false });
@@ -750,13 +765,13 @@
                 renderFullInventory();
                 populateSelects();
             } else {
-                document.getElementById('db-status').className = "px-2 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold ml-2";
-                document.getElementById('db-status').innerText = "🔴 Sync Failed";
+                setDbStatus(false, "Sync Failed");
                 console.error("Fetch error: ", error);
             }
         }
 
         function renderFullInventory() {
+            const stockStatus = document.getElementById('filter-stock').value;
             const minPrice = parseFloat(document.getElementById('filter-min').value) || 0;
             const maxPrice = parseFloat(document.getElementById('filter-max').value) || Infinity;
             const category = document.getElementById('filter-cat').value.toLowerCase();
@@ -764,10 +779,11 @@
 
             const filteredData = inventoryData.filter(item => {
                 const price = item.selling_price;
+                const matchesStock = stockStatus === 'all' || (stockStatus === 'in' && item.stock_quantity > 0) || (stockStatus === 'out' && item.stock_quantity === 0);
                 const matchesPrice = price >= minPrice && price <= maxPrice;
                 const matchesCat = category === '' || (item.category && item.category.toLowerCase() === category);
                 const matchesShop = shop === '' || (item.shop_name && item.shop_name.toLowerCase().includes(shop));
-                return matchesPrice && matchesCat && matchesShop;
+                return matchesStock && matchesPrice && matchesCat && matchesShop;
             });
 
             const tbody = document.getElementById('full-inventory-body');
@@ -792,6 +808,7 @@
         }
 
         function clearFilters() {
+            document.getElementById('filter-stock').value = 'all';
             document.getElementById('filter-min').value = '';
             document.getElementById('filter-max').value = '';
             document.getElementById('filter-cat').value = '';
@@ -800,7 +817,9 @@
         }
 
         function populateSelects() {
-            const options = '<option value="">-- Choose Product --</option>' + inventoryData.map(item => {
+            const availableOnly = inventoryData.filter(i => i.stock_quantity > 0);
+            
+            const options = '<option value="">-- Choose Product --</option>' + availableOnly.map(item => {
                 const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
                 return `<option value="${item.product_code}">${item.product_code} - ${item.product_name}${sizeLabel}</option>`;
             }).join('');
@@ -808,6 +827,7 @@
             document.getElementById('out-product').innerHTML = options;
             document.getElementById('inv-product').innerHTML = options;
             
+            // Stock In dropdown needs all products so you can restock them
             const inNameSelectOptions = '<option value="">-- Select Existing Product --</option>' + 
                                   inventoryData.map(item => {
                                       const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
@@ -834,13 +854,8 @@
                 document.getElementById('update-old-stock').checked = true; 
                 document.getElementById('in-date').valueAsDate = new Date();
                 
-                document.getElementById('in-cat').disabled = true;
-                document.getElementById('in-size').readOnly = true;
-                document.getElementById('in-weight').readOnly = true;
-                document.getElementById('in-address').readOnly = true;
-                document.getElementById('in-desc').readOnly = true;
-                document.getElementById('in-buy').readOnly = true;
-                document.getElementById('in-sale').readOnly = true;
+                // Allow editing of details for existing products as requested
+                document.getElementById('in-code').disabled = true; // Still can't change the locked code
             } else {
                 nameSelect.classList.add('hidden');
                 nameSelect.required = false;
@@ -849,13 +864,7 @@
                 
                 document.getElementById('stockInForm').reset();
                 document.getElementById('in-date').valueAsDate = new Date();
-                document.getElementById('in-cat').disabled = false;
-                document.getElementById('in-size').readOnly = false;
-                document.getElementById('in-weight').readOnly = false;
-                document.getElementById('in-address').readOnly = false;
-                document.getElementById('in-desc').readOnly = false;
-                document.getElementById('in-buy').readOnly = false;
-                document.getElementById('in-sale').readOnly = false;
+                document.getElementById('in-code').disabled = false;
                 document.getElementById('in-code').value = '';
             }
         }
@@ -919,7 +928,7 @@
 
             if (isUpdatingOld) {
                 const selectElement = document.getElementById('in-name-select');
-                payload.product_name = selectElement.options[selectElement.selectedIndex].text.split(' (')[0];
+                payload.product_name = selectElement.options[selectElement.selectedIndex].text.split(' - ')[0]; 
             } else {
                 payload.product_name = document.getElementById('in-name').value;
             }
@@ -1132,7 +1141,6 @@
                 });
         }
 
-        // --- DASHBOARD LOGIC (AVAILABLE ONLY) ---
         function renderDashboard() {
             const tbody = document.getElementById('dashboard-table-body');
             
@@ -1141,17 +1149,17 @@
             
             if(availableInventory.length === 0) {
                 document.getElementById('dash-qty').innerText = '0';
-                document.getElementById('dash-val').innerText = '₹0';
+                document.getElementById('dash-products').innerText = '0';
+                document.getElementById('dash-low').innerText = '0';
                 document.getElementById('dash-sale-val').innerText = '₹0';
                 return tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">No available inventory.</td></tr>`;
             }
 
             tbody.innerHTML = '';
-            let totalQty = 0, totalVal = 0, expectedSale = 0;
+            let totalQty = 0, expectedSale = 0;
 
             availableInventory.forEach(item => {
                 totalQty += item.stock_quantity;
-                totalVal += (item.stock_quantity * item.purchase_price);
                 expectedSale += (item.stock_quantity * item.selling_price);
 
                 tbody.innerHTML += `
@@ -1166,7 +1174,8 @@
             });
 
             document.getElementById('dash-qty').innerText = totalQty;
-            document.getElementById('dash-val').innerText = '₹' + totalVal.toLocaleString('en-IN');
+            document.getElementById('dash-products').innerText = availableInventory.length;
+            document.getElementById('dash-low').innerText = availableInventory.filter(i => i.stock_quantity < 5).length;
             document.getElementById('dash-sale-val').innerText = '₹' + expectedSale.toLocaleString('en-IN');
         }
 
@@ -1249,12 +1258,54 @@
         }
 
         window.onload = function() {
-            const url = localStorage.getItem('supa_url');
-            const key = localStorage.getItem('supa_key');
-            if(url) document.getElementById('setup-supa-url').value = url;
-            if(key) document.getElementById('setup-supa-key').value = key;
-            if(url && key) initSupabase(url, key);
+            setDbStatus(false, "Checking DB...");
+            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
+                try {
+                    supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    checkInitialSetup();
+                } catch(e) {
+                    console.error("Supabase client creation failed:", e);
+                    setDbStatus(false, "Config Error");
+                }
+            } else {
+                setDbStatus(false, "config.js missing");
+            }
         };
+
+        async function checkInitialSetup() {
+            try {
+                const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
+                if(error) throw error;
+                
+                setDbStatus(true, "DB Connected");
+
+                if(count === 0) {
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('initial-setup-form').style.display = 'block';
+                    document.getElementById('login-title').innerText = "SYSTEM SETUP";
+                    document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
+                }
+            } catch (err) {
+                console.error("Database connection failed:", err.message);
+                setDbStatus(false, "DB Disconnected");
+            }
+        }
+
+        function setDbStatus(isConnected, message) {
+            const loginDot = document.getElementById('login-db-dot');
+            const loginText = document.getElementById('login-db-text');
+            const headerStatus = document.getElementById('app-db-status');
+            
+            if(isConnected) {
+                if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-sm";
+                if(loginText) loginText.innerText = "";
+                if(headerStatus) { headerStatus.className = "px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold ml-2"; headerStatus.innerText = "🟢 Connected"; }
+            } else {
+                if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-rose-500 shadow-sm";
+                if(loginText) loginText.innerText = message || "DB Disconnected";
+                if(headerStatus) { headerStatus.className = "px-2 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold ml-2"; headerStatus.innerText = "🔴 Disconnected"; }
+            }
+        }
     </script>
 </body>
 </html>
