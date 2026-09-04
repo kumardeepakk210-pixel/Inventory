@@ -25,7 +25,23 @@
         #app-container { display: none; }
         #auth-wrapper { display: flex; }
         #login-container { display: block; }
-        #register-container { display: none; }
+        
+        /* Professional PDF Watermark Styles */
+        #invoice-document { position: relative; overflow: hidden; background: white; }
+        #invoice-document .content-layer { position: relative; z-index: 10; }
+        #invoice-watermark { 
+            position: absolute; 
+            left: 50%; 
+            top: 50%; 
+            transform: translate(-50%, -50%) rotate(-35deg); 
+            font-size: 130px; 
+            font-weight: 900; 
+            color: rgba(0, 0, 0, 0.03); 
+            pointer-events: none; 
+            z-index: 0; 
+            white-space: nowrap; 
+            letter-spacing: 0.2em;
+        }
     </style>
     <script>
         tailwind.config = { theme: { extend: { colors: { primary: '#4f46e5', sidebar: '#0f172a' } } } }
@@ -36,7 +52,7 @@
     <!-- AUTHENTICATION WRAPPER -->
     <div id="auth-wrapper" class="h-full w-full items-center justify-center bg-slate-900 absolute inset-0 z-50 overflow-y-auto py-10">
         
-        <!-- LOGIN SCREEN -->
+        <!-- LOGIN / INITIAL SETUP SCREEN -->
         <div id="login-container" class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative my-auto">
             
             <button onclick="toggleDbSetup()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-indigo-600 font-bold flex items-center gap-1">
@@ -127,6 +143,7 @@
                     <button onclick="navigate('stock-out')" id="nav-stock-out" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-out">📤 Stock Out (Adjust)</button>
                     <button onclick="navigate('invoice')" id="nav-invoice" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="invoice">🧾 Sales & Invoice</button>
                     <button onclick="navigate('employees')" id="nav-employees" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="employees">👥 Manage Users</button>
+                    <button onclick="navigate('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="settings">⚙️ Settings</button>
                     
                     <div class="pt-4 mt-4 border-t border-slate-800">
                         <a href="https://www.wishrite.com" target="_blank" class="w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-white">
@@ -235,31 +252,28 @@
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                        <!-- Card 1 -->
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
                             <div>
                                 <h3 class="text-slate-500 text-sm font-medium mb-3">Total Inventory Value</h3>
                                 <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-val">₹0</div>
-                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> 12.5% vs last week</div>
+                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Live Update</div>
                             </div>
                             <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                             </div>
                         </div>
                         
-                        <!-- Card 2 -->
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
                             <div>
                                 <h3 class="text-slate-500 text-sm font-medium mb-3">Total Products In Stock</h3>
                                 <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-products">0</div>
-                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> 8.4% vs last week</div>
+                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Active SKUs</div>
                             </div>
                             <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-sm border border-blue-100">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                             </div>
                         </div>
 
-                        <!-- Card 3 -->
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
                             <div>
                                 <h3 class="text-slate-500 text-sm font-medium mb-3">Low Stock Items (<5)</h3>
@@ -271,7 +285,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 4 -->
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
                             <div>
                                 <h3 class="text-slate-500 text-sm font-medium mb-3">Expected Sale Value</h3>
@@ -310,10 +323,6 @@
                 <div id="inventory" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Inventory Explorer</h1>
                     
-                                    /* Invoice watermark styles */
-                                    #invoice-document { position: relative; }
-                                    #invoice-document > * { position: relative; z-index: 1; }
-                                    #invoice-watermark { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 120px; font-weight: 800; color: rgba(0,0,0,0.04); pointer-events: none; z-index: 0; white-space: nowrap; }
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Stock Status</label>
@@ -433,6 +442,32 @@
             
                             <button type="submit" class="w-full mt-4 bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">Add New Employee</button>
                         </form>
+                    </div>
+                </div>
+
+                <!-- SETTINGS -->
+                <div id="settings" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Database Settings</h1>
+                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
+                        <div class="flex justify-between items-start mb-6">
+                            <p class="text-sm text-slate-600">Update your Supabase credentials to sync inventory in real-time.</p>
+                            <div class="text-sm font-medium border px-3 py-1.5 rounded-lg bg-slate-50">
+                                Connection: <span id="settings-db-status" class="text-rose-600 font-bold ml-1">Disconnected</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase URL</label>
+                            <input type="text" id="settings-supa-url" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="https://xyz.supabase.co">
+                        </div>
+                        <div class="mb-6 relative">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase API Key (anon public)</label>
+                            <input type="password" id="settings-supa-key" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" placeholder="eyJh...">
+                            <button type="button" onclick="togglePasswordVis('settings-supa-key')" class="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </button>
+                        </div>
+                        <button onclick="updateSettingsDB()" class="bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-600">Save & Connect</button>
                     </div>
                 </div>
 
@@ -573,13 +608,13 @@
 
                         <div class="col-span-2">
                             <div id="invoice-document" class="bg-white p-10 border border-slate-200 shadow-lg mx-auto" style="min-height: 297mm; max-width: 210mm;">
-                                <div id="invoice-watermark">WishRite</div>
-                                <div class="flex justify-between border-b-2 border-slate-800 pb-6 mb-6">
+                                <div id="invoice-watermark">WISHRITE</div>
+                                <div class="flex justify-between border-b-2 border-slate-800 pb-6 mb-6 content-layer">
                                     <div>
                                         <span class="block text-4xl font-semibold tracking-[0.3em] text-[#5A2C31] mb-2">WISHRITE</span>
-                                        <p class="text-sm text-slate-500 mt-1">Premium Silver Jewelry</p>
+                                        <p class="text-sm text-slate-500 mt-1">Premium Jewelry & Accessories</p>
                                         <p class="text-sm text-slate-500 font-medium text-indigo-600">www.wishrite.com</p>
-                                        <p class="text-sm text-slate-500">support@wishrite.com | GSTIN: 19BAEPD1067K1ZQ</p>
+                                        <p class="text-sm text-slate-500">support@wishrite.com | GSTIN: 19AWBPX1234</p>
                                     </div>
                                     <div class="text-right">
                                         <h2 class="text-2xl font-bold text-indigo-600 mb-2">INVOICE</h2>
@@ -588,21 +623,21 @@
                                     </div>
                                 </div>
                                 
-                                <div class="mb-8">
+                                <div class="mb-8 content-layer">
                                     <h3 class="font-bold text-slate-700 border-b border-slate-200 mb-2 pb-1">BILL TO:</h3>
                                     <div class="grid grid-cols-2 gap-2">
-                                        <input type="text" id="cust-name" placeholder="Customer Name *" class="block w-full font-medium text-slate-900 border-b outline-none focus:border-indigo-500 p-1 text-sm" required>
-                                        <input type="text" id="cust-phone" placeholder="Phone Number" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
-                                        <input type="email" id="cust-email" placeholder="Email Address" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm col-span-2">
-                                        <input type="text" id="cust-address" placeholder="Address" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm col-span-2">
-                                        <input type="text" id="cust-city" placeholder="City" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
-                                        <input type="text" id="cust-state" placeholder="State" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
-                                        <input type="text" id="cust-pin" placeholder="PIN Code" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
-                                        <input type="text" id="cust-country" placeholder="Country" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm">
+                                        <input type="text" id="cust-name" placeholder="Customer Name *" class="block w-full font-medium text-slate-900 border-b outline-none focus:border-indigo-500 p-1 text-sm bg-transparent" required>
+                                        <input type="text" id="cust-phone" placeholder="Phone Number" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm bg-transparent">
+                                        <input type="email" id="cust-email" placeholder="Email Address" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm col-span-2 bg-transparent">
+                                        <input type="text" id="cust-address" placeholder="Address" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm col-span-2 bg-transparent">
+                                        <input type="text" id="cust-city" placeholder="City" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm bg-transparent">
+                                        <input type="text" id="cust-state" placeholder="State" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm bg-transparent">
+                                        <input type="text" id="cust-pin" placeholder="PIN Code" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm bg-transparent">
+                                        <input type="text" id="cust-country" placeholder="Country" class="block w-full text-slate-600 border-b outline-none focus:border-indigo-500 p-1 text-sm bg-transparent">
                                     </div>
                                 </div>
 
-                                <table class="w-full text-left mb-8">
+                                <table class="w-full text-left mb-8 content-layer relative">
                                     <thead>
                                         <tr class="bg-slate-100 text-slate-700 text-xs">
                                             <th class="p-2 font-semibold">SKU</th>
@@ -616,8 +651,8 @@
                                     </thead>
                                     <tbody id="invoice-items-body" class="text-sm"></tbody>
                                 </table>
-                                <div class="flex justify-end">
-                                    <div class="w-1/2">
+                                <div class="flex justify-end content-layer relative">
+                                    <div class="w-1/2 bg-white/80 p-2 rounded">
                                         <div class="flex justify-between py-2 border-b border-slate-200 text-sm">
                                             <span class="text-slate-600">Subtotal (Items):</span><span class="font-medium" id="inv-subtotal">₹0</span>
                                         </div>
@@ -687,7 +722,7 @@
             document.getElementById('initial-setup-form').style.display = 'none';
             document.getElementById('login-form').style.display = 'block';
             document.getElementById('login-title').innerText = "WISHRITE";
-            document.getElementById('login-subtitle').innerText = "YOUR WISH MY COMMAND";
+            document.getElementById('login-subtitle').innerText = "YOUR WISH OUR COMMAND";
         }
 
         async function handleRegister(e) {
@@ -904,6 +939,7 @@
             document.getElementById('out-product').innerHTML = options;
             document.getElementById('inv-product').innerHTML = options;
             
+            // Stock In dropdown needs all products so you can restock them
             const inNameSelectOptions = '<option value="">-- Select Existing Product --</option>' + 
                                   inventoryData.map(item => {
                                       const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
@@ -930,7 +966,8 @@
                 document.getElementById('update-old-stock').checked = true; 
                 document.getElementById('in-date').valueAsDate = new Date();
                 
-                document.getElementById('in-code').disabled = true; 
+                // Allow editing of details for existing products as requested
+                document.getElementById('in-code').disabled = true; // Still can't change the locked code
             } else {
                 nameSelect.classList.add('hidden');
                 nameSelect.required = false;
@@ -1003,7 +1040,7 @@
 
             if (isUpdatingOld) {
                 const selectElement = document.getElementById('in-name-select');
-                payload.product_name = selectElement.options[selectElement.selectedIndex].text.split(' - ')[0]; 
+                payload.product_name = selectElement.options[selectElement.selectedIndex].text.split(' - ')[0].trim(); 
             } else {
                 payload.product_name = document.getElementById('in-name').value;
             }
