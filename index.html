@@ -446,30 +446,55 @@
 
                 <!-- FULL INVENTORY TAB -->
                 <div id="inventory" class="page">
-                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Inventory Explorer</h1>
+                    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 mb-6">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600 mb-2">Catalog workspace</p>
+                            <h1 class="text-3xl font-black tracking-tight text-slate-900">Inventory Explorer</h1>
+                            <p class="text-sm text-slate-500 mt-1">Browse, filter, and review every product in your catalog.</p>
+                        </div>
+                        <span class="inline-flex items-center gap-2 self-start lg:self-auto rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                            Live inventory
+                        </span>
+                    </div>
                     
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row flex-wrap gap-4 md:items-end">
-                        <div class="w-full md:w-auto">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Stock Status</label>
-                            <select id="filter-stock" class="w-full md:w-36 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" onchange="renderFullInventory()">
+                    <div class="rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/40 to-slate-50 p-5 md:p-6 shadow-sm mb-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                            <div>
+                                <h2 class="text-sm font-extrabold text-slate-800">Refine inventory</h2>
+                                <p class="text-xs text-slate-500 mt-1">Use any combination of filters to narrow the catalog.</p>
+                            </div>
+                            <button onclick="clearFilters()" class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M5.64 18.36A9 9 0 1012 3a9 9 0 00-6.36 2.64L4 7"></path></svg>
+                                Clear filters
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Stock status</label>
+                                <select id="filter-stock" class="w-full border border-slate-200 bg-white rounded-xl p-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" onchange="renderFullInventory()">
                                 <option value="all">All Inventory</option>
                                 <option value="in">In Stock Only</option>
                                 <option value="out">Out of Stock Only</option>
-                            </select>
-                        </div>
-                        <div class="flex gap-4 w-full md:w-auto">
-                            <div class="w-1/2 md:w-auto">
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Min Price (₹)</label>
-                                <input type="number" id="filter-min" class="w-full md:w-28 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="0" oninput="renderFullInventory()">
+                                </select>
                             </div>
-                            <div class="w-1/2 md:w-auto">
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Max Price (₹)</label>
-                                <input type="number" id="filter-max" class="w-full md:w-28 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="999999" oninput="renderFullInventory()">
+                            <div>
+                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Minimum price</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-3 text-sm font-bold text-slate-400">₹</span>
+                                    <input type="number" id="filter-min" class="w-full border border-slate-200 bg-white rounded-xl py-3 pl-8 pr-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" placeholder="0" oninput="renderFullInventory()">
+                                </div>
                             </div>
-                        </div>
-                        <div class="w-full md:w-auto">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                            <select id="filter-cat" class="w-full md:w-36 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" onchange="renderFullInventory()">
+                            <div>
+                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Maximum price</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-3 text-sm font-bold text-slate-400">₹</span>
+                                    <input type="number" id="filter-max" class="w-full border border-slate-200 bg-white rounded-xl py-3 pl-8 pr-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" placeholder="999999" oninput="renderFullInventory()">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Category</label>
+                                <select id="filter-cat" class="w-full border border-slate-200 bg-white rounded-xl p-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" onchange="renderFullInventory()">
                                 <option value="">All Categories</option>
                                 <option value="Chain">Chain</option>
                                 <option value="Ring">Ring</option>
@@ -478,26 +503,35 @@
                                 <option value="Bracelet">Bracelet</option>
                                 <option value="Necklace">Necklace</option>
                                 <option value="Packaging">Packaging</option>
-                            </select>
+                                </select>
+                            </div>
                         </div>
-                        <button onclick="clearFilters()" class="text-sm font-medium text-slate-500 hover:text-rose-500 underline mt-2 md:mt-0 ml-auto w-full md:w-auto text-right">Clear Filters</button>
                     </div>
 
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto h-[600px]">
-                        <table class="w-full text-left border-collapse relative min-w-[600px]">
-                            <thead class="sticky top-0 bg-slate-50 shadow-sm z-10">
-                                <tr class="border-b border-slate-200 text-xs uppercase text-slate-500">
-                                    <th class="p-4 font-semibold">Code</th>
-                                    <th class="p-4 font-semibold">Product Details</th>
-                                    <th class="p-4 font-semibold">Category</th>
-                                    <th class="p-4 font-semibold">Stock</th>
-                                    <th class="p-4 font-semibold">Price (₹)</th>
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/70 px-5 py-4">
+                            <div>
+                                <h2 class="font-extrabold text-slate-800">Product catalog</h2>
+                                <p class="text-xs text-slate-500 mt-1">Detailed stock and pricing overview</p>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Updated live</span>
+                        </div>
+                        <div class="overflow-x-auto h-[600px]">
+                            <table class="w-full text-left border-collapse relative min-w-[700px]">
+                                <thead class="sticky top-0 bg-slate-900 shadow-lg z-10">
+                                <tr class="border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-300">
+                                    <th class="px-5 py-4 font-extrabold">Code</th>
+                                    <th class="px-5 py-4 font-extrabold">Product details</th>
+                                    <th class="px-5 py-4 font-extrabold">Category</th>
+                                    <th class="px-5 py-4 font-extrabold">Stock</th>
+                                    <th class="px-5 py-4 font-extrabold text-right">Price (₹)</th>
                                 </tr>
                             </thead>
-                            <tbody id="full-inventory-body" class="text-sm">
-                                <tr><td colspan="5" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
-                            </tbody>
-                        </table>
+                                <tbody id="full-inventory-body" class="text-sm divide-y divide-slate-100">
+                                    <tr><td colspan="5" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -1243,14 +1277,14 @@
 
             tbody.innerHTML = '';
             filteredData.forEach(item => {
-                const sizeBadge = item.size ? `<span class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded ml-2">Size: ${item.size}</span>` : '';
+                const sizeBadge = item.size ? `<span class="inline-flex bg-slate-100 text-slate-600 text-[11px] font-bold px-2 py-1 rounded-md ml-2">Size: ${item.size}</span>` : '';
                 tbody.innerHTML += `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                        <td class="p-4 font-medium text-primary">${item.product_code}</td>
-                        <td class="p-4 font-bold text-slate-900">${item.product_name} ${sizeBadge}</td>
-                        <td class="p-4 text-slate-500">${item.category}</td>
-                        <td class="p-4 font-bold ${item.stock_quantity === 0 ? 'text-rose-500 bg-rose-50 rounded' : 'text-slate-800'}">${item.stock_quantity}</td>
-                        <td class="p-4 text-emerald-600 font-medium">₹${item.selling_price.toLocaleString('en-IN')}</td>
+                    <tr class="odd:bg-white even:bg-slate-50/60 hover:bg-indigo-50/60 transition-colors">
+                        <td class="px-5 py-4 align-middle"><span class="inline-flex rounded-md bg-indigo-50 px-2.5 py-1.5 text-xs font-extrabold text-indigo-700">${item.product_code}</span></td>
+                        <td class="px-5 py-4 align-middle font-bold text-slate-900">${item.product_name} ${sizeBadge}</td>
+                        <td class="px-5 py-4 align-middle"><span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">${item.category}</span></td>
+                        <td class="px-5 py-4 align-middle font-bold ${item.stock_quantity === 0 ? 'text-rose-600' : 'text-slate-800'}">${item.stock_quantity === 0 ? '<span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-rose-500"></span>0</span>' : item.stock_quantity}</td>
+                        <td class="px-5 py-4 align-middle text-right font-extrabold text-emerald-600">₹${item.selling_price.toLocaleString('en-IN')}</td>
                     </tr>`;
             });
         }
