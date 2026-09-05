@@ -50,17 +50,17 @@
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden">
 
     <!-- AUTHENTICATION WRAPPER -->
-    <div id="auth-wrapper" class="h-full w-full items-center justify-center bg-slate-900 absolute inset-0 z-50 overflow-y-auto py-10">
+    <div id="auth-wrapper" class="h-full w-full items-center justify-center bg-slate-900 absolute inset-0 z-50 overflow-y-auto py-10 px-4">
         
         <!-- LOGIN / INITIAL SETUP SCREEN -->
-        <div id="login-container" class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative my-auto">
+        <div id="login-container" class="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl w-full max-w-md relative my-auto">
             
             <button onclick="toggleDbSetup()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-indigo-600 font-bold flex items-center gap-1">
                 ⚙️ DB Setup
             </button>
 
             <div class="text-center mb-8">
-                <span id="login-title" class="block text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
+                <span id="login-title" class="block text-2xl sm:text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
                 <p id="login-subtitle" class="text-slate-500 text-sm mt-2">Enterprise Resource Planning OS</p>
             </div>
 
@@ -93,7 +93,7 @@
                 <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">Secure Login</button>
             </form>
 
-            <!-- Initial Master Admin Setup Form -->
+            <!-- Initial Master Admin Setup Form (Hidden by default) -->
             <form id="initial-setup-form" onsubmit="handleInitialSetup(event)" class="hidden">
                 <div class="mb-4 bg-rose-50 border border-rose-200 p-4 rounded-lg">
                     <p class="text-xs font-bold text-rose-700">No users found in database.</p>
@@ -129,26 +129,48 @@
     </div>
 
     <!-- MAIN APP CONTAINER -->
-    <div id="app-container" class="h-full w-full flex">
-        <!-- SIDEBAR -->
-        <aside class="w-64 bg-sidebar text-slate-300 flex flex-col justify-between flex-shrink-0">
+    <div id="app-container" class="h-full w-full flex overflow-hidden">
+        
+        <!-- RESPONSIVE SIDEBAR -->
+        <!-- absolute on mobile (hidden behind translate), relative on desktop -->
+        <aside id="main-sidebar" class="bg-sidebar text-slate-300 flex flex-col justify-between flex-shrink-0 transition-all duration-300 w-64 absolute md:relative z-50 h-full transform -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
             <div>
-                <div class="h-20 flex items-center justify-center px-6 border-b border-slate-800">
-                    <span class="text-white font-semibold text-2xl tracking-[0.3em]">WISHRITE</span>
+                <div class="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+                    <span id="logo-full" class="text-white font-semibold text-xl tracking-[0.3em] ml-2">WISHRITE</span>
+                    <span id="logo-short" class="text-white font-semibold text-xl tracking-[0.1em] ml-3 hidden">WR</span>
+                    <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-400 hover:text-white transition-colors p-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
                 </div>
-                <nav class="p-4 space-y-1">
-                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 bg-primary text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="dashboard">📊 Inventory Dashboard</button>
-                    <button onclick="navigate('sales-dashboard')" id="nav-sales-dash" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="sales-dashboard">📈 Sales Dashboard</button>
-                    <button onclick="navigate('influencers')" id="nav-influencers" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="influencers">🌟 Influencers</button>
-                    <button onclick="navigate('inventory')" id="nav-inventory" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="inventory">📦 Full Inventory</button>
-                    <button onclick="navigate('stock-in')" id="nav-stock-in" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-in">📥 Stock In (Receive)</button>
-                    <button onclick="navigate('stock-out')" id="nav-stock-out" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-out">📤 Stock Out (Adjust)</button>
-                    <button onclick="navigate('invoice')" id="nav-invoice" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="invoice">🧾 Create Invoice</button>
-                    <button onclick="navigate('employees')" id="nav-employees" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="employees">👥 Manage Users</button>
+                <nav class="p-3 space-y-1 overflow-y-auto h-[calc(100vh-4rem)] scrollbar-hide">
+                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 bg-primary text-white px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="dashboard">
+                        <span class="text-lg">📊</span> <span class="nav-text truncate">Inventory Dashboard</span>
+                    </button>
+                    <button onclick="navigate('sales-dashboard')" id="nav-sales-dash" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="sales-dashboard">
+                        <span class="text-lg">📈</span> <span class="nav-text truncate">Sales Dashboard</span>
+                    </button>
+                    <button onclick="navigate('influencers')" id="nav-influencers" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="influencers">
+                        <span class="text-lg">🌟</span> <span class="nav-text truncate">Influencers</span>
+                    </button>
+                    <button onclick="navigate('inventory')" id="nav-inventory" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="inventory">
+                        <span class="text-lg">📦</span> <span class="nav-text truncate">Full Inventory</span>
+                    </button>
+                    <button onclick="navigate('stock-in')" id="nav-stock-in" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-in">
+                        <span class="text-lg">📥</span> <span class="nav-text truncate">Stock In (Receive)</span>
+                    </button>
+                    <button onclick="navigate('stock-out')" id="nav-stock-out" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-out">
+                        <span class="text-lg">📤</span> <span class="nav-text truncate">Stock Out (Adjust)</span>
+                    </button>
+                    <button onclick="navigate('invoice')" id="nav-invoice" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="invoice">
+                        <span class="text-lg">🧾</span> <span class="nav-text truncate">Create Invoice</span>
+                    </button>
+                    <button onclick="navigate('employees')" id="nav-employees" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="employees">
+                        <span class="text-lg">👥</span> <span class="nav-text truncate">Manage Users</span>
+                    </button>
                     
                     <div class="pt-4 mt-4 border-t border-slate-800">
-                        <a href="https://www.wishrite.com" target="_blank" class="w-full flex items-center gap-3 hover:bg-slate-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-white">
-                            🌐 www.wishrite.com
+                        <a href="https://www.wishrite.com" target="_blank" class="w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-white">
+                            <span class="text-lg">🌐</span> <span class="nav-text truncate">www.wishrite.com</span>
                         </a>
                     </div>
                 </nav>
@@ -156,31 +178,40 @@
         </aside>
 
         <!-- MAIN WORKSPACE -->
-        <main class="flex-1 flex flex-col overflow-hidden bg-slate-50 relative">
+        <main class="flex-1 flex flex-col overflow-hidden bg-slate-50 relative w-full">
             
             <!-- STYLED HEADER -->
-            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 flex-shrink-0 relative z-40">
-                <div class="flex items-center gap-4 w-1/2">
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0 relative z-40">
+                <div class="flex items-center gap-3 md:gap-4 w-2/3 md:w-1/2">
+                    <!-- Mobile Hamburger -->
+                    <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-400 hover:text-slate-600 transition-colors p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    <!-- Desktop Collapse -->
+                    <button onclick="toggleDesktopSidebar()" class="hidden md:block text-slate-400 hover:text-slate-600 transition-colors p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    
                     <div class="relative w-full max-w-md">
                         <svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <input type="text" id="global-search" oninput="handleGlobalSearch()" placeholder="Search products, categories, SKU..." class="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:bg-white focus:border-indigo-300 transition-all placeholder:text-slate-400">
-                        <span class="absolute right-3 top-2.5 text-xs text-slate-400 font-medium border border-slate-200 rounded px-1.5 py-0.5 bg-white shadow-sm">⌘K</span>
+                        <input type="text" id="global-search" oninput="handleGlobalSearch()" placeholder="Search products, SKUs..." class="w-full pl-9 pr-2 md:pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:bg-white focus:border-indigo-300 transition-all placeholder:text-slate-400">
+                        <span class="hidden md:block absolute right-3 top-2.5 text-xs text-slate-400 font-medium border border-slate-200 rounded px-1.5 py-0.5 bg-white shadow-sm">⌘K</span>
                     </div>
-                    <div class="text-xs font-medium text-slate-500 flex items-center ml-2 hidden" id="app-db-status-container">
-                        DB Status: <span id="app-db-status" class="ml-1 text-emerald-600 font-bold">🟢 Connected</span>
+                    <div class="text-[10px] md:text-xs font-medium text-slate-500 flex items-center ml-1 md:ml-2 hidden" id="app-db-status-container">
+                        <span id="app-db-status" class="ml-1 text-emerald-600 font-bold whitespace-nowrap">🟢 <span class="hidden sm:inline">Connected</span></span>
                     </div>
                 </div>
                 
-                <div class="flex items-center gap-5">
+                <div class="flex items-center gap-2 md:gap-5">
                     <!-- USER DROPDOWN -->
                     <div class="relative group cursor-pointer">
-                        <div class="flex items-center gap-3 pl-5 border-l border-slate-200 hover:bg-slate-50 py-1 px-2 rounded-lg transition-colors">
-                            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-sm" id="top-ui-avatar">XX</div>
-                            <div class="text-xs text-left">
-                                <p class="text-slate-900 font-bold" id="top-ui-name">User Name</p>
+                        <div class="flex items-center gap-2 md:gap-3 pl-2 md:pl-5 border-l border-slate-200 hover:bg-slate-50 py-1 px-1 md:px-2 rounded-lg transition-colors">
+                            <div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs md:text-sm font-bold text-white shadow-sm" id="top-ui-avatar">XX</div>
+                            <div class="text-xs text-left hidden sm:block">
+                                <p class="text-slate-900 font-bold truncate max-w-[100px]" id="top-ui-name">User Name</p>
                                 <p class="text-slate-500 font-medium" id="top-ui-role">Role</p>
                             </div>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <svg class="w-3 h-3 md:w-4 md:h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                         
                         <!-- Dropdown Menu -->
@@ -197,20 +228,20 @@
                 </div>
             </header>
 
-            <div class="flex-1 overflow-auto p-8 relative">
+            <div class="flex-1 overflow-auto p-4 md:p-8 relative w-full">
                 
                 <!-- USER PROFILE PAGE -->
                 <div id="profile" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">My Profile</h1>
-                    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-2xl">
-                        <div class="flex items-center gap-5 mb-8 pb-8 border-b border-slate-200">
-                            <div class="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl font-bold text-indigo-700 shadow-sm" id="profile-avatar">XX</div>
+                    <div class="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm max-w-2xl">
+                        <div class="flex items-center gap-4 md:gap-5 mb-8 pb-8 border-b border-slate-200">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-indigo-100 flex items-center justify-center text-2xl md:text-3xl font-bold text-indigo-700 shadow-sm" id="profile-avatar">XX</div>
                             <div>
-                                <h2 class="text-2xl font-extrabold text-slate-900" id="profile-name">Name</h2>
+                                <h2 class="text-xl md:text-2xl font-extrabold text-slate-900" id="profile-name">Name</h2>
                                 <p class="text-sm font-bold text-indigo-600" id="profile-role">Role</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-8">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
                             <div>
                                 <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">System User ID</p>
                                 <p class="text-sm font-medium text-slate-900 bg-slate-50 border border-slate-200 rounded p-2 inline-block" id="profile-id">-</p>
@@ -219,11 +250,11 @@
                                 <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Phone Number</p>
                                 <p class="text-sm font-medium text-slate-900" id="profile-phone">-</p>
                             </div>
-                            <div class="col-span-2">
+                            <div class="col-span-1 sm:col-span-2">
                                 <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email Address</p>
-                                <p class="text-sm font-medium text-slate-900" id="profile-email">-</p>
+                                <p class="text-sm font-medium text-slate-900 break-all" id="profile-email">-</p>
                             </div>
-                            <div class="col-span-2">
+                            <div class="col-span-1 sm:col-span-2">
                                 <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Full Registered Address</p>
                                 <p class="text-sm font-medium text-slate-900 leading-relaxed" id="profile-address">-</p>
                             </div>
@@ -233,76 +264,75 @@
 
                 <!-- INVENTORY DASHBOARD -->
                 <div id="dashboard" class="page active">
-                    <div class="flex justify-between items-end mb-8">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
                         <div>
-                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight" id="dash-welcome">Welcome back! 👋</h1>
-                            <p class="text-slate-500 mt-2 font-medium">Here's what's happening with your inventory today.</p>
+                            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight" id="dash-welcome">Welcome back! 👋</h1>
+                            <p class="text-slate-500 mt-1 md:mt-2 text-sm md:text-base font-medium">Here's what's happening with your inventory today.</p>
                         </div>
-                        <div class="border border-slate-200 bg-white rounded-lg px-4 py-2 flex items-center gap-3 text-sm font-medium text-slate-700 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors">
+                        <div class="border border-slate-200 bg-white rounded-lg px-4 py-2 flex items-center gap-3 text-sm font-medium text-slate-700 shadow-sm w-fit">
                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             <span id="dash-date-range">Today</span>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
                             <div>
-                                <h3 class="text-slate-500 text-sm font-medium mb-3">Total Inventory Value</h3>
-                                <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-val">₹0</div>
-                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Live Value</div>
+                                <h3 class="text-slate-500 text-xs md:text-sm font-medium mb-2 md:mb-3">Total Inventory Value</h3>
+                                <div class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1 md:mb-2 tracking-tight truncate" id="dash-val">₹0</div>
+                                <div class="text-[10px] md:text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Live Value</div>
                             </div>
-                            <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100 flex-shrink-0">
+                                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                             </div>
                         </div>
                         
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
                             <div>
-                                <h3 class="text-slate-500 text-sm font-medium mb-3">Total Products In Stock</h3>
-                                <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-products">0</div>
-                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Unique SKUs</div>
+                                <h3 class="text-slate-500 text-xs md:text-sm font-medium mb-2 md:mb-3">Total Products In Stock</h3>
+                                <div class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1 md:mb-2 tracking-tight" id="dash-products">0</div>
+                                <div class="text-[10px] md:text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Unique SKUs</div>
                             </div>
-                            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-sm border border-blue-100">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 border border-blue-100 flex-shrink-0">
+                                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                             </div>
                         </div>
 
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
                             <div>
-                                <h3 class="text-slate-500 text-sm font-medium mb-3">Low Stock Items (<5)</h3>
-                                <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-low">0</div>
-                                <div class="text-xs font-medium text-rose-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg> Action Required</div>
+                                <h3 class="text-slate-500 text-xs md:text-sm font-medium mb-2 md:mb-3">Low Stock (<5)</h3>
+                                <div class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1 md:mb-2 tracking-tight" id="dash-low">0</div>
+                                <div class="text-[10px] md:text-xs font-medium text-rose-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg> Action Required</div>
                             </div>
-                            <div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shadow-sm border border-orange-100">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 border border-orange-100 flex-shrink-0">
+                                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             </div>
                         </div>
 
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
                             <div>
-                                <h3 class="text-slate-500 text-sm font-medium mb-3">Expected Sale Value</h3>
-                                <div class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" id="dash-sale-val">₹0</div>
-                                <div class="text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Potential Revenue</div>
+                                <h3 class="text-slate-500 text-xs md:text-sm font-medium mb-2 md:mb-3">Expected Sale Value</h3>
+                                <div class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1 md:mb-2 tracking-tight truncate" id="dash-sale-val">₹0</div>
+                                <div class="text-[10px] md:text-xs font-medium text-emerald-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> Potential Revenue</div>
                             </div>
-                            <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-sm border border-emerald-100">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 border border-emerald-100 flex-shrink-0">
+                                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+                        <div class="px-6 py-4 border-b border-slate-200">
                             <h2 class="font-bold text-slate-800">Available Products Preview</h2>
                         </div>
-                        <table class="w-full text-left border-collapse">
+                        <table class="w-full text-left border-collapse min-w-[600px]">
                             <thead>
                                 <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
                                     <th class="p-4 font-semibold">Code</th>
                                     <th class="p-4 font-semibold">Product Name</th>
                                     <th class="p-4 font-semibold">Category</th>
                                     <th class="p-4 font-semibold">Stock</th>
-                                    <th class="p-4 font-semibold">Selling Price (Per Unit)</th>
+                                    <th class="p-4 font-semibold">Selling Price (Unit)</th>
                                 </tr>
                             </thead>
                             <tbody id="dashboard-table-body" class="text-sm">
@@ -312,34 +342,34 @@
                     </div>
                 </div>
 
-                <!-- NEW: SALES DASHBOARD TAB -->
+                <!-- SALES DASHBOARD TAB -->
                 <div id="sales-dashboard" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Sales Analytics Dashboard</h1>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
                             <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Revenue</h3>
-                            <div class="text-3xl font-extrabold text-slate-900" id="sales-total-revenue">₹0</div>
+                            <div class="text-2xl md:text-3xl font-extrabold text-slate-900 truncate" id="sales-total-revenue">₹0</div>
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                             <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Units Sold</h3>
-                            <div class="text-3xl font-extrabold text-slate-900" id="sales-total-units">0</div>
+                            <div class="text-2xl md:text-3xl font-extrabold text-slate-900" id="sales-total-units">0</div>
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                             <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Tax Collected</h3>
-                            <div class="text-3xl font-extrabold text-slate-900" id="sales-total-tax">₹0</div>
+                            <div class="text-2xl md:text-3xl font-extrabold text-slate-900 truncate" id="sales-total-tax">₹0</div>
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                             <h3 class="text-slate-500 text-xs font-semibold uppercase mb-2">Total Discounts Given</h3>
-                            <div class="text-3xl font-extrabold text-rose-600" id="sales-total-discount">₹0</div>
+                            <div class="text-2xl md:text-3xl font-extrabold text-rose-600 truncate" id="sales-total-discount">₹0</div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
                         <div class="px-6 py-4 border-b border-slate-200">
                             <h2 class="font-bold text-slate-800">Recent Sales Log</h2>
                         </div>
-                        <table class="w-full text-left border-collapse">
+                        <table class="w-full text-left border-collapse min-w-[600px]">
                             <thead>
                                 <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
                                     <th class="p-4 font-semibold">Date</th>
@@ -356,12 +386,12 @@
                     </div>
                 </div>
 
-                <!-- NEW: INFLUENCER TAB -->
+                <!-- INFLUENCER TAB -->
                 <div id="influencers" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Influencer Marketing Analytics</h1>
                     
-                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6 max-w-xl">
-                        <div class="flex items-end gap-4">
+                    <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm mb-6 max-w-xl">
+                        <div class="flex flex-col sm:flex-row items-end gap-4">
                             <div class="w-full">
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Instagram Username / ID</label>
                                 <div class="relative">
@@ -369,12 +399,12 @@
                                     <input type="text" id="insta-id" class="w-full border border-slate-300 rounded-lg py-2 pl-8 pr-3 text-sm focus:ring-2 focus:ring-pink-500 outline-none transition-shadow" placeholder="e.g. dkuma71">
                                 </div>
                             </div>
-                            <button onclick="fetchInfluencer()" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:shadow-lg transition-all whitespace-nowrap">Fetch Profile</button>
+                            <button onclick="fetchInfluencer()" class="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:shadow-lg transition-all whitespace-nowrap">Fetch Profile</button>
                         </div>
                     </div>
 
                     <!-- Influencer Post Card -->
-                    <div id="influencer-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden max-w-sm transition-all transform hover:-translate-y-1">
+                    <div id="influencer-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden max-w-sm transition-all transform hover:-translate-y-1 mx-auto sm:mx-0">
                          <div class="h-24 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 relative"></div>
                          <div class="px-6 pb-6 relative">
                              <img id="inf-pic" src="" class="w-20 h-20 rounded-full border-4 border-white absolute -top-10 bg-slate-100 object-cover shadow-sm">
@@ -404,26 +434,28 @@
                 <div id="inventory" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Inventory Explorer</h1>
                     
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
-                        <div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row flex-wrap gap-4 md:items-end">
+                        <div class="w-full md:w-auto">
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Stock Status</label>
-                            <select id="filter-stock" class="w-36 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" onchange="renderFullInventory()">
+                            <select id="filter-stock" class="w-full md:w-36 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" onchange="renderFullInventory()">
                                 <option value="all">All Inventory</option>
                                 <option value="in">In Stock Only</option>
                                 <option value="out">Out of Stock Only</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Min Price (₹)</label>
-                            <input type="number" id="filter-min" class="w-28 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="0" oninput="renderFullInventory()">
+                        <div class="flex gap-4 w-full md:w-auto">
+                            <div class="w-1/2 md:w-auto">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Min Price (₹)</label>
+                                <input type="number" id="filter-min" class="w-full md:w-28 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="0" oninput="renderFullInventory()">
+                            </div>
+                            <div class="w-1/2 md:w-auto">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Max Price (₹)</label>
+                                <input type="number" id="filter-max" class="w-full md:w-28 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="999999" oninput="renderFullInventory()">
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Max Price (₹)</label>
-                            <input type="number" id="filter-max" class="w-28 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="999999" oninput="renderFullInventory()">
-                        </div>
-                        <div>
+                        <div class="w-full md:w-auto">
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                            <select id="filter-cat" class="w-36 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" onchange="renderFullInventory()">
+                            <select id="filter-cat" class="w-full md:w-36 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" onchange="renderFullInventory()">
                                 <option value="">All Categories</option>
                                 <option value="Chain">Chain</option>
                                 <option value="Ring">Ring</option>
@@ -434,15 +466,15 @@
                                 <option value="Packaging">Packaging</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="w-full md:w-auto">
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Shop Name</label>
-                            <input type="text" id="filter-shop" class="w-40 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="Search Shop..." oninput="renderFullInventory()">
+                            <input type="text" id="filter-shop" class="w-full md:w-40 border border-slate-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="Search Shop..." oninput="renderFullInventory()">
                         </div>
-                        <button onclick="clearFilters()" class="text-sm font-medium text-slate-500 hover:text-rose-500 underline ml-auto mb-2">Clear Filters</button>
+                        <button onclick="clearFilters()" class="text-sm font-medium text-slate-500 hover:text-rose-500 underline mt-2 md:mt-0 ml-auto w-full md:w-auto text-right">Clear Filters</button>
                     </div>
 
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-[600px] overflow-y-auto">
-                        <table class="w-full text-left border-collapse relative">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto h-[600px]">
+                        <table class="w-full text-left border-collapse relative min-w-[600px]">
                             <thead class="sticky top-0 bg-slate-50 shadow-sm z-10">
                                 <tr class="border-b border-slate-200 text-xs uppercase text-slate-500">
                                     <th class="p-4 font-semibold">Code</th>
@@ -463,14 +495,14 @@
                 <!-- MANAGE USERS (ADMIN ONLY) -->
                 <div id="employees" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">User Management</h1>
-                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
+                    <div class="bg-white p-5 md:p-8 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
                         <div class="mb-6 border-b border-slate-200 pb-4">
                             <h2 class="text-lg font-bold text-slate-800">Register New Employee</h2>
                             <p class="text-sm text-slate-500">Only administrators can add new staff members to the system.</p>
                         </div>
                         
                         <form id="register-form" onsubmit="handleRegister(event)">
-                            <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1">First Name *</label>
                                     <input type="text" id="reg-fname" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
@@ -487,7 +519,7 @@
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Email ID</label>
                                     <input type="email" id="reg-email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
                                 </div>
-                                <div class="col-span-2">
+                                <div class="col-span-1 sm:col-span-2">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Full Address</label>
                                     <input type="text" id="reg-address" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
                                 </div>
@@ -511,7 +543,7 @@
                                         <option value="Agent">Agent</option>
                                     </select>
                                 </div>
-                                <div class="col-span-2 relative">
+                                <div class="col-span-1 sm:col-span-2 relative">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Secure Password *</label>
                                     <input type="password" id="reg-password" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" required>
                                     <button type="button" onclick="togglePasswordVis('reg-password')" class="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600">
@@ -526,69 +558,43 @@
                     </div>
                 </div>
 
-                <!-- SETTINGS -->
-                <div id="settings" class="page">
-                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Database Settings</h1>
-                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
-                        <div class="flex justify-between items-start mb-6">
-                            <p class="text-sm text-slate-600">Update your Supabase credentials to sync inventory in real-time.</p>
-                            <div class="text-sm font-medium border px-3 py-1.5 rounded-lg bg-slate-50">
-                                Connection: <span id="settings-db-status" class="text-rose-600 font-bold ml-1">Disconnected</span>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase URL</label>
-                            <input type="text" id="settings-supa-url" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="https://xyz.supabase.co">
-                        </div>
-                        <div class="mb-6 relative">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Supabase API Key (anon public)</label>
-                            <input type="password" id="settings-supa-key" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" placeholder="eyJh...">
-                            <button type="button" onclick="togglePasswordVis('settings-supa-key')" class="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                            </button>
-                        </div>
-                        <button onclick="updateSettingsDB()" class="bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-600">Save & Connect</button>
-                    </div>
-                </div>
-
                 <!-- STOCK IN -->
                 <div id="stock-in" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Stock In (Receive)</h1>
                     
-                    <div class="mb-8 bg-indigo-50 border border-indigo-200 p-6 rounded-xl max-w-4xl">
+                    <div class="mb-8 bg-indigo-50 border border-indigo-200 p-5 md:p-6 rounded-xl max-w-4xl">
                         <h2 class="font-bold text-indigo-900 mb-2">Bulk Import Inventory</h2>
-                        <p class="text-sm text-indigo-700 mb-4">Upload an Excel (.xlsx) file to add or update multiple products at once in the database.</p>
-                        <div class="flex gap-4">
-                            <button type="button" onclick="downloadSampleSheet()" class="bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors shadow-sm">
+                        <p class="text-sm text-indigo-700 mb-4">Upload an Excel (.xlsx) file to add or update multiple products at once.</p>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button type="button" onclick="downloadSampleSheet()" class="bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors shadow-sm text-center">
                                 📄 Download Sample Sheet
                             </button>
-                            <label class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors cursor-pointer shadow-sm">
+                            <label class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors cursor-pointer shadow-sm text-center">
                                 📁 Upload Data File
                                 <input type="file" id="bulk-upload-file" accept=".xlsx, .csv" class="hidden" onchange="handleBulkImport(event)">
                             </label>
                         </div>
                     </div>
 
-                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-4xl">
+                    <div class="bg-white p-5 md:p-8 rounded-xl border border-slate-200 shadow-sm max-w-4xl">
                         <form id="stockInForm" onsubmit="handleStockIn(event)">
                             
                             <div class="mb-6 bg-slate-50 border border-slate-200 p-4 rounded-lg flex items-center gap-3">
                                 <input type="checkbox" id="update-old-stock" class="w-5 h-5 text-primary rounded" onchange="toggleStockInMode()">
-                                <label for="update-old-stock" class="font-bold text-slate-700 cursor-pointer">Yes, add stock to an EXISTING product</label>
+                                <label for="update-old-stock" class="font-bold text-slate-700 cursor-pointer text-sm sm:text-base">Yes, add stock to an EXISTING product</label>
                             </div>
 
                             <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Purchase Details</h3>
-                            <div class="grid grid-cols-2 gap-6 mb-6">
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Purchased Shop Name</label><input type="text" id="in-shop" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Purchase Date</label><input type="date" id="in-date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
-                                <div class="col-span-2"><label class="block text-sm font-medium text-slate-700 mb-1">Shop Address</label><input type="text" id="in-address" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-6">
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Purchased Shop Name</label><input type="text" id="in-shop" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Purchase Date</label><input type="date" id="in-date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div class="col-span-1 sm:col-span-2"><label class="block text-xs font-bold text-slate-700 mb-1">Shop Address</label><input type="text" id="in-address" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
                             </div>
                             
                             <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Product Details</h3>
-                            <div class="grid grid-cols-3 gap-6 mb-6">
-                                <div class="col-span-3">
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Product Name</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6">
+                                <div class="col-span-1 sm:col-span-3">
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Product Name</label>
                                     <input type="text" id="in-name" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Enter new product name" required>
                                     <select id="in-name-select" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm hidden" onchange="autoFillExistingProduct()">
                                         <option value="">-- Select Existing Product --</option>
@@ -596,7 +602,7 @@
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
                                     <select id="in-cat" onchange="generateProductCode()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
                                         <option value="">-- Select --</option>
                                         <option value="Chain">Chain</option>
@@ -608,18 +614,18 @@
                                         <option value="Packaging">Packaging</option>
                                     </select>
                                 </div>
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Product Code</label><input type="text" id="in-code" readonly class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2.5 text-sm font-bold text-primary"></div>
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Size</label><input type="text" id="in-size" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Weight</label><input type="number" step="0.001" id="in-weight" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Product Code</label><input type="text" id="in-code" readonly class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2.5 text-sm font-bold text-primary"></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Size</label><input type="text" id="in-size" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Weight</label><input type="number" step="0.001" id="in-weight" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
                                 
-                                <div class="col-span-3"><label class="block text-sm font-medium text-slate-700 mb-1">Product Description</label><textarea id="in-desc" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></textarea></div>
+                                <div class="col-span-1 sm:col-span-3"><label class="block text-xs font-bold text-slate-700 mb-1">Product Description</label><textarea id="in-desc" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></textarea></div>
                             </div>
                             
                             <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Pricing & Quantity</h3>
-                            <div class="grid grid-cols-3 gap-6 mb-8">
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Purchase Price (₹)</label><input type="number" id="in-buy" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Selling Price (₹)</label><input type="number" id="in-sale" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Stock Quantity</label><input type="number" id="in-qty" min="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold" required></div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Purchase Price (₹)</label><input type="number" id="in-buy" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Selling Price (₹)</label><input type="number" id="in-sale" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Stock Quantity</label><input type="number" id="in-qty" min="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold" required></div>
                             </div>
                             <button type="submit" class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors">📥 Save & Sync to Supabase</button>
                         </form>
@@ -629,14 +635,14 @@
                 <!-- STOCK OUT -->
                 <div id="stock-out" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Stock Adjustments (Non-Sale)</h1>
-                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-xl">
+                    <div class="bg-white p-5 md:p-8 rounded-xl border border-slate-200 shadow-sm max-w-xl">
                         <form onsubmit="handleStockOut(event)" class="mb-6">
                             <div class="mb-5">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Select Product by Code & Size</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Select Product by Code & Size</label>
                                 <select id="out-product" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required onchange="checkStockAvailability()"><option value="">-- Choose Product --</option></select>
                             </div>
                             <div class="mb-5">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Quantity to Deduct</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Quantity to Deduct</label>
                                 <input type="number" id="out-qty" min="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
                                 <p id="out-avail" class="text-xs text-slate-500 mt-2 font-medium"></p>
                             </div>
@@ -655,50 +661,50 @@
 
                 <!-- INVOICE GENERATOR & SALES -->
                 <div id="invoice" class="page">
-                    <div class="flex justify-between items-center mb-6">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
                         <div>
                             <h1 class="text-2xl font-bold text-slate-900">Sales & Invoice Generator</h1>
                             <p class="text-sm text-slate-500 mt-1">Process a sale to automatically update inventory and log the transaction.</p>
                         </div>
-                        <button onclick="processSaleAndDownload()" class="bg-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm">
+                        <button onclick="processSaleAndDownload()" class="bg-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex justify-center items-center gap-2 shadow-sm whitespace-nowrap">
                             ✅ Complete Sale & Download PDF
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 h-fit">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 h-fit">
                             <h3 class="font-bold text-slate-800 mb-4">1. Add Item to Sale</h3>
                             <p class="text-xs text-rose-600 font-medium mb-4">Note: Items added will be instantly deducted from DB inventory.</p>
                             <div class="mb-4">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Product Code</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Product Code</label>
                                 <select id="inv-product" class="w-full border border-slate-300 rounded-lg p-2 text-sm" onchange="autoFillInvoiceItem()"><option value="">-- Select SKU --</option></select>
                             </div>
                             <div class="mb-4">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Description</label>
                                 <input type="text" id="inv-desc" readonly class="w-full border border-slate-200 bg-slate-50 rounded-lg p-2 text-sm">
                             </div>
                             <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Selling Price (₹)</label><input type="number" id="inv-price" readonly class="w-full border border-slate-200 bg-slate-50 rounded-lg p-2 text-sm"></div>
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Qty</label><input type="number" id="inv-qty" min="1" value="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Selling Price (₹)</label><input type="number" id="inv-price" readonly class="w-full border border-slate-200 bg-slate-50 rounded-lg p-2 text-sm"></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Qty</label><input type="number" id="inv-qty" min="1" value="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
                             </div>
                             <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Discount (₹)</label><input type="number" id="inv-discount" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
-                                <div><label class="block text-sm font-medium text-slate-700 mb-1">Tax (₹)</label><input type="number" id="inv-tax" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Discount (₹)</label><input type="number" id="inv-discount" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Tax (₹)</label><input type="number" id="inv-tax" min="0" value="0" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
                             </div>
                             <button onclick="addItemToInvoice()" class="w-full bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors">➕ Add to Invoice List</button>
                         </div>
 
-                        <div class="col-span-2">
-                            <div id="invoice-document" class="bg-white p-10 border border-slate-200 shadow-lg mx-auto" style="min-height: 297mm; max-width: 210mm;">
+                        <div class="col-span-1 lg:col-span-2 overflow-x-auto">
+                            <div id="invoice-document" class="bg-white p-6 sm:p-10 border border-slate-200 shadow-lg mx-auto min-w-[600px]" style="min-height: 297mm; max-width: 210mm;">
                                 <div id="invoice-watermark">WISHRITE</div>
                                 <div class="flex justify-between border-b-2 border-slate-800 pb-6 mb-6 content-layer">
                                     <div>
-                                        <span class="block text-4xl font-semibold tracking-[0.3em] text-[#5A2C31] mb-2">WISHRITE</span>
+                                        <span class="block text-3xl sm:text-4xl font-semibold tracking-[0.3em] text-[#5A2C31] mb-2">WISHRITE</span>
                                         <p class="text-sm text-slate-500 mt-1">Premium Jewelry & Accessories</p>
                                         <p class="text-sm text-slate-500 font-medium text-indigo-600">www.wishrite.com</p>
                                         <p class="text-sm text-slate-500">support@wishrite.com | GSTIN: 19AWBPX1234</p>
                                     </div>
                                     <div class="text-right">
-                                        <h2 class="text-2xl font-bold text-indigo-600 mb-2">INVOICE</h2>
+                                        <h2 class="text-xl sm:text-2xl font-bold text-indigo-600 mb-2">INVOICE</h2>
                                         <p class="text-sm"><strong>Invoice #:</strong> <span id="inv-number">...</span></p>
                                         <p class="text-sm"><strong>Date:</strong> <span id="inv-date"></span></p>
                                     </div>
@@ -733,7 +739,7 @@
                                     <tbody id="invoice-items-body" class="text-sm"></tbody>
                                 </table>
                                 <div class="flex justify-end content-layer relative">
-                                    <div class="w-1/2 bg-white/80 p-2 rounded">
+                                    <div class="w-full sm:w-1/2 bg-white/90 p-2 rounded">
                                         <div class="flex justify-between py-2 border-b border-slate-200 text-sm">
                                             <span class="text-slate-600">Subtotal (Items):</span><span class="font-medium" id="inv-subtotal">₹0</span>
                                         </div>
@@ -777,6 +783,40 @@
                 el.type = "text";
             } else {
                 el.type = "password";
+            }
+        }
+
+        // --- SIDEBAR LOGIC (Desktop/Mobile) ---
+        let isDesktopCollapsed = false;
+        
+        function toggleDesktopSidebar() {
+            isDesktopCollapsed = !isDesktopCollapsed;
+            const sidebar = document.getElementById('main-sidebar');
+            const texts = document.querySelectorAll('.nav-text');
+            const logoFull = document.getElementById('logo-full');
+            const logoShort = document.getElementById('logo-short');
+            
+            if (isDesktopCollapsed) {
+                sidebar.classList.remove('md:w-64');
+                sidebar.classList.add('md:w-20');
+                texts.forEach(t => t.classList.add('hidden'));
+                logoFull.classList.add('hidden');
+                logoShort.classList.remove('hidden');
+            } else {
+                sidebar.classList.remove('md:w-20');
+                sidebar.classList.add('md:w-64');
+                texts.forEach(t => t.classList.remove('hidden'));
+                logoFull.classList.remove('hidden');
+                logoShort.classList.add('hidden');
+            }
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+            } else {
+                sidebar.classList.add('-translate-x-full');
             }
         }
 
@@ -856,6 +896,30 @@
             document.getElementById('register-form').reset();
         }
 
+        function setupUserUI() {
+            const fullName = `${currentUser.first_name} ${currentUser.last_name || ''}`.trim();
+            
+            document.getElementById('dash-welcome').innerText = `Welcome back, ${currentUser.first_name}! 👋`;
+            document.getElementById('top-ui-name').innerText = fullName;
+            document.getElementById('top-ui-role').innerText = currentUser.role;
+            
+            const avatarTxt = currentUser.first_name.substring(0,2).toUpperCase();
+            document.getElementById('top-ui-avatar').innerText = avatarTxt;
+            
+            // Profile Page Populating
+            document.getElementById('profile-avatar').innerText = avatarTxt;
+            document.getElementById('profile-name').innerText = fullName;
+            document.getElementById('profile-role').innerText = currentUser.role;
+            document.getElementById('profile-id').innerText = currentUser.user_id;
+            document.getElementById('profile-phone').innerText = currentUser.phone_number || '-';
+            document.getElementById('profile-email').innerText = currentUser.email_id || '-';
+            
+            const addressParts = [currentUser.address, currentUser.city, currentUser.state, currentUser.pin, currentUser.country].filter(Boolean);
+            document.getElementById('profile-address').innerText = addressParts.length > 0 ? addressParts.join(', ') : '-';
+            
+            applyRolePermissions(currentUser.role);
+        }
+
         async function handleLogin(e) {
             e.preventDefault();
             if(!supaClient) return alert("System not connected to database. Check config.js");
@@ -869,46 +933,26 @@
             if(error || !data) {
                 return alert("Login Failed: User ID not found in database.");
             }
-
             if(data.password !== passwordInput) {
                 return alert("Login Failed: Incorrect password.");
             }
-
             if(data.role !== role) {
                 return alert(`Login Failed: User found, but role does not match. Expected ${data.role}, got ${role}.`);
             }
 
             currentUser = data;
+            localStorage.setItem('wishrite_user', JSON.stringify(data)); // Persistent login
+            
             document.getElementById('auth-wrapper').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
             
-            const fullName = `${data.first_name} ${data.last_name || ''}`.trim();
-            
-            // Set User Details across the app
-            document.getElementById('dash-welcome').innerText = `Welcome back, ${data.first_name}! 👋`;
-            document.getElementById('top-ui-name').innerText = fullName;
-            document.getElementById('top-ui-role').innerText = data.role;
-            
-            const avatarTxt = data.first_name.substring(0,2).toUpperCase();
-            document.getElementById('top-ui-avatar').innerText = avatarTxt;
-            
-            // Profile Page Populating
-            document.getElementById('profile-avatar').innerText = avatarTxt;
-            document.getElementById('profile-name').innerText = fullName;
-            document.getElementById('profile-role').innerText = data.role;
-            document.getElementById('profile-id').innerText = data.user_id;
-            document.getElementById('profile-phone').innerText = data.phone_number || '-';
-            document.getElementById('profile-email').innerText = data.email_id || '-';
-            
-            const addressParts = [data.address, data.city, data.state, data.pin, data.country].filter(Boolean);
-            document.getElementById('profile-address').innerText = addressParts.length > 0 ? addressParts.join(', ') : '-';
-            
-            applyRolePermissions(data.role);
+            setupUserUI();
             navigate('dashboard');
         }
 
         function logout() {
             currentUser = null;
+            localStorage.removeItem('wishrite_user'); // Clear persistent login
             document.getElementById('app-container').style.display = 'none';
             document.getElementById('auth-wrapper').style.display = 'flex';
             document.getElementById('login-form').reset();
@@ -948,57 +992,93 @@
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(targetId).classList.add('active');
 
+            if (window.innerWidth < 768) {
+                document.getElementById('main-sidebar').classList.add('-translate-x-full');
+            }
+
             if (targetId === 'inventory') renderFullInventory();
             if (targetId === 'sales-dashboard') renderSalesDashboard();
             if (supaClient) { fetchInventory(); fetchSales(); }
         }
 
-        function updateSettingsDB() {
-            const url = document.getElementById('settings-supa-url').value;
-            const key = document.getElementById('settings-supa-key').value;
-            if(!url || !key) return alert("Please fill both URL and Key");
-            
-            localStorage.setItem('supa_url', url);
-            localStorage.setItem('supa_key', key);
-            initSupabase(url, key);
+        window.onload = function() {
+            setDbStatus(false, "Checking DB...");
+            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
+                try {
+                    supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    checkInitialSetup();
+                } catch(e) {
+                    console.error("Supabase client creation failed:", e);
+                    setDbStatus(false, "Config Error");
+                }
+            } else {
+                setDbStatus(false, "config.js missing");
+            }
+        };
+
+        async function checkInitialSetup() {
+            try {
+                const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
+                if(error) throw error;
+                
+                setDbStatus(true, "DB Connected");
+
+                if(count === 0) {
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('initial-setup-form').style.display = 'block';
+                    document.getElementById('login-title').innerText = "SYSTEM SETUP";
+                    document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
+                } else {
+                    // Check local storage for persistent login
+                    const storedUser = localStorage.getItem('wishrite_user');
+                    if (storedUser) {
+                        currentUser = JSON.parse(storedUser);
+                        document.getElementById('auth-wrapper').style.display = 'none';
+                        document.getElementById('app-container').style.display = 'flex';
+                        setupUserUI();
+                        navigate('dashboard');
+                    } else {
+                        document.getElementById('login-form').style.display = 'block';
+                        document.getElementById('initial-setup-form').style.display = 'none';
+                        document.getElementById('login-title').innerText = "WISHRITE";
+                        document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
+                    }
+                }
+
+                // Connect Realtime listeners
+                supaClient.channel('inventory-sync-channel')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+                        fetchInventory(); 
+                    }).subscribe();
+                    
+                supaClient.channel('sales-sync-channel')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, payload => {
+                        fetchSales(); 
+                    }).subscribe();
+
+            } catch (err) {
+                console.error("Database connection failed:", err.message);
+                setDbStatus(false, "DB Disconnected");
+            }
         }
 
-        async function initSupabase(url, key) {
-            supaClient = window.supabase.createClient(url, key);
+        function setDbStatus(isConnected, message) {
+            const loginDot = document.getElementById('login-db-dot');
+            const loginText = document.getElementById('login-db-text');
+            const headerStatus = document.getElementById('app-db-status');
+            const headerStatusContainer = document.getElementById('app-db-status-container');
             
-            const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
-            
-            if(!error && count === 0) {
-                document.getElementById('login-form').style.display = 'none';
-                document.getElementById('initial-setup-form').style.display = 'block';
-                document.getElementById('login-title').innerText = "SYSTEM SETUP";
-                document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
+            if(isConnected) {
+                if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-sm";
+                if(loginText) loginText.innerText = "";
+                if(headerStatusContainer) headerStatusContainer.classList.remove('hidden');
+                if(headerStatus) { headerStatus.className = "ml-1 text-emerald-600 font-bold whitespace-nowrap"; headerStatus.innerHTML = "🟢 <span class='hidden sm:inline'>Connected</span>"; }
             } else {
-                document.getElementById('login-form').style.display = 'block';
-                document.getElementById('initial-setup-form').style.display = 'none';
-                document.getElementById('login-title').innerText = "WISHRITE";
-                document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
+                if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-rose-500 shadow-sm";
+                if(loginText) loginText.innerText = message || "DB Disconnected";
+                if(headerStatusContainer) headerStatusContainer.classList.remove('hidden');
+                if(headerStatus) { headerStatus.className = "ml-1 text-rose-600 font-bold whitespace-nowrap"; headerStatus.innerHTML = "🔴 <span class='hidden sm:inline'>Disconnected</span>"; }
             }
-
-            document.getElementById('db-status').className = "px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold ml-2";
-            document.getElementById('db-status').innerText = "🟢 Auto-Syncing Enabled";
-            if(document.getElementById('settings-db-status')) {
-                document.getElementById('settings-db-status').className = "text-emerald-600 font-bold ml-1";
-                document.getElementById('settings-db-status').innerText = "Connected & Syncing";
-            }
-
-            fetchInventory();
-            fetchSales();
-
-            supaClient.channel('inventory-sync-channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
-                    fetchInventory(); 
-                }).subscribe();
-                
-            supaClient.channel('sales-sync-channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, payload => {
-                    fetchSales(); 
-                }).subscribe();
         }
 
         async function fetchSales() {
@@ -1137,7 +1217,6 @@
             document.getElementById('out-product').innerHTML = options;
             document.getElementById('inv-product').innerHTML = options;
             
-            // Stock In dropdown needs all products so you can restock them
             const inNameSelectOptions = '<option value="">-- Select Existing Product --</option>' + 
                                   inventoryData.map(item => {
                                       const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
@@ -1485,7 +1564,8 @@
                         <td class="p-4 font-medium text-primary">${item.product_code}</td>
                         <td class="p-4 font-bold text-slate-900">${item.product_name} ${sizeBadge}</td>
                         <td class="p-4 text-slate-500">${item.category}</td>
-                        <td class="p-4 font-bold ${item.stock_quantity === 0 ? 'text-rose-500' : 'text-slate-800'}">${item.stock_quantity}</td>
+                        <td class="p-4 text-slate-600">${item.shop_name || '-'}</td>
+                        <td class="p-4 font-bold text-slate-800">${item.stock_quantity}</td>
                         <td class="p-4 text-emerald-600 font-medium">₹${item.selling_price.toLocaleString('en-IN')}</td>
                     </tr>`;
             });
@@ -1504,7 +1584,22 @@
             
             const card = document.getElementById('influencer-card');
             
-            // Mocking Data (Real IG Graph API requires Business Auth/Tokens)
+            /* 
+            ========================================================================
+            HOW TO CONNECT YOUR C# API:
+            When your C# ASP.NET/Azure backend is running, uncomment these two lines 
+            and replace the URL with your server's endpoint.
+            ========================================================================
+            
+            const response = await fetch(`https://your-csharp-backend.com/api/instagram/${handle}`);
+            const apiData = await response.json();
+            
+            document.getElementById('inf-name').innerText = apiData.Username;
+            document.getElementById('inf-followers').innerText = apiData.Followers_Count;
+            document.getElementById('inf-views').innerText = apiData.Media_Count; 
+            document.getElementById('inf-pic').src = apiData.Profile_Picture_Url;
+            */
+
             const mockData = {
                 'dkuma71': { name: 'Deepak Kumar', category: 'Jewelry & Lifestyle', followers: '124K', views: '45.2K', pic: 'https://ui-avatars.com/api/?name=Deepak+Kumar&background=4f46e5&color=fff', status: 'High Engagement' },
                 'default': { name: 'Verified Creator', category: 'Digital Creator', followers: '89K', views: '12.4K', pic: 'https://ui-avatars.com/api/?name=Creator&background=random', status: 'Active' }
@@ -1516,7 +1611,7 @@
             document.getElementById('inf-handle').innerText = '@' + handle;
             document.getElementById('inf-category').innerText = data.category;
             document.getElementById('inf-followers').innerText = data.followers;
-            document.getElementById('inf-views').innerText = data.views;
+            document.getElementById('inf-views').innerText = data.views; 
             document.getElementById('inf-pic').src = data.pic;
             document.getElementById('inf-status').innerText = data.status;
             
@@ -1599,59 +1694,6 @@
                 }
             };
             reader.readAsArrayBuffer(file);
-        }
-
-        window.onload = function() {
-            setDbStatus(false, "Checking DB...");
-            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
-                try {
-                    supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    checkInitialSetup();
-                } catch(e) {
-                    console.error("Supabase client creation failed:", e);
-                    setDbStatus(false, "Config Error");
-                }
-            } else {
-                setDbStatus(false, "config.js missing");
-            }
-        };
-
-        async function checkInitialSetup() {
-            try {
-                const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
-                if(error) throw error;
-                
-                setDbStatus(true, "DB Connected");
-
-                if(count === 0) {
-                    document.getElementById('login-form').style.display = 'none';
-                    document.getElementById('initial-setup-form').style.display = 'block';
-                    document.getElementById('login-title').innerText = "SYSTEM SETUP";
-                    document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
-                }
-            } catch (err) {
-                console.error("Database connection failed:", err.message);
-                setDbStatus(false, "DB Disconnected");
-            }
-        }
-
-        function setDbStatus(isConnected, message) {
-            const loginDot = document.getElementById('login-db-dot');
-            const loginText = document.getElementById('login-db-text');
-            const headerStatus = document.getElementById('app-db-status');
-            const headerStatusContainer = document.getElementById('app-db-status-container');
-            
-            if(isConnected) {
-                if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-sm";
-                if(loginText) loginText.innerText = "";
-                if(headerStatusContainer) headerStatusContainer.classList.remove('hidden');
-                if(headerStatus) { headerStatus.className = "px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold ml-2"; headerStatus.innerText = "🟢 Connected"; }
-            } else {
-                if(loginDot) loginDot.className = "w-3 h-3 rounded-full bg-rose-500 shadow-sm";
-                if(loginText) loginText.innerText = message || "DB Disconnected";
-                if(headerStatusContainer) headerStatusContainer.classList.remove('hidden');
-                if(headerStatus) { headerStatus.className = "px-2 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold ml-2"; headerStatus.innerText = "🔴 Disconnected"; }
-            }
         }
     </script>
 </body>
