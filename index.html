@@ -132,7 +132,6 @@
     <div id="app-container" class="h-full w-full flex overflow-hidden">
         
         <!-- RESPONSIVE SIDEBAR -->
-        <!-- absolute on mobile (hidden behind translate), relative on desktop -->
         <aside id="main-sidebar" class="bg-sidebar text-slate-300 flex flex-col justify-between flex-shrink-0 transition-all duration-300 w-64 absolute md:relative z-50 h-full transform -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
             <div>
                 <div class="h-16 flex items-center justify-between px-4 border-b border-slate-800">
@@ -183,11 +182,9 @@
             <!-- STYLED HEADER -->
             <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0 relative z-40">
                 <div class="flex items-center gap-3 md:gap-4 w-2/3 md:w-1/2">
-                    <!-- Mobile Hamburger -->
                     <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-400 hover:text-slate-600 transition-colors p-1">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </button>
-                    <!-- Desktop Collapse -->
                     <button onclick="toggleDesktopSidebar()" class="hidden md:block text-slate-400 hover:text-slate-600 transition-colors p-1">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </button>
@@ -203,7 +200,6 @@
                 </div>
                 
                 <div class="flex items-center gap-2 md:gap-5">
-                    <!-- USER DROPDOWN -->
                     <div class="relative group cursor-pointer">
                         <div class="flex items-center gap-2 md:gap-3 pl-2 md:pl-5 border-l border-slate-200 hover:bg-slate-50 py-1 px-1 md:px-2 rounded-lg transition-colors">
                             <div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs md:text-sm font-bold text-white shadow-sm" id="top-ui-avatar">XX</div>
@@ -214,7 +210,6 @@
                             <svg class="w-3 h-3 md:w-4 md:h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                         
-                        <!-- Dropdown Menu -->
                         <div class="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-2 hidden group-hover:block">
                             <button onclick="navigate('profile')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center gap-2 font-medium">
                                 👤 My Profile
@@ -385,47 +380,67 @@
                     </div>
                 </div>
 
-                <!-- INFLUENCER TAB -->
+                <!-- INFLUENCER TAB (UPDATED LAYOUT) -->
                 <div id="influencers" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Influencer Marketing Analytics</h1>
                     
-                    <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm mb-6 max-w-xl">
-                        <div class="flex flex-col sm:flex-row items-end gap-4">
-                            <div class="w-full">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        
+                        <!-- Left Side: Search & Preview -->
+                        <div class="lg:col-span-4 flex flex-col gap-6">
+                            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Instagram Username / ID</label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-2.5 text-slate-400 font-bold">@</span>
-                                    <input type="text" id="insta-id" class="w-full border border-slate-300 rounded-lg py-2 pl-8 pr-3 text-sm focus:ring-2 focus:ring-pink-500 outline-none transition-shadow" placeholder="e.g. dkuma71">
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <div class="relative w-full">
+                                        <span class="absolute left-3 top-2.5 text-slate-400 font-bold">@</span>
+                                        <input type="text" id="insta-id" class="w-full border border-slate-300 rounded-lg py-2 pl-8 pr-3 text-sm focus:ring-2 focus:ring-pink-500 outline-none transition-shadow" placeholder="e.g. dkuma71">
+                                    </div>
+                                    <button onclick="fetchInfluencer()" class="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 py-2 rounded-lg text-sm font-bold hover:shadow-lg transition-all whitespace-nowrap">Fetch</button>
                                 </div>
                             </div>
-                            <button onclick="fetchInfluencer()" class="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:shadow-lg transition-all whitespace-nowrap">Fetch Profile</button>
-                        </div>
-                    </div>
 
-                    <!-- Influencer Post Card -->
-                    <div id="influencer-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden max-w-sm transition-all transform hover:-translate-y-1 mx-auto sm:mx-0">
-                         <div class="h-24 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 relative"></div>
-                         <div class="px-6 pb-6 relative">
-                             <img id="inf-pic" src="" class="w-20 h-20 rounded-full border-4 border-white absolute -top-10 bg-slate-100 object-cover shadow-sm">
-                             <div class="flex justify-end pt-3">
-                                 <span id="inf-status" class="px-3 py-1 text-xs font-bold bg-emerald-100 text-emerald-700 rounded-full shadow-sm border border-emerald-200">Verified</span>
-                             </div>
-                             <div class="mt-2">
-                                 <h2 id="inf-name" class="text-xl font-bold text-slate-900">Name</h2>
-                                 <p id="inf-handle" class="text-sm text-slate-500 font-medium">@handle</p>
-                                 <p id="inf-category" class="text-xs text-pink-600 font-bold mt-1 uppercase tracking-wider bg-pink-50 inline-block px-2 py-0.5 rounded">Category</p>
-                             </div>
-                             <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-100">
-                                 <div>
-                                     <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Total Followers</p>
-                                     <p id="inf-followers" class="text-2xl font-black text-slate-800">0</p>
+                            <!-- Influencer Post Card -->
+                            <div id="influencer-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden w-full relative">
+                                 <div class="h-24 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 relative"></div>
+                                 <div class="px-6 pb-6 relative">
+                                     <img id="inf-pic" src="" class="w-20 h-20 rounded-full border-4 border-white absolute -top-10 bg-slate-100 object-cover shadow-sm">
+                                     <div class="flex justify-end pt-3">
+                                         <span id="inf-status" class="px-3 py-1 text-xs font-bold bg-emerald-100 text-emerald-700 rounded-full shadow-sm border border-emerald-200">Verified</span>
+                                     </div>
+                                     <div class="mt-2">
+                                         <h2 id="inf-name" class="text-xl font-bold text-slate-900">Name</h2>
+                                         <p id="inf-handle" class="text-sm text-slate-500 font-medium">@handle</p>
+                                         <p id="inf-category" class="text-xs text-pink-600 font-bold mt-1 uppercase tracking-wider bg-pink-50 inline-block px-2 py-0.5 rounded">Category</p>
+                                     </div>
+                                     <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-100">
+                                         <div>
+                                             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Total Followers</p>
+                                             <p id="inf-followers" class="text-2xl font-black text-slate-800">0</p>
+                                         </div>
+                                         <div>
+                                             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Avg. Reel Views</p>
+                                             <p id="inf-views" class="text-2xl font-black text-slate-800">0</p>
+                                         </div>
+                                     </div>
+                                     <button onclick="addToCollab()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2">
+                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                         Add for Collab
+                                     </button>
                                  </div>
-                                 <div>
-                                     <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Avg. Reel Views</p>
-                                     <p id="inf-views" class="text-2xl font-black text-slate-800">0</p>
-                                 </div>
-                             </div>
-                         </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Collab Gallery -->
+                        <div class="lg:col-span-8 bg-white p-6 rounded-xl border border-slate-200 shadow-sm min-h-[400px]">
+                            <div class="flex justify-between items-end border-b border-slate-100 pb-3 mb-4">
+                                <h2 class="font-bold text-slate-800">Selected Influencer Collabs</h2>
+                                <span class="text-xs text-slate-500 font-medium">Tag products to influencers</span>
+                            </div>
+                            <div id="collab-gallery" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="text-slate-400 text-sm italic col-span-full text-center py-8">No influencers selected yet. Fetch and add influencers to build your campaign.</div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -547,7 +562,7 @@
                                     <input type="password" id="reg-password" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" required>
                                     <button type="button" onclick="togglePasswordVis('reg-password')" class="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                    </button>
+                    </button>
                                     <p class="text-[10px] text-slate-500 mt-1 font-medium">Must be 8+ chars with 1 uppercase, 1 lowercase, 1 number, and 1 special character.</p>
                                 </div>
                             </div>
@@ -802,9 +817,20 @@
     </div>
 
     <script>
+        let todayInvoiceSeq = 1;
+
         document.getElementById('in-date').valueAsDate = new Date();
         document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
-        document.getElementById('inv-number').innerText = Math.floor(100000 + Math.random() * 900000);
+        
+        function setDailyInvoiceNumber() {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString() +
+                            String(now.getMonth() + 1).padStart(2, '0') +
+                            String(now.getDate()).padStart(2, '0');
+            document.getElementById('inv-number').innerText = dateStr + String(todayInvoiceSeq).padStart(4, '0');
+        }
+        setDailyInvoiceNumber();
+
         document.getElementById('dash-date-range').innerText = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         let supaClient = null;
@@ -813,6 +839,10 @@
         let invoiceItems = [];
         let salesData = [];
         const categoryPrefixes = { 'Chain': 'CHN', 'Toe Ring': 'TRNG', 'Bracelet': 'BRLT', 'Pendant': 'PNDT', 'Ring': 'RNG', 'Necklace': 'NCK', 'Earring': 'EAR', 'Packaging': 'PKG' };
+
+        // Influencer Collab Variables
+        let activeInfluencer = null;
+        let collabRoster = [];
 
         // --- AUTH & VIEW SWITCHING ---
         function togglePasswordVis(inputId) {
@@ -1569,7 +1599,8 @@
                 .then(() => {
                     invoiceItems = [];
                     renderInvoiceTable();
-                    document.getElementById('inv-number').innerText = Math.floor(100000 + Math.random() * 900000);
+                    todayInvoiceSeq++; 
+                    setDailyInvoiceNumber(); 
                     ['cust-name', 'cust-phone', 'cust-email', 'cust-address', 'cust-city', 'cust-state', 'cust-pin', 'cust-country'].forEach(id => document.getElementById(id).value = '');
                     fetchInventory();
                 });
@@ -1628,28 +1659,17 @@
             
             const card = document.getElementById('influencer-card');
             
-            /* 
-            ========================================================================
-            HOW TO CONNECT YOUR C# API:
-            When your C# ASP.NET/Azure backend is running, uncomment these two lines 
-            and replace the URL with your server's endpoint.
-            ========================================================================
-            
-            const response = await fetch(`https://your-csharp-backend.com/api/instagram/${handle}`);
-            const apiData = await response.json();
-            
-            document.getElementById('inf-name').innerText = apiData.Username;
-            document.getElementById('inf-followers').innerText = apiData.Followers_Count;
-            document.getElementById('inf-views').innerText = apiData.Media_Count; 
-            document.getElementById('inf-pic').src = apiData.Profile_Picture_Url;
-            */
-
             const mockData = {
                 'dkuma71': { name: 'Deepak Kumar', category: 'Jewelry & Lifestyle', followers: '124K', views: '45.2K', pic: 'https://ui-avatars.com/api/?name=Deepak+Kumar&background=4f46e5&color=fff', status: 'High Engagement' },
                 'default': { name: 'Verified Creator', category: 'Digital Creator', followers: '89K', views: '12.4K', pic: 'https://ui-avatars.com/api/?name=Creator&background=random', status: 'Active' }
             };
             
             const data = mockData[handle.toLowerCase()] || mockData['default'];
+            
+            activeInfluencer = {
+                handle: handle,
+                ...data
+            };
             
             document.getElementById('inf-name').innerText = data.name;
             document.getElementById('inf-handle').innerText = '@' + handle;
@@ -1660,6 +1680,89 @@
             document.getElementById('inf-status').innerText = data.status;
             
             card.classList.remove('hidden');
+        }
+
+        function addToCollab() {
+            if(!activeInfluencer) return;
+            
+            // Check if already exists in roster
+            if(!collabRoster.find(i => i.handle === activeInfluencer.handle)) {
+                // Add with a placeholder for a tagged product
+                collabRoster.push({...activeInfluencer, taggedProduct: null});
+            }
+            
+            renderCollabGallery();
+            
+            document.getElementById('influencer-card').classList.add('hidden');
+            document.getElementById('insta-id').value = '';
+            activeInfluencer = null;
+        }
+
+        function renderCollabGallery() {
+            const gal = document.getElementById('collab-gallery');
+            if (collabRoster.length === 0) {
+                gal.innerHTML = `<div class="text-slate-400 text-sm italic col-span-full text-center py-8">No influencers selected yet. Fetch and add influencers to build your campaign.</div>`;
+                return;
+            }
+
+            gal.innerHTML = collabRoster.map((inf) => `
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-5 shadow-sm flex flex-col gap-4 relative">
+                    <button onclick="removeCollab('${inf.handle}')" class="absolute top-2 right-2 text-slate-400 hover:text-rose-500 font-bold p-1">✕</button>
+                    <div class="flex items-center gap-4">
+                        <img src="${inf.pic}" class="w-14 h-14 rounded-full border-2 border-white shadow-sm">
+                        <div class="pr-4">
+                            <h4 class="font-bold text-slate-900 leading-tight">${inf.name}</h4>
+                            <p class="text-xs text-indigo-600 font-medium">@${inf.handle}</p>
+                            <p class="text-[10px] text-slate-500 mt-1 uppercase">Fol: ${inf.followers} | Vws: ${inf.views}</p>
+                        </div>
+                    </div>
+                    <div class="border-t border-indigo-100 pt-3">
+                        ${inf.taggedProduct ? `
+                            <div class="bg-white p-2.5 rounded-lg border border-emerald-200 flex justify-between items-center shadow-sm">
+                                <div>
+                                    <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mb-0.5">Tagged Product</p>
+                                    <p class="text-xs font-bold text-slate-800">${inf.taggedProduct.name}</p>
+                                    <p class="text-[10px] text-slate-500">${inf.taggedProduct.code}</p>
+                                </div>
+                                <button onclick="removeProductTag('${inf.handle}')" class="text-rose-500 text-xs font-medium hover:underline px-2">Remove</button>
+                            </div>
+                        ` : `
+                            <div class="flex gap-2">
+                                <input type="text" id="tag-input-${inf.handle}" placeholder="Enter Product Code..." class="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                                <button onclick="tagProductToCollab('${inf.handle}')" class="bg-indigo-600 text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-indigo-700 whitespace-nowrap shadow-sm">Tag Item</button>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function tagProductToCollab(handle) {
+            const inputId = `tag-input-${handle}`;
+            const code = document.getElementById(inputId).value.trim();
+            if(!code) return alert("Please enter a product code to tag.");
+
+            const product = inventoryData.find(i => i.product_code === code);
+            if(!product) return alert("Product code not found in Database. Please verify the code.");
+
+            const inf = collabRoster.find(i => i.handle === handle);
+            if(inf) {
+                inf.taggedProduct = { code: product.product_code, name: product.product_name };
+                renderCollabGallery();
+            }
+        }
+
+        function removeProductTag(handle) {
+            const inf = collabRoster.find(i => i.handle === handle);
+            if(inf) {
+                inf.taggedProduct = null;
+                renderCollabGallery();
+            }
+        }
+
+        function removeCollab(handle) {
+            collabRoster = collabRoster.filter(i => i.handle !== handle);
+            renderCollabGallery();
         }
 
         function downloadSampleSheet() {
