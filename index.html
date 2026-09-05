@@ -656,7 +656,21 @@
                                 Delete Product Completely
                             </button>
                         </div>
+                        <!-- Right Side Verification Card -->
+                        <div id="out-preview-card" class="bg-indigo-50 border border-indigo-100 rounded-xl p-6 hidden shadow-sm">
+                            <h3 class="text-indigo-900 font-extrabold border-b border-indigo-200 pb-2 mb-4">Inventory Verification</h3>
+                            <div class="space-y-3 text-sm text-indigo-900">
+                                <p class="flex justify-between"><strong>Product Name:</strong> <span id="out-prev-name"></span></p>
+                                <p class="flex justify-between"><strong>Category:</strong> <span id="out-prev-cat"></span></p>
+                                <p class="flex justify-between"><strong>Size / Specs:</strong> <span id="out-prev-size"></span></p>
+                                <div class="mt-4 bg-white p-3 rounded-lg border border-indigo-100 shadow-sm flex justify-between items-center">
+                                    <span class="font-bold text-slate-500 uppercase text-xs">Current Stock Level</span>
+                                    <span id="out-prev-stock" class="text-2xl font-black text-indigo-700">0</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
 
                 <!-- INVOICE GENERATOR & SALES -->
