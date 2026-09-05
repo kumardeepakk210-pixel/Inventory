@@ -1366,6 +1366,19 @@
                 document.getElementById('out-qty').max = product.stock_quantity;
                 document.getElementById('out-avail').innerHTML = `Available DB Stock: <strong class="text-slate-800 text-lg">${product.stock_quantity}</strong>`;
             }
+
+            //const product = inventoryData.find(i => i.product_code === code);
+            const card = document.getElementById('out-preview-card');
+            if (product) {
+                document.getElementById('out-qty').max = product.stock_quantity;
+                document.getElementById('out-prev-name').innerText = product.product_name;
+                document.getElementById('out-prev-cat').innerText = product.category;
+                document.getElementById('out-prev-size').innerText = product.size || 'N/A';
+                document.getElementById('out-prev-stock').innerText = product.stock_quantity;
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
         }
 
         async function handleStockOut(e) {
