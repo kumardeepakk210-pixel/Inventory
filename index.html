@@ -1615,7 +1615,25 @@
             }
         }
 
-        function generateProductCode() {
+        async function getNextProductCode(category) {
+            const prefix = categoryPrefixes[category] || 'PRD';
+            if(!supaClient) throw new Error('Database is not connected.');
+
+            const { data, error } = await supaClient
+                .from('inventory')
+                .select('product_code')
+                .like('product_code', `${prefix}-%`);
+
+            if(error) throw error;
+
+            const latestNumber = (data || []).reduce((highest, item) => {
+                const number = Number(String(item.product_code || '').split('-')[1]);
+                return Number.isFinite(number) && number > highest ? number : highest;
+            }, 0);
+            return `${prefix}-${String(latestNumber + 1).padStart(4, '0')}`;
+        }
+
+        async function generateProductCode() {
             const isUpdatingOld = document.getElementById('update-old-stock').checked;
             if(isUpdatingOld) return; 
             
@@ -1624,15 +1642,17 @@
                 document.getElementById('in-code').value = '';
                 return;
             }
-            const prefix = categoryPrefixes[cat] || 'PRD';
-            let maxId = 0;
-            inventoryData.forEach(item => {
-                if(item.product_code && item.product_code.startsWith(prefix)) {
-                    let num = parseInt(item.product_code.split('-')[1]);
-                    if(num > maxId) maxId = num;
-                }
-            });
-            document.getElementById('in-code').value = `${prefix}-${(maxId + 1).toString().padStart(4, '0')}`;
+            const codeInput = document.getElementById('in-code');
+            codeInput.value = 'Checking database...';
+            codeInput.disabled = true;
+            try {
+                codeInput.value = await getNextProductCode(cat);
+            } catch(error) {
+                codeInput.value = '';
+                alert('Could not generate a product code from the database: ' + error.message);
+            } finally {
+                codeInput.disabled = false;
+            }
         }
 
         function storageSafeName(value) {
@@ -1672,6 +1692,18 @@
 
             if(isUpdatingOld && !document.getElementById('in-name-select').value) return alert("Please select an existing product.");
             if(!productName) return alert("Please enter or select a product name.");
+
+            if(!isUpdatingOld) {
+                try {
+                    const databaseCode = await getNextProductCode(document.getElementById('in-cat').value);
+                    if(code !== databaseCode) {
+                        document.getElementById('in-code').value = databaseCode;
+                        return alert(`The latest database code is ${databaseCode}. The form has been updated; please click Save again.`);
+                    }
+                } catch(error) {
+                    return alert('Could not verify the product code with the database: ' + error.message);
+                }
+            }
             
             const payload = {
                 product_code: code,
