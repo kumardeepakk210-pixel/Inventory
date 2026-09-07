@@ -1430,6 +1430,78 @@
             };
         }
 
+        // --- NEW PDF INVOICE TABULAR PARSING LOGIC ---
+        function inferCategory(name) {
+            name = name.toLowerCase();
+            if(name.includes('chain')) return 'Chain';
+            if(name.includes('ring') || name.includes('band') || name.includes('bangle')) return 'Ring';
+            if(name.includes('earring') || name.includes('baali') || name.includes('bali') || name.includes('cuff')) return 'Earring';
+            if(name.includes('pendant')) return 'Pendant';
+            if(name.includes('bracelet') || name.includes('kada') || name.includes('pola') || name.includes('ruli')) return 'Bracelet';
+            if(name.includes('necklace')) return 'Necklace';
+            if(name.includes('payal') || name.includes('anklet')) return 'Anklet';
+            return 'Other';
+        }
+
+        function parseTabularInvoiceData(text) {
+            const rows = [];
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const pendingProducts = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].replace(/\s+\|\s+/g, '|').replace(/\|+/g, '|');
+                
+                // Matches standard piped row format e.g. "1 Indian Baby Payal | 2 | 27.000 | 1.100 | 24.800 | 242.00 | 6002 | 25 | 620"
+                if (line.includes('|')) {
+                    let parts = line.split('|').map(p => p.trim());
+                    if (parts.length >= 5) {
+                        let descMatch = parts[0].match(/^\d+\s+(.+)$/);
+                        let desc = descMatch ? descMatch[1] : parts[0];
+                        let pcs = parseInt(parts[1]) || 1;
+                        let amount = parseFloat(parts[6] || parts[5] || 0);
+                        
+                        if (desc.match(/[a-zA-Z]/)) {
+                            rows.push({
+                                product_name: desc,
+                                stock_quantity: pcs,
+                                purchase_price: amount ? Math.round(amount / pcs) : '',
+                                category: inferCategory(desc),
+                                product_code: 'INV-' + Math.floor(1000 + Math.random() * 9000)
+                            });
+                            continue; 
+                        }
+                    }
+                }
+                
+                // Catches fragmented lines broken up by PDF extractors
+                const itemMatch = line.match(/^(\d+)\s+([A-Za-z\s\+]+(?:Chain|Pendant|Payal|Ring|Earring|Baali|Bali|Kada|Bracelet|Necklace|Anklet|Pola|Cuff)[A-Za-z\s\+]*)/i);
+                if (itemMatch) {
+                    pendingProducts.push({
+                        product_name: itemMatch[2].trim(),
+                        stock_quantity: 1, 
+                        purchase_price: '',
+                        category: inferCategory(itemMatch[2]),
+                        product_code: 'INV-' + Math.floor(1000 + Math.random() * 9000)
+                    });
+                } else if (line.match(/^[A-Za-z\s\+]+(?:Chain|Pendant|Payal|Ring|Earring|Baali|Bali|Kada|Bracelet|Necklace|Anklet|Pola|Cuff)[A-Za-z\s\+]*$/i)) {
+                    pendingProducts.push({
+                        product_name: line.trim(),
+                        stock_quantity: 1,
+                        purchase_price: '',
+                        category: inferCategory(line),
+                        product_code: 'INV-' + Math.floor(1000 + Math.random() * 9000)
+                    });
+                }
+            }
+            
+            pendingProducts.forEach(p => {
+                const exists = rows.find(r => r.product_name.toLowerCase() === p.product_name.toLowerCase());
+                if (!exists) rows.push(p);
+            });
+            
+            return rows.map(normalizeImportedRow);
+        }
+
         function parseLabelledText(text) {
             const row = {};
             const labels = {
@@ -1520,28 +1592,48 @@
             const status = document.getElementById('purchase-import-status');
             importedPurchaseFile = file;
             try {
-                let rows;
+                status.innerText = "Extracting data...";
+                let rows = [];
+                let text = "";
+                
                 if(file.name.toLowerCase().endsWith('.pdf')) {
-                    let text = await extractPdfText(file);
+                    text = await extractPdfText(file);
                     if(text.replace(/\s/g, '').length < 20) text = await extractScannedPdfText(file);
-                    rows = parseLabelledText(text);
-                    if(!Object.values(rows[0]).some(Boolean)) throw new Error('No readable labelled fields found in the PDF.');
+                    
+                    // Attempt specialised table invoice parsing first
+                    rows = parseTabularInvoiceData(text);
+                    
+                    // Fallback to standard labelled field mapping if tabular fails
+                    if(!rows.length || !Object.values(rows[0] || {}).some(Boolean)) {
+                        rows = parseLabelledText(text);
+                    }
+                    if(!rows.length) throw new Error('No readable data found in the PDF.');
+                    
                 } else if(file.type.startsWith('image/')) {
                     const result = await window.Tesseract.recognize(file, 'eng');
-                    rows = parseLabelledText(result.data.text);
-                    if(!Object.values(rows[0]).some(Boolean)) throw new Error('No readable labelled fields found in the image.');
+                    text = result.data.text;
+                    rows = parseTabularInvoiceData(text);
+                    if(!rows.length) rows = parseLabelledText(text);
+                    if(!rows.length) throw new Error('No readable fields found in the image.');
+                    
                 } else if(file.name.toLowerCase().match(/\.(xlsx|xls|csv)$/)) {
                     const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
                     rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]).map(normalizeImportedRow);
+                    
                 } else {
-                    rows = parseLabelledText(await file.text());
+                    text = await file.text();
+                    rows = parseTabularInvoiceData(text);
+                    if(!rows.length) rows = parseLabelledText(text);
                 }
+                
                 importedPurchaseRows = rows.filter(row => Object.values(row).some(Boolean));
                 if(!importedPurchaseRows.length) throw new Error('No purchase details found in this file.');
+                
                 const firstRow = importedPurchaseRows[0];
                 document.getElementById('purchase-shop').value = firstRow.shop_name || '';
                 document.getElementById('purchase-date').value = firstRow.purchase_date || '';
                 document.getElementById('purchase-address').value = firstRow.shop_address || '';
+                
                 status.innerText = `${file.name}: ${importedPurchaseRows.length} row(s) extracted. Review the fields below.`;
                 renderImportedPurchaseRows();
             } catch(error) {
