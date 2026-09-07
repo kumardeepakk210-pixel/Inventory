@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     
     <!-- Link to your local config.js file containing SUPABASE_URL and SUPABASE_ANON_KEY -->
     <script src="config.js"></script>
@@ -617,6 +618,31 @@
                         </button>
                     </div>
 
+                    <div class="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 md:p-6 shadow-sm mb-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                            <div>
+                                <h2 class="font-extrabold text-indigo-950">Import purchase document</h2>
+                                <p class="text-xs text-indigo-700 mt-1">Upload PDF, Excel, CSV, or text. Extracted values appear below for correction before saving.</p>
+                            </div>
+                            <label class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 cursor-pointer">
+                                📄 Choose file
+                                <input type="file" id="purchase-import-file" accept=".pdf,.xlsx,.xls,.csv,.txt,application/pdf,text/csv,text/plain" class="hidden" onchange="handlePurchaseImport(event)">
+                            </label>
+                        </div>
+                        <p id="purchase-import-status" class="text-xs font-semibold text-indigo-800">No document imported.</p>
+                    </div>
+
+                    <div id="purchase-import-editor" class="hidden rounded-2xl border border-amber-200 bg-amber-50/50 p-5 md:p-6 shadow-sm mb-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                            <div>
+                                <h2 class="font-extrabold text-slate-900">Check extracted details</h2>
+                                <p class="text-xs text-slate-600 mt-1">Correct extracted values and fill any blank inventory fields before saving.</p>
+                            </div>
+                            <button type="button" onclick="saveImportedPurchaseDetails()" class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700">✅ Save corrected details</button>
+                        </div>
+                        <div id="purchase-import-rows" class="space-y-4"></div>
+                    </div>
+
                     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                         <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-5 py-4">
                             <div>
@@ -914,6 +940,8 @@
         let inventoryData = [];
         let invoiceItems = [];
         let salesData = [];
+        let importedPurchaseRows = [];
+        let importedPurchaseFile = null;
         const categoryPrefixes = { 'Chain': 'CHN', 'Toe Ring': 'TRNG', 'Bracelet': 'BRLT', 'Pendant': 'PNDT', 'Ring': 'RNG', 'Necklace': 'NCK', 'Earring': 'EAR', 'Packaging': 'PKG' };
 
         // Influencer Collab Variables
@@ -1368,6 +1396,150 @@
             }).join('');
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+        }
+
+        function normalizePurchaseDate(value) {
+            if(!value) return '';
+            if(value instanceof Date) return new Date(value.getTime() - value.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+            const text = String(value).trim();
+            if(/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+            const parsed = new Date(text);
+            return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().split('T')[0];
+        }
+
+        function normalizeImportedRow(row) {
+            const values = Object.fromEntries(Object.entries(row).map(([key, value]) => [key.toLowerCase().replace(/[\s-]+/g, '_'), value]));
+            return {
+                product_code: values.product_code || values.code || '',
+                product_name: values.product_name || values.product || values.name || '',
+                category: values.category || '',
+                size: values.size || '',
+                stock_quantity: values.stock_quantity || values.quantity || '',
+                purchase_price: values.purchase_price || values.price || '',
+                selling_price: values.selling_price || '',
+                weight: values.weight || '',
+                purchase_date: normalizePurchaseDate(values.purchase_date || values.date),
+                shop_name: values.shop_name || values.shop || '',
+                shop_address: values.shop_address || values.address || '',
+                product_description: values.product_description || values.description || ''
+            };
+        }
+
+        function parseLabelledText(text) {
+            const row = {};
+            const labels = {
+                product_code: 'product\\s*(?:code|id)|code', product_name: 'product\\s*name|product|item', category: 'category',
+                stock_quantity: 'stock\\s*quantity|quantity|qty', purchase_price: 'purchase\\s*price|buying\\s*price|price',
+                selling_price: 'selling\\s*price|sale\\s*price', purchase_date: 'purchase\\s*date|date',
+                shop_name: 'shop\\s*name|shop|vendor|supplier', shop_address: 'shop\\s*address|address',
+                size: 'size', weight: 'weight', product_description: 'product\\s*description|description'
+            };
+            text.split(/\r?\n/).forEach(line => {
+                const match = line.match(/^\s*([^:,-]+)\s*[:,-]\s*(.+?)\s*$/);
+                if(!match) return;
+                const key = Object.entries(labels).find(([, pattern]) => new RegExp(`^(?:${pattern})$`, 'i').test(match[1].trim()))?.[0];
+                if(key) row[key] = match[2];
+            });
+            return [normalizeImportedRow(row)];
+        }
+
+        async function extractPdfText(file) {
+            const buffer = await file.arrayBuffer();
+            const pdf = await window.pdfjsLib.getDocument({ data: buffer }).promise;
+            let text = '';
+            for(let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+                const page = await pdf.getPage(pageNumber);
+                const content = await page.getTextContent();
+                text += content.items.map(item => item.str).join(' ') + '\n';
+            }
+            return text;
+        }
+
+        function renderImportedPurchaseRows() {
+            const editor = document.getElementById('purchase-import-editor');
+            const container = document.getElementById('purchase-import-rows');
+            editor.classList.toggle('hidden', importedPurchaseRows.length === 0);
+            container.innerHTML = importedPurchaseRows.map((row, index) => `
+                <div class="rounded-xl border border-amber-200 bg-white p-4" data-import-row="${index}">
+                    <div class="flex items-center justify-between mb-3"><p class="text-xs font-extrabold uppercase tracking-wider text-amber-700">Imported row ${index + 1}</p><button type="button" onclick="removeImportedPurchaseRow(${index})" class="text-xs font-bold text-rose-600 hover:underline">Remove</button></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        ${[['product_name','Product name'],['product_code','Product code'],['category','Category'],['size','Size'],['stock_quantity','Quantity'],['purchase_price','Purchase price'],['selling_price','Selling price'],['weight','Weight'],['purchase_date','Purchase date'],['shop_name','Shop name'],['shop_address','Shop address'],['product_description','Description']].map(([field, label]) => `<label class="text-xs font-bold text-slate-700">${label}<input data-field="${field}" value="${escapeHtml(row[field])}" type="${field === 'purchase_date' ? 'date' : field.includes('price') || field === 'weight' || field === 'stock_quantity' ? 'number' : 'text'}" class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm font-normal"></label>`).join('')}
+                    </div>
+                </div>`).join('');
+        }
+
+        function collectImportedPurchaseRows() {
+            document.querySelectorAll('[data-import-row]').forEach((rowElement, index) => {
+                rowElement.querySelectorAll('[data-field]').forEach(input => importedPurchaseRows[index][input.dataset.field] = input.value.trim());
+            });
+        }
+
+        function removeImportedPurchaseRow(index) {
+            importedPurchaseRows.splice(index, 1);
+            renderImportedPurchaseRows();
+        }
+
+        async function handlePurchaseImport(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const status = document.getElementById('purchase-import-status');
+            importedPurchaseFile = file;
+            try {
+                let rows;
+                if(file.name.toLowerCase().endsWith('.pdf')) {
+                    const text = await extractPdfText(file);
+                    rows = parseLabelledText(text);
+                    if(!Object.values(rows[0]).some(Boolean)) throw new Error('No readable labelled fields found in the PDF.');
+                } else if(file.name.toLowerCase().match(/\.(xlsx|xls|csv)$/)) {
+                    const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+                    rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]).map(normalizeImportedRow);
+                } else {
+                    rows = parseLabelledText(await file.text());
+                }
+                importedPurchaseRows = rows.filter(row => Object.values(row).some(Boolean));
+                if(!importedPurchaseRows.length) throw new Error('No purchase details found in this file.');
+                status.innerText = `${file.name}: ${importedPurchaseRows.length} row(s) extracted. Review the fields below.`;
+                renderImportedPurchaseRows();
+            } catch(error) {
+                importedPurchaseRows = [];
+                renderImportedPurchaseRows();
+                status.innerText = `Import failed: ${error.message}`;
+            }
+            event.target.value = '';
+        }
+
+        async function saveImportedPurchaseDetails() {
+            if(!supaClient) return alert('Please connect database in Settings first.');
+            collectImportedPurchaseRows();
+            if(!importedPurchaseRows.length) return alert('Import at least one row first.');
+            if(importedPurchaseRows.some(row => !row.product_code || !row.product_name || !row.stock_quantity)) return alert('Product code, product name, and quantity are required for every row.');
+
+            try {
+                let attachmentUrl = null;
+                if(importedPurchaseFile) attachmentUrl = await uploadInventoryFile(importedPurchaseFile, `purchases/imports/${Date.now()}`);
+                const payload = importedPurchaseRows.map(row => ({
+                    ...row,
+                    stock_quantity: Number(row.stock_quantity) || 0,
+                    purchase_price: Number(row.purchase_price) || 0,
+                    selling_price: Number(row.selling_price) || 0,
+                    weight: row.weight ? Number(row.weight) : null,
+                    purchase_attachment_url: attachmentUrl
+                }));
+                const { error } = await supaClient.from('inventory').upsert(payload, { onConflict: 'product_code' });
+                if(error) throw error;
+                alert(`Saved ${payload.length} corrected purchase record(s).`);
+                importedPurchaseRows = [];
+                importedPurchaseFile = null;
+                document.getElementById('purchase-import-status').innerText = 'No document imported.';
+                renderImportedPurchaseRows();
+                await fetchInventory();
+            } catch(error) {
+                alert('Could not save purchase details: ' + error.message);
+            }
+        }
+
         function clearFilters() {
             document.getElementById('filter-stock').value = 'all';
             document.getElementById('filter-min').value = '';
@@ -1473,7 +1645,7 @@
         }
 
         async function uploadInventoryFile(file, folder) {
-            const allowedType = file.type === 'application/pdf' || file.type.startsWith('image/') || file.type.startsWith('video/');
+            const allowedType = file.type === 'application/pdf' || file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.includes('spreadsheet') || file.type.includes('excel') || file.type === 'text/csv' || file.type === 'text/plain' || /\.(xlsx|xls|csv|txt)$/i.test(file.name);
             if(!allowedType) throw new Error(`Unsupported file type: ${file.name}`);
             if(file.size > 50 * 1024 * 1024) throw new Error(`File is larger than 50 MB: ${file.name}`);
 
