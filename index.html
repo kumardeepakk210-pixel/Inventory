@@ -157,6 +157,9 @@
                     <button onclick="navigate('stock-in')" id="nav-stock-in" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-in">
                         <span class="text-lg">📥</span> <span class="nav-text truncate">Stock In (Receive)</span>
                     </button>
+                    <button onclick="navigate('purchase-details')" id="nav-purchase-details" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="purchase-details">
+                        <span class="text-lg">🧾</span> <span class="nav-text truncate">Purchase Details</span>
+                    </button>
                     <button onclick="navigate('stock-out')" id="nav-stock-out" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-out">
                         <span class="text-lg">📤</span> <span class="nav-text truncate">Stock Out (Adjust)</span>
                     </button>
@@ -598,6 +601,48 @@
             
                             <button type="submit" class="w-full mt-4 bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">Add New Employee</button>
                         </form>
+                    </div>
+                </div>
+
+                <!-- PURCHASE DETAILS -->
+                <div id="purchase-details" class="page">
+                    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600 mb-2">Purchase workspace</p>
+                            <h1 class="text-3xl font-black tracking-tight text-slate-900">Purchase Details</h1>
+                            <p class="text-sm text-slate-500 mt-1">Review shop, date, address, pricing, and saved purchase attachments.</p>
+                        </div>
+                        <button onclick="navigate('stock-in')" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700">
+                            📥 Add Stock In
+                        </button>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-5 py-4">
+                            <div>
+                                <h2 class="font-extrabold text-slate-800">Saved purchase records</h2>
+                                <p class="text-xs text-slate-500 mt-1">Each row is linked to its inventory product.</p>
+                            </div>
+                            <span id="purchase-record-count" class="text-xs font-bold uppercase tracking-wider text-slate-400">0 records</span>
+                        </div>
+                        <div class="overflow-x-auto h-[600px]">
+                            <table class="w-full text-left border-collapse min-w-[1050px]">
+                                <thead class="sticky top-0 bg-slate-900 shadow-lg z-10">
+                                    <tr class="border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-300">
+                                        <th class="px-5 py-4 font-extrabold">Product</th>
+                                        <th class="px-5 py-4 font-extrabold">Shop</th>
+                                        <th class="px-5 py-4 font-extrabold">Purchase date</th>
+                                        <th class="px-5 py-4 font-extrabold">Address</th>
+                                        <th class="px-5 py-4 font-extrabold text-right">Quantity</th>
+                                        <th class="px-5 py-4 font-extrabold text-right">Purchase price</th>
+                                        <th class="px-5 py-4 font-extrabold">Files</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchase-details-body" class="text-sm divide-y divide-slate-100">
+                                    <tr><td colspan="7" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -1058,7 +1103,7 @@
         }
 
         function applyRolePermissions(role) {
-            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
+            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
             buttons.forEach(id => {
                 if(document.getElementById(id)) document.getElementById(id).style.display = 'flex';
             });
@@ -1068,6 +1113,7 @@
             } 
             else if (role === 'Agent') {
                 document.getElementById('nav-stock-in').style.display = 'none';
+                document.getElementById('nav-purchase-details').style.display = 'none';
                 document.getElementById('nav-stock-out').style.display = 'none';
                 document.getElementById('nav-invoice').style.display = 'none';
                 document.getElementById('nav-employees').style.display = 'none';
@@ -1096,6 +1142,7 @@
             }
 
             if (targetId === 'inventory') renderFullInventory();
+            if (targetId === 'purchase-details') renderPurchaseDetails();
             if (targetId === 'sales-dashboard') renderSalesDashboard();
             if (supaClient) { fetchInventory(); fetchSales(); }
         }
@@ -1198,6 +1245,7 @@
                 inventoryData = data || [];
                 renderDashboard();
                 if(document.getElementById('inventory').classList.contains('active')) renderFullInventory();
+                if(document.getElementById('purchase-details').classList.contains('active')) renderPurchaseDetails();
                 populateSelects();
             } else {
                 setDbStatus(false, "Sync Failed");
@@ -1289,6 +1337,35 @@
                         <td class="px-5 py-4 align-middle text-right font-extrabold text-emerald-600">₹${item.selling_price.toLocaleString('en-IN')}</td>
                     </tr>`;
             });
+        }
+
+        function renderPurchaseDetails() {
+            const tbody = document.getElementById('purchase-details-body');
+            const count = document.getElementById('purchase-record-count');
+            count.innerText = `${inventoryData.length} ${inventoryData.length === 1 ? 'record' : 'records'}`;
+
+            if(inventoryData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-400">No purchase details found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = inventoryData.map(item => {
+                const purchaseDate = item.purchase_date ? new Date(`${item.purchase_date}T00:00:00`).toLocaleDateString('en-IN') : '-';
+                const mediaFiles = Array.isArray(item.product_media_urls) ? item.product_media_urls : [];
+                const fileLinks = [];
+                if(item.purchase_attachment_url) fileLinks.push(`<a href="${item.purchase_attachment_url}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline font-bold">Purchase file</a>`);
+                mediaFiles.forEach((url, index) => fileLinks.push(`<a href="${url}" target="_blank" rel="noopener" class="text-emerald-600 hover:underline font-bold">Product ${index + 1}</a>`));
+                return `
+                    <tr class="odd:bg-white even:bg-slate-50/60 hover:bg-indigo-50/60 transition-colors">
+                        <td class="px-5 py-4 align-middle"><p class="font-bold text-slate-900">${item.product_name || '-'}</p><span class="text-xs text-slate-400">${item.product_code || '-'}</span></td>
+                        <td class="px-5 py-4 align-middle font-semibold text-slate-700">${item.shop_name || '-'}</td>
+                        <td class="px-5 py-4 align-middle text-slate-600">${purchaseDate}</td>
+                        <td class="px-5 py-4 align-middle text-slate-600 max-w-[220px] truncate" title="${item.shop_address || ''}">${item.shop_address || '-'}</td>
+                        <td class="px-5 py-4 align-middle text-right font-bold text-slate-800">${item.stock_quantity || 0}</td>
+                        <td class="px-5 py-4 align-middle text-right font-bold text-emerald-600">₹${Number(item.purchase_price || 0).toLocaleString('en-IN')}</td>
+                        <td class="px-5 py-4 align-middle"><div class="flex flex-col items-start gap-1 text-xs">${fileLinks.length ? fileLinks.join('') : '<span class="text-slate-400">No files</span>'}</div></td>
+                    </tr>`;
+            }).join('');
         }
 
         function clearFilters() {
