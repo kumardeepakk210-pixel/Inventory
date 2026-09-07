@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
     <!-- Link to your local config.js file containing SUPABASE_URL and SUPABASE_ANON_KEY -->
     <script src="config.js"></script>
@@ -626,10 +627,20 @@
                             </div>
                             <label class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 cursor-pointer">
                                 📄 Choose file
-                                <input type="file" id="purchase-import-file" accept=".pdf,.xlsx,.xls,.csv,.txt,application/pdf,text/csv,text/plain" class="hidden" onchange="handlePurchaseImport(event)">
+                                <input type="file" id="purchase-import-file" accept=".pdf,.xlsx,.xls,.csv,.txt,application/pdf,image/*,text/csv,text/plain" class="hidden" onchange="handlePurchaseImport(event)">
                             </label>
                         </div>
                         <p id="purchase-import-status" class="text-xs font-semibold text-indigo-800">No document imported.</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm mb-6">
+                        <h2 class="font-extrabold text-slate-800 mb-1">Purchase information</h2>
+                        <p class="text-xs text-slate-500 mb-4">Use these fields for manual entry or to complete values missing from the invoice.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <label class="text-xs font-bold text-slate-700">Shop name<input type="text" id="purchase-shop" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm font-normal"></label>
+                            <label class="text-xs font-bold text-slate-700">Purchase date<input type="date" id="purchase-date" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm font-normal"></label>
+                            <label class="text-xs font-bold text-slate-700 sm:col-span-2">Shop address<input type="text" id="purchase-address" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm font-normal"></label>
+                        </div>
                     </div>
 
                     <div id="purchase-import-editor" class="hidden rounded-2xl border border-amber-200 bg-amber-50/50 p-5 md:p-6 shadow-sm mb-6">
@@ -698,14 +709,6 @@
                                 <label for="update-old-stock" class="font-bold text-slate-700 cursor-pointer text-sm sm:text-base">Yes, add stock to an EXISTING product</label>
                             </div>
 
-                            <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Purchase Details</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-6">
-                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Purchased Shop Name</label><input type="text" id="in-shop" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
-                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Purchase Date</label><input type="date" id="in-date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
-                                <div class="col-span-1 sm:col-span-2"><label class="block text-xs font-bold text-slate-700 mb-1">Shop Address</label><input type="text" id="in-address" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
-                                <div class="col-span-1 sm:col-span-2"><label class="block text-xs font-bold text-slate-700 mb-1">Purchase Attachment</label><input type="file" id="in-attachment" accept="application/pdf,image/*" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white"><p class="text-[11px] text-slate-500 mt-1">Optional PDF or image. Stored in the purchase folder for future reference.</p></div>
-                            </div>
-                            
                             <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Product Details</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6">
                                 <div class="col-span-1 sm:col-span-3">
@@ -921,7 +924,7 @@
     <script>
         let todayInvoiceSeq = 1;
 
-        document.getElementById('in-date').valueAsDate = new Date();
+        document.getElementById('purchase-date').valueAsDate = new Date();
         document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
         
         function setDailyInvoiceNumber() {
@@ -1436,12 +1439,25 @@
                 shop_name: 'shop\\s*name|shop|vendor|supplier', shop_address: 'shop\\s*address|address',
                 size: 'size', weight: 'weight', product_description: 'product\\s*description|description'
             };
-            text.split(/\r?\n/).forEach(line => {
+            const parseLine = line => {
                 const match = line.match(/^\s*([^:,-]+)\s*[:,-]\s*(.+?)\s*$/);
-                if(!match) return;
+                if(!match) return false;
                 const key = Object.entries(labels).find(([, pattern]) => new RegExp(`^(?:${pattern})$`, 'i').test(match[1].trim()))?.[0];
                 if(key) row[key] = match[2];
-            });
+                return Boolean(key);
+            };
+            text.split(/\r?\n/).forEach(parseLine);
+            if(!Object.keys(row).length) {
+                const labelPattern = Object.values(labels).join('|');
+                const fields = Object.entries(labels).map(([key, pattern]) => ({ key, pattern: new RegExp(`(?:${pattern})\\s*[:,-]\\s*`, 'i') }));
+                fields.forEach((field, index) => {
+                    const match = field.pattern.exec(text);
+                    if(!match) return;
+                    const nextMatches = fields.slice(index + 1).map(next => next.pattern.exec(text)).filter(Boolean).sort((a, b) => a.index - b.index);
+                    const end = nextMatches[0]?.index ?? text.length;
+                    row[field.key] = text.slice(match.index + match[0].length, end).trim();
+                });
+            }
             return [normalizeImportedRow(row)];
         }
 
@@ -1453,6 +1469,23 @@
                 const page = await pdf.getPage(pageNumber);
                 const content = await page.getTextContent();
                 text += content.items.map(item => item.str).join(' ') + '\n';
+            }
+            return text;
+        }
+
+        async function extractScannedPdfText(file) {
+            const buffer = await file.arrayBuffer();
+            const pdf = await window.pdfjsLib.getDocument({ data: buffer }).promise;
+            let text = '';
+            for(let pageNumber = 1; pageNumber <= Math.min(pdf.numPages, 5); pageNumber++) {
+                const page = await pdf.getPage(pageNumber);
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                const result = await window.Tesseract.recognize(canvas, 'eng');
+                text += result.data.text + '\n';
             }
             return text;
         }
@@ -1489,9 +1522,14 @@
             try {
                 let rows;
                 if(file.name.toLowerCase().endsWith('.pdf')) {
-                    const text = await extractPdfText(file);
+                    let text = await extractPdfText(file);
+                    if(text.replace(/\s/g, '').length < 20) text = await extractScannedPdfText(file);
                     rows = parseLabelledText(text);
                     if(!Object.values(rows[0]).some(Boolean)) throw new Error('No readable labelled fields found in the PDF.');
+                } else if(file.type.startsWith('image/')) {
+                    const result = await window.Tesseract.recognize(file, 'eng');
+                    rows = parseLabelledText(result.data.text);
+                    if(!Object.values(rows[0]).some(Boolean)) throw new Error('No readable labelled fields found in the image.');
                 } else if(file.name.toLowerCase().match(/\.(xlsx|xls|csv)$/)) {
                     const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
                     rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]).map(normalizeImportedRow);
@@ -1500,6 +1538,10 @@
                 }
                 importedPurchaseRows = rows.filter(row => Object.values(row).some(Boolean));
                 if(!importedPurchaseRows.length) throw new Error('No purchase details found in this file.');
+                const firstRow = importedPurchaseRows[0];
+                document.getElementById('purchase-shop').value = firstRow.shop_name || '';
+                document.getElementById('purchase-date').value = firstRow.purchase_date || '';
+                document.getElementById('purchase-address').value = firstRow.shop_address || '';
                 status.innerText = `${file.name}: ${importedPurchaseRows.length} row(s) extracted. Review the fields below.`;
                 renderImportedPurchaseRows();
             } catch(error) {
@@ -1518,9 +1560,12 @@
 
             try {
                 let attachmentUrl = null;
-                if(importedPurchaseFile) attachmentUrl = await uploadInventoryFile(importedPurchaseFile, `purchases/imports/${Date.now()}`);
+                if(importedPurchaseFile) attachmentUrl = await uploadInventoryFile(importedPurchaseFile, 'purchase-invoices', `purchase-invoice/${Date.now()}`);
                 const payload = importedPurchaseRows.map(row => ({
                     ...row,
+                    shop_name: row.shop_name || document.getElementById('purchase-shop').value || null,
+                    shop_address: row.shop_address || document.getElementById('purchase-address').value || null,
+                    purchase_date: row.purchase_date || document.getElementById('purchase-date').value || null,
                     stock_quantity: Number(row.stock_quantity) || 0,
                     purchase_price: Number(row.purchase_price) || 0,
                     selling_price: Number(row.selling_price) || 0,
@@ -1584,7 +1629,6 @@
                 
                 document.getElementById('stockInForm').reset();
                 document.getElementById('update-old-stock').checked = true; 
-                document.getElementById('in-date').valueAsDate = new Date();
                 
                 document.getElementById('in-code').disabled = true; 
             } else {
@@ -1594,7 +1638,6 @@
                 nameInput.required = true;
                 
                 document.getElementById('stockInForm').reset();
-                document.getElementById('in-date').valueAsDate = new Date();
                 document.getElementById('in-code').disabled = false;
                 document.getElementById('in-code').value = '';
             }
@@ -1664,15 +1707,15 @@
             return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
         }
 
-        async function uploadInventoryFile(file, folder) {
+        async function uploadInventoryFile(file, bucket, folder) {
             const allowedType = file.type === 'application/pdf' || file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.includes('spreadsheet') || file.type.includes('excel') || file.type === 'text/csv' || file.type === 'text/plain' || /\.(xlsx|xls|csv|txt)$/i.test(file.name);
             if(!allowedType) throw new Error(`Unsupported file type: ${file.name}`);
             if(file.size > 50 * 1024 * 1024) throw new Error(`File is larger than 50 MB: ${file.name}`);
 
             const path = `${folder}/${storageFileName(file)}`;
-            const { error } = await supaClient.storage.from('inventory-files').upload(path, file, { upsert: false, contentType: file.type });
+            const { error } = await supaClient.storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type });
             if(error) throw error;
-            const { data } = supaClient.storage.from('inventory-files').getPublicUrl(path);
+            const { data } = supaClient.storage.from(bucket).getPublicUrl(path);
             return data.publicUrl;
         }
 
@@ -1687,7 +1730,6 @@
             const productName = isUpdatingOld
                 ? document.getElementById('in-name-select').options[document.getElementById('in-name-select').selectedIndex].text.split(' - ')[0].trim()
                 : document.getElementById('in-name').value.trim();
-            const purchaseFile = document.getElementById('in-attachment').files[0];
             const productFiles = Array.from(document.getElementById('in-product-media').files);
 
             if(isUpdatingOld && !document.getElementById('in-name-select').value) return alert("Please select an existing product.");
@@ -1711,21 +1753,22 @@
                 size: document.getElementById('in-size').value || null,
                 purchase_price: parseFloat(document.getElementById('in-buy').value),
                 selling_price: parseFloat(document.getElementById('in-sale').value),
-                shop_name: document.getElementById('in-shop').value,
-                shop_address: document.getElementById('in-address').value || null,
-                purchase_date: document.getElementById('in-date').value,
+                shop_name: null,
+                shop_address: null,
+                purchase_date: null,
                 product_description: document.getElementById('in-desc').value || null,
                 weight: isNaN(weightVal) ? null : weightVal,
                 product_name: productName
             };
 
             try {
-                const purchaseFolder = `purchases/${document.getElementById('in-date').value}-${storageSafeName(document.getElementById('in-shop').value)}-${code.toLowerCase()}`;
                 const productFolder = `products/${storageSafeName(productName)}`;
-                if(purchaseFile) payload.purchase_attachment_url = await uploadInventoryFile(purchaseFile, purchaseFolder);
                 if(productFiles.length > 0) {
                     payload.product_media_urls = [];
-                    for(const file of productFiles) payload.product_media_urls.push(await uploadInventoryFile(file, productFolder));
+                    for(const file of productFiles) {
+                        const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+                        payload.product_media_urls.push(await uploadInventoryFile(file, 'product-images', `product-image/${storageSafeName(productName)}/${mediaType}`));
+                    }
                 }
             } catch(error) {
                 return alert("Attachment upload failed: " + error.message);
