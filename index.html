@@ -715,6 +715,16 @@
                                 <label for="update-old-stock" class="font-bold text-slate-700 cursor-pointer text-sm sm:text-base">Yes, add stock to an EXISTING product</label>
                             </div>
 
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 md:p-5 mb-6">
+                                <h3 class="font-extrabold text-slate-800 mb-1">Purchase information</h3>
+                                <p class="text-xs text-slate-500 mb-4">Use these fields for manual entry or to complete values missing from the invoice.</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <label class="text-xs font-bold text-slate-700">Shop name<input type="text" id="stock-purchase-shop" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm font-normal" required></label>
+                                    <label class="text-xs font-bold text-slate-700">Purchase date<input type="date" id="stock-purchase-date" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm font-normal" required></label>
+                                    <label class="text-xs font-bold text-slate-700 sm:col-span-2">Shop address<input type="text" id="stock-purchase-address" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm font-normal" placeholder="Optional"></label>
+                                </div>
+                            </div>
+
                             <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Product Details</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6">
                                 <div class="col-span-1 sm:col-span-3">
@@ -937,6 +947,7 @@
         let todayInvoiceSeq = 1;
 
         document.getElementById('purchase-date').valueAsDate = new Date();
+        document.getElementById('stock-purchase-date').valueAsDate = new Date();
         document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
         
         function setDailyInvoiceNumber() {
@@ -1753,6 +1764,7 @@
                 
                 document.getElementById('stockInForm').reset();
                 document.getElementById('update-old-stock').checked = true; 
+                document.getElementById('stock-purchase-date').valueAsDate = new Date();
                 
                 document.getElementById('in-code').disabled = true; 
             } else {
@@ -1762,6 +1774,7 @@
                 nameInput.required = true;
                 
                 document.getElementById('stockInForm').reset();
+                document.getElementById('stock-purchase-date').valueAsDate = new Date();
                 document.getElementById('in-code').disabled = false;
                 document.getElementById('in-code').value = '';
             }
@@ -1877,9 +1890,9 @@
                 size: document.getElementById('in-size').value || null,
                 purchase_price: parseFloat(document.getElementById('in-buy').value),
                 selling_price: parseFloat(document.getElementById('in-sale').value),
-                shop_name: null,
-                shop_address: null,
-                purchase_date: null,
+                shop_name: document.getElementById('stock-purchase-shop').value.trim(),
+                shop_address: document.getElementById('stock-purchase-address').value.trim() || null,
+                purchase_date: document.getElementById('stock-purchase-date').value,
                 product_description: document.getElementById('in-desc').value || null,
                 weight: isNaN(weightVal) ? null : weightVal,
                 product_name: productName
