@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wishrite | Inventory </title>
+    <title>Wishrite | Inventory & ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -11,7 +11,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
-    <!-- Link to your local config.js file containing SUPABASE_URL and SUPABASE_ANON_KEY -->
     <script src="config.js"></script>
 
     <style>
@@ -28,45 +27,207 @@
         #auth-wrapper { display: flex; }
         #login-container { display: block; }
         
-        /* Professional PDF Watermark Styles */
         #invoice-document { position: relative; overflow: hidden; background: white; }
         #invoice-document .content-layer { position: relative; z-index: 10; }
         #invoice-watermark { 
-            position: absolute; 
-            left: 50%; 
-            top: 50%; 
-            transform: translate(-50%, -50%) rotate(-35deg); 
-            font-size: 130px; 
-            font-weight: 900; 
-            color: rgba(0, 0, 0, 0.03); 
-            pointer-events: none; 
-            z-index: 0; 
-            white-space: nowrap; 
-            letter-spacing: 0.2em;
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-35deg); 
+            font-size: 130px; font-weight: 900; color: rgba(0, 0, 0, 0.03); pointer-events: none; z-index: 0; white-space: nowrap; letter-spacing: 0.2em;
+        }
+
+        .top-bar { background: var(--dark); color: #FFF; display: flex; align-items: center; min-height: 42px; padding: 0 5%; font-size: 0.68rem; letter-spacing: 1.2px; position: relative; text-transform: uppercase; overflow: hidden; }
+        .top-bar-section { display: flex; align-items: center; min-width: 0; height: 42px; }
+        .top-bar-center { flex: 1 1 auto; min-width: 0; border-left: 1px solid rgba(255,255,255,0.16); border-right: 1px solid rgba(255,255,255,0.16); }
+        .top-bar-right { flex: 0 0 130px; justify-content: flex-end; padding-left: 1.25rem; white-space: nowrap; }
+        .top-bar-currency { cursor: pointer; }
+        .marquee { width: 100%; overflow: hidden; white-space: nowrap; }
+        .marquee-track { display: inline-flex; width: max-content; animation: marqueeScroll 28s linear infinite; }
+        .marquee-text { display: inline-block; padding-right: 4rem; color: #E8E6E1; }
+        @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        
+        .nav-pincode-container { position: relative; width: 280px; display: flex; flex-direction: column; align-items: stretch; margin-left: 0.5rem; }
+        .nav-pincode-container .pincode-controls { display: flex; align-items: center; width: 100%; height: 44px; background: #FFFFFF; border: 1px solid #E8E6E1; border-radius: 50px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); padding: 0; padding-left: 1.2rem; position: relative;}
+        .nav-pincode-container .pin-icon-svg { flex-shrink: 0; margin-right: 0.6rem; }
+        .nav-pincode-container input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 0.85rem; color: #333; font-family: 'Inter', sans-serif; padding-right: 10px;}
+        .nav-pincode-container input::placeholder { color: #888; }
+        .nav-pincode-container button { height: 44px; padding: 0 1.8rem; border: none; border-radius: 50px; background: linear-gradient(to right, #9a1f44, #73132e); color: #FFFFFF; font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 500; letter-spacing: 0.5px; cursor: pointer; box-shadow: -4px 0 12px rgba(154, 31, 68, 0.15); transition: transform 0.2s, background 0.3s; margin-left: auto;}
+        .nav-pincode-container button:hover { background: linear-gradient(to right, #87193b, #5d0f25); }
+        .pin-messages { position: absolute; top: 48px; left: 1rem; width: 100%; display: flex; flex-direction: column; gap: 0.2rem; }
+        .pin-messages span { font-size: 0.65rem; font-weight: 500; white-space: nowrap; }
+
+        @media (min-width: 761px) {
+            .navbar { padding: 1.1rem 5%; }
+            .nav-links { gap: 1.75rem; }
+            .nav-icons { gap: 1rem; }
+            .nav-pincode-container { flex: 0 0 280px; width: 280px; }
+        }
+
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 5%; border-bottom: 1px solid var(--border); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { text-align: center; cursor: pointer; }
+        .logo-main { font-family: 'Inter', sans-serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 0.22em; color: #5A343D; transform: scaleX(1.04); transform-origin: center; }
+        .nav-links { display: flex; gap: 2.5rem; }
+        .nav-links a { text-decoration: none; color: var(--dark); font-size: 0.85rem; position: relative; transition: var(--transition); cursor: pointer; }
+        .nav-links a::after { content: ''; position: absolute; width: 0; height: 1px; bottom: -4px; left: 0; background-color: var(--dark); transition: var(--transition); }
+        .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+        .nav-icons { display: flex; gap: 1.5rem; font-size: 1.2rem; align-items: center; cursor: pointer; }
+        
+        .search-wrapper { position: relative; display: flex; align-items: center; }
+        .search-input { position: absolute; right: 30px; width: 0; padding: 0; border: none; border-bottom: 1px solid var(--dark); background: #FFF; outline: none; font-family: 'Inter', sans-serif; transition: all 0.3s ease; opacity: 0; z-index: 10; }
+        .search-input.active { width: 220px; padding: 0.4rem; opacity: 1; }
+        .cart-icon, .wishlist-icon { position: relative; }
+        .cart-count { position: absolute; top: -6px; right: -10px; background: var(--dark); color: #FFF; font-size: 0.6rem; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+        #nav-wishlist { display: none; color: #e74c3c; }
+
+        .user-menu-wrapper { position: relative; }
+        .user-dropdown { display: none; position: absolute; right: 0; top: 30px; background: #FFF; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.05); min-width: 160px; flex-direction: column; text-align: left; z-index: 101; }
+        .user-dropdown.show { display: flex; }
+        .user-dropdown a { padding: 0.8rem 1.2rem; color: var(--dark); font-size: 0.85rem; text-decoration: none; border-bottom: 1px solid var(--border); transition: background 0.3s; }
+        .user-dropdown a:hover { background: var(--light-bg); }
+
+        .auth-section { display: flex; justify-content: center; align-items: center; padding: 6rem 5%; background: var(--light-bg); min-height: 70vh;}
+        .auth-card { background: #FFF; padding: 3rem; border: 1px solid var(--border); width: 100%; max-width: 450px; text-align: center;}
+        .auth-card h2 { font-size: 2.5rem; margin-bottom: 2rem; }
+        .form-group { text-align: left; margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--border); font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.3s;}
+        .auth-card .btn-solid { width: 100%; display: block; text-align: center; margin-top: 1rem; border: none;}
+        .auth-links { margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); }
+        .auth-links a { color: var(--dark); text-decoration: underline; cursor: pointer; }
+        .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+        .auth-tab { flex: 1; padding: 0.8rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; font: inherit; }
+        .auth-tab.active { border-bottom-color: var(--dark); color: var(--dark); }
+        .auth-message { min-height: 1.2rem; margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); }
+        .auth-message.error { color: #b42318; }
+        .auth-message.success { color: #18794e; }
+        .phone-input { display: flex; gap: 0.5rem; }
+        .phone-input select { width: 82px; }
+        .phone-input input { flex: 1; }
+        .otp-step { display: none; }
+        .otp-step.show { display: block; }
+
+        .hero { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: stretch; min-height: 430px; background: var(--light-bg); }
+        .hero-left { display: flex; flex-direction: column; justify-content: center; padding: 4rem 8%; }
+        .hero-carousel { position: relative; min-height: 430px; overflow: hidden; background: #e9e5dc; }
+        .hero-slide { position: absolute; inset: 0; opacity: 0; background-size: cover; background-position: center; transform: scale(1.04); transition: opacity 0.8s ease, transform 6s ease; }
+        .hero-slide.active { opacity: 1; transform: scale(1); }
+        .hero-carousel::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(26,26,26,0.08), transparent 45%), linear-gradient(0deg, rgba(26,26,26,0.25), transparent 35%); pointer-events: none; }
+        .hero-dots { position: absolute; z-index: 2; left: 2rem; bottom: 1.75rem; display: flex; gap: 0.5rem; }
+        .hero-dot { width: 28px; height: 3px; border: 0; padding: 0; background: rgba(255,255,255,0.55); cursor: pointer; transition: var(--transition); }
+        .hero-dot.active { background: #FFF; width: 46px; }
+        .hero-slide-label { position: absolute; z-index: 2; right: 2rem; bottom: 1.7rem; color: #FFF; font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; }
+        .hero-subtitle { font-size: 0.75rem; letter-spacing: 3px; margin-bottom: 1.5rem; color: var(--accent); }
+        .hero h1 { font-size: clamp(2.5rem, 4vw, 4.5rem); line-height: 1.05; margin-bottom: 1.25rem; color: var(--dark); }
+        .hero p { font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.6; font-weight: 300;}
+        .hero-buttons { display: flex; gap: 1.5rem; }
+        .btn-solid, .btn-outline { padding: 1rem 2.5rem; text-decoration: none; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; transition: var(--transition); cursor: pointer; display: inline-block; }
+        .btn-solid { background: var(--dark); color: #FFF; border: 1px solid var(--dark); }
+        .btn-solid:hover { background: #333; }
+        .btn-outline { background: transparent; color: var(--dark); border: 1px solid var(--dark); }
+        .btn-outline:hover { background: var(--dark); color: #FFF; }
+
+        .trust-badges { display: flex; justify-content: space-around; padding: 4rem 5%; flex-wrap: wrap; gap: 2rem; background: var(--light-bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .badge { display: flex; align-items: center; gap: 1.2rem; font-size: 0.85rem; color: var(--dark); line-height: 1.5; font-weight: 500;}
+        .badge span { color: var(--text-muted); font-weight: 300; }
+
+        .product-card { cursor: pointer; display: flex; flex-direction: column; }
+        .product-card:hover .product-image { background-size: 105%; }
+        .product-image { height: 380px; margin-bottom: 1.5rem; position: relative; display: flex; align-items: flex-end; padding: 1.5rem; background-size: 100%; background-repeat: no-repeat; transition: background-size 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .heart-icon { position: absolute; top: 1.5rem; right: 1.5rem; background: rgba(255,255,255,0.9); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: var(--transition); color: var(--text-muted); }
+        .heart-icon:hover { background: var(--dark); color: #FFF; }
+        .heart-icon.active { color: #e74c3c; }
+        .tag { font-size: 0.65rem; padding: 6px 12px; letter-spacing: 1.5px; text-transform: uppercase; background: #FFF; font-weight: 500;}
+        .tag-dark { background: var(--dark); color: #FFF; }
+        .product-card h3 { font-size: 1.2rem; margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; font-weight: 400; }
+        .product-card p { font-size: 1.1rem; font-weight: 400; color: var(--text-muted); margin-bottom: 1rem; }
+        .add-to-cart-btn { margin-top: auto; padding: 0.75rem; border: 1px solid var(--dark); background: transparent; color: var(--dark); cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-size: 0.75rem; transition: all 0.3s; }
+        .add-to-cart-btn:hover { background: var(--dark); color: #FFF; }
+
+        .bestsellers { padding: 8rem 5%; }
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4rem; }
+        .sub-label { font-size: 0.75rem; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; display: block; margin-bottom: 1rem; }
+        .section-header h2 { font-size: 3.5rem; margin-bottom: 0.5rem; }
+        .section-header p { color: var(--text-muted); font-weight: 300; font-size: 1.1rem; }
+        .view-all { color: var(--dark); text-decoration: none; font-weight: 400; font-size: 0.9rem; border-bottom: 1px solid var(--dark); padding-bottom: 4px; letter-spacing: 1px; transition: var(--transition); cursor: pointer; }
+        .product-carousel { display: flex; gap: 2rem; overflow-x: auto; padding-bottom: 2rem; scrollbar-width: none; }
+        .product-carousel .product-card { min-width: 300px; flex: 1; }
+
+        .shop-header { text-align: center; padding: 6rem 5% 3rem; background: var(--light-bg); }
+        .shop-header h1 { font-size: 3.5rem; margin-bottom: 1rem; }
+        .shop-header p { color: var(--text-muted); font-weight: 300; font-size: 1.1rem; }
+        .shop-controls { display: flex; justify-content: space-between; padding: 2rem 5%; border-bottom: 1px solid var(--border); }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 3rem; padding: 4rem 5%; }
+
+        .cart-container { max-width: 900px; margin: 2rem auto 6rem; padding: 0 5%; min-height: 40vh; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 0; border-bottom: 1px solid var(--border); }
+        .cart-item-info { display: flex; align-items: center; gap: 1.5rem; }
+        .cart-img { width: 90px; height: 90px; background-size: cover; background-position: center; border-radius: 4px; }
+        .cart-summary { text-align: right; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid var(--dark); }
+        .cart-summary h3 { font-size: 1.8rem; margin-bottom: 1.5rem; font-family: 'Inter', sans-serif; font-weight: 400; }
+
+        .site-footer { background: var(--dark); color: #FFF; text-align: center; padding: 4rem 5% 2rem; }
+        .site-footer .logo-main { color: #FFF; margin-bottom: 2rem;}
+        .footer-links { margin-bottom: 2rem; }
+        .footer-links a { color: #CCC; text-decoration: none; margin: 0 1rem; font-size: 0.85rem; cursor: pointer; transition: 0.3s;}
+        .footer-links a:hover { color: #FFF; }
+        .copyright { color: #888; font-size: 0.75rem; }
+        
+        @media (max-width: 760px) {
+            .hero { grid-template-columns: 1fr; }
+            .hero-left { min-height: 360px; padding: 3.5rem 7%; }
+            .navbar { padding: 1rem 5%; flex-wrap: wrap; row-gap: 0.75rem; }
+            .logo { flex: 1 1 auto; text-align: left; order: 1; }
+            .logo-main { font-size: 1.65rem; letter-spacing: 0.16em; }
+            .nav-icons { flex: 0 0 auto; display: flex; justify-content: flex-end; gap: 0.8rem; font-size: 1.05rem; order: 2; }
+            .nav-pincode-container { flex: 0 0 100%; width: 100%; max-width: 100%; margin: 0; order: 3; }
+            .nav-pincode-container .pincode-controls { height: 40px; }
+            .nav-pincode-container input { width: auto; font-size: 0.8rem; }
+            .nav-pincode-container button { height: 40px; padding: 0 1.2rem; font-size: 0.75rem; }
+            .nav-pincode-container #pin-msg { display: none; }
+            .nav-pincode-container #pin-location { font-size: 0.52rem; }
+            .nav-links { flex: 0 0 100%; display: flex; overflow-x: auto; gap: 1.5rem; padding: 0.8rem 0 0.2rem; border-top: 1px solid var(--border); order: 4; -webkit-overflow-scrolling: touch; } 
+            .nav-links::-webkit-scrollbar { display: none; }
+            .top-bar { padding: 0 0.75rem; font-size: 0.58rem; }
+            .top-bar-center { min-width: 0; }
+            .top-bar-right { flex: 0 0 88px; padding-left: 0.6rem; font-size: 0.56rem; }
+            .hero h1 { font-size: 2.7rem; }
+            .hero p { font-size: 0.92rem; }
+            .hero-buttons { flex-wrap: wrap; gap: 0.75rem; }
+            .hero-buttons .btn-solid, .hero-buttons .btn-outline { padding: 0.85rem 1.25rem; }
+            .section-header { align-items: flex-start; flex-direction: column; gap: 1.5rem; margin-bottom: 2.5rem; }
+            .section-header h2, .shop-header h1 { font-size: 2.5rem; }
+            .section-header p, .shop-header p { font-size: 0.95rem; }
+            .bestsellers { padding: 5rem 5%; }
+            .shop-header { padding: 4rem 5% 2rem; }
+            .shop-controls { flex-wrap: wrap; gap: 1rem; padding: 1.25rem 5%; }
+            .shop-controls select { max-width: 100%; }
+            .shop-grid { grid-template-columns: 1fr; gap: 2.5rem; padding: 3rem 5%; }
+            .product-image { height: min(110vw, 380px); }
+            .cart-item { align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+            .cart-item-info { min-width: 0; }
+            .cart-summary { text-align: left; }
+            .auth-card { padding: 2rem 1.25rem; }
+        }
+
+        @media (max-width: 420px) {
+            .top-bar-right { flex-basis: 78px; font-size: 0.5rem; }
+            .logo-main { font-size: 1.4rem; }
+            .nav-icons { gap: 0.55rem; }
+            .nav-pincode-container .pincode-controls { min-height: 34px; }
+            .nav-pincode-container input { width: auto; }
+            .product-image { height: 88vw; }
         }
     </style>
-    <script>
-        tailwind.config = { theme: { extend: { colors: { primary: '#4f46e5', sidebar: '#0f172a' } } } }
-    </script>
 </head>
-<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden">
+<body>
 
-    <!-- AUTHENTICATION WRAPPER -->
     <div id="auth-wrapper" class="h-full w-full items-center justify-center bg-slate-900 absolute inset-0 z-50 overflow-y-auto py-10 px-4">
-        
-        <!-- LOGIN / INITIAL SETUP SCREEN -->
         <div id="login-container" class="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl w-full max-w-md relative my-auto">
-            
             <button onclick="toggleDbSetup()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-indigo-600 font-bold flex items-center gap-1">
                 ⚙️ DB Setup
             </button>
-
             <div class="text-center mb-8">
                 <span id="login-title" class="block text-2xl sm:text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
                 <p id="login-subtitle" class="text-slate-500 text-sm mt-2">Enterprise Resource Planning OS</p>
             </div>
-
-            <!-- Standard Login Form -->
             <form id="login-form" onsubmit="handleLogin(event)">
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-slate-700 mb-1">User ID</label>
@@ -87,15 +248,11 @@
                         <option value="Agent">Agent</option>
                     </select>
                 </div>
-                
                 <div class="flex justify-between items-center mb-6 px-1">
                     <a href="#" onclick="alert('Please contact your System Administrator to reset or change your password.')" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password?</a>
                 </div>
-
                 <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">Secure Login</button>
             </form>
-
-            <!-- Initial Master Admin Setup Form (Hidden by default) -->
             <form id="initial-setup-form" onsubmit="handleInitialSetup(event)" class="hidden">
                 <div class="mb-4 bg-rose-50 border border-rose-200 p-4 rounded-lg">
                     <p class="text-xs font-bold text-rose-700">No users found in database.</p>
@@ -119,8 +276,6 @@
                 </div>
                 <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200">Create Master Admin</button>
             </form>
-
-            <!-- Hidden DB Setup Form -->
             <form id="db-setup-form" onsubmit="saveDbSetup(event)" class="hidden mt-6 pt-6 border-t border-slate-200">
                 <p class="text-xs font-bold text-rose-600 mb-3 uppercase">Supabase Connection</p>
                 <input type="text" id="setup-supa-url" placeholder="Supabase URL" class="w-full border border-slate-300 rounded-lg p-2 mb-2 text-xs" required>
@@ -170,6 +325,9 @@
                     </button>
                     <button onclick="navigate('employees')" id="nav-employees" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="employees">
                         <span class="text-lg">👥</span> <span class="nav-text truncate">Manage Users</span>
+                    </button>
+                    <button onclick="navigate('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="settings">
+                        <span class="text-lg">⚙️</span> <span class="nav-text truncate">Settings & Workflows</span>
                     </button>
                     
                     <div class="pt-4 mt-4 border-t border-slate-800">
@@ -259,6 +417,93 @@
                                 <p class="text-sm font-medium text-slate-900 leading-relaxed" id="profile-address">-</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- SETTINGS & WORKFLOWS -->
+                <div id="settings" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Business Settings & Workflows</h1>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        
+                        <!-- 1. Business Type -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">1. Business Profile</h2>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Business Name</label>
+                                    <input type="text" id="setting-biz-name" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" onchange="saveSystemConfig()">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Primary Currency</label>
+                                    <select id="setting-currency" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50" disabled>
+                                        <option value="INR">INR (₹)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Product Fields -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center border-b pb-2 mb-4">
+                                <h2 class="text-lg font-bold text-slate-800">2. Active Product Fields</h2>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4">Enable or disable specific fields in your inventory and invoice views.</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3">
+                                    <input type="checkbox" id="setting-f-size" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500" onchange="saveSystemConfig()">
+                                    <span class="text-sm font-bold text-slate-700">Product Size</span>
+                                </label>
+                                <label class="flex items-center gap-3">
+                                    <input type="checkbox" id="setting-f-weight" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500" onchange="saveSystemConfig()">
+                                    <span class="text-sm font-bold text-slate-700">Product Weight</span>
+                                </label>
+                                <label class="flex items-center gap-3 opacity-60">
+                                    <input type="checkbox" checked disabled class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                    <span class="text-sm font-bold text-slate-700">Influencer Tagging <span class="text-[10px] bg-slate-200 px-1 rounded ml-1">Core Module</span></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 3. Categories -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center border-b pb-2 mb-4">
+                                <h2 class="text-lg font-bold text-slate-800">3. Dynamic Categories</h2>
+                                <span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase tracking-wider">Synced to DB</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4 leading-relaxed">Manage your product categories and auto-generated SKUs. These sync automatically across all inventory and shop filters.</p>
+                            
+                            <form onsubmit="addDynamicCategory(event)" class="flex gap-2 mb-4">
+                                <input type="text" id="new-cat-name" placeholder="Name (e.g. Ring)" class="w-full border border-slate-300 rounded-lg p-2 text-sm" required>
+                                <input type="text" id="new-cat-prefix" placeholder="Prefix (RNG)" class="w-24 border border-slate-300 rounded-lg p-2 text-sm uppercase" required>
+                                <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors">Add</button>
+                            </form>
+
+                            <div id="settings-category-list" class="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+
+                        <!-- 4. Workflows -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">4. Sales Workflows</h2>
+                            <div class="flex flex-col gap-4 overflow-x-auto pb-4">
+                                <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg flex-1">
+                                    <div class="font-bold text-slate-700 mb-1 flex items-center gap-2">🛒 Order Placed</div>
+                                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">Initial state triggered when an invoice is generated via the ERP system.</p>
+                                </div>
+                                <div class="text-slate-400 flex justify-center">⬇</div>
+                                <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg flex-1">
+                                    <div class="font-bold text-indigo-700 mb-1 flex items-center gap-2">📦 Processing</div>
+                                    <p class="text-xs text-indigo-600/80 mt-2 leading-relaxed">Inventory count is instantly deducted. Operations team begins packing process.</p>
+                                </div>
+                                <div class="text-slate-400 flex justify-center">⬇</div>
+                                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg flex-1">
+                                    <div class="font-bold text-emerald-700 mb-1 flex items-center gap-2">✅ Fulfilled</div>
+                                    <p class="text-xs text-emerald-600/80 mt-2 leading-relaxed">Order successfully completed. Revenue logged in sales analytics dashboard.</p>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -385,12 +630,11 @@
                     </div>
                 </div>
 
-                <!-- INFLUENCER TAB (UPDATED LAYOUT) -->
+                <!-- INFLUENCER TAB -->
                 <div id="influencers" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Influencer Marketing Analytics</h1>
                     
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        
                         <!-- Left Side: Search & Preview -->
                         <div class="lg:col-span-4 flex flex-col gap-6">
                             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -404,7 +648,6 @@
                                 </div>
                             </div>
 
-                            <!-- Influencer Post Card -->
                             <div id="influencer-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden w-full relative">
                                  <div class="h-24 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 relative"></div>
                                  <div class="px-6 pb-6 relative">
@@ -445,7 +688,6 @@
                                 <div class="text-slate-400 text-sm italic col-span-full text-center py-8">No influencers selected yet. Fetch and add influencers to build your campaign.</div>
                             </div>
                         </div>
-
                     </div>
                 </div>
 
@@ -499,21 +741,9 @@
                             </div>
                             <div>
                                 <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Category</label>
-                                <select id="filter-cat" class="w-full border border-slate-200 bg-white rounded-xl p-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" onchange="renderFullInventory()">
-                                <option value="">All Categories</option>
-                                <option value="Chain">Chain</option>
-                                <option value="Ring">Ring</option>
-                                <option value="Earring">Earring</option>
-                                <option value="Pendant">Pendant</option>
-                                <option value="Bracelet">Bracelet</option>
-                                <option value="Necklace">Necklace</option>
-                                <option value="Toe Rings">Toe Rings</option>
-                                <option value="Anklet">Anklet</option>
-                                <option value="Rakhi">Rakhi</option>
-                                <option value="Nose Pin">Nose Pin</option>
-                                <option value="Bali">Bali</option>
-                                <option value="Set">Set</option>
-                                <option value="Other">Other</option>
+                                <select id="filter-cat" class="filter-cat-select w-full border border-slate-200 bg-white rounded-xl p-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" onchange="renderFullInventory()">
+                                    <!-- Populated Dynamically via Settings/DB -->
+                                    <option value="">All Categories</option>
                                 </select>
                             </div>
                         </div>
@@ -540,149 +770,6 @@
                             </thead>
                                 <tbody id="full-inventory-body" class="text-sm divide-y divide-slate-100">
                                     <tr><td colspan="5" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MANAGE USERS (ADMIN ONLY) -->
-                <div id="employees" class="page">
-                    <h1 class="text-2xl font-bold text-slate-900 mb-6">User Management</h1>
-                    <div class="bg-white p-5 md:p-8 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
-                        <div class="mb-6 border-b border-slate-200 pb-4">
-                            <h2 class="text-lg font-bold text-slate-800">Register New Employee</h2>
-                            <p class="text-sm text-slate-500">Only administrators can add new staff members to the system.</p>
-                        </div>
-                        
-                        <form id="register-form" onsubmit="handleRegister(event)">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">First Name *</label>
-                                    <input type="text" id="reg-fname" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Last Name</label>
-                                    <input type="text" id="reg-lname" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Phone Number *</label>
-                                    <input type="text" id="reg-phone" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Email ID</label>
-                                    <input type="email" id="reg-email" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
-                                </div>
-                                <div class="col-span-1 sm:col-span-2">
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Full Address</label>
-                                    <input type="text" id="reg-address" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">City</label>
-                                    <input type="text" id="reg-city" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">State</label>
-                                    <input type="text" id="reg-state" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">PIN Code</label>
-                                    <input type="text" id="reg-pin" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Assign Role *</label>
-                                    <select id="reg-role" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
-                                        <option value="Admin">Admin</option>
-                                        <option value="Manager">Manager</option>
-                                        <option value="Agent">Agent</option>
-                                    </select>
-                                </div>
-                                <div class="col-span-1 sm:col-span-2 relative">
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Secure Password *</label>
-                                    <input type="password" id="reg-password" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" required>
-                                    <button type="button" onclick="togglePasswordVis('reg-password')" class="absolute right-3 top-[28px] text-slate-400 hover:text-slate-600">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                    </button>
-                                    <p class="text-[10px] text-slate-500 mt-1 font-medium">Must be 8+ chars with 1 uppercase, 1 lowercase, 1 number, and 1 special character.</p>
-                                </div>
-                            </div>
-            
-                            <button type="submit" class="w-full mt-4 bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">Add New Employee</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- PURCHASE DETAILS -->
-                <div id="purchase-details" class="page">
-                    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
-                        <div>
-                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600 mb-2">Purchase workspace</p>
-                            <h1 class="text-3xl font-black tracking-tight text-slate-900">Purchase Details</h1>
-                            <p class="text-sm text-slate-500 mt-1">Review shop, date, address, pricing, and saved purchase attachments.</p>
-                        </div>
-                        <button onclick="navigate('stock-in')" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700">
-                            📥 Add Stock In
-                        </button>
-                    </div>
-
-                    <div class="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 md:p-6 shadow-sm mb-6">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                            <div>
-                                <h2 class="font-extrabold text-indigo-950">Import purchase document</h2>
-                                <p class="text-xs text-indigo-700 mt-1">Upload PDF, Excel, CSV, or text. Extracted values appear below for correction before saving.</p>
-                            </div>
-                            <label class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 cursor-pointer">
-                                📄 Choose file
-                                <input type="file" id="purchase-import-file" accept=".pdf,.xlsx,.xls,.csv,.txt,application/pdf,image/*,text/csv,text/plain" class="hidden" onchange="handlePurchaseImport(event)">
-                            </label>
-                        </div>
-                        <p id="purchase-import-status" class="text-xs font-semibold text-indigo-800">No document imported.</p>
-                    </div>
-
-                    <div class="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm mb-6">
-                        <h2 class="font-extrabold text-slate-800 mb-1">Purchase information</h2>
-                        <p class="text-xs text-slate-500 mb-4">Use these fields for manual entry or to complete values missing from the invoice.</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <label class="text-xs font-bold text-slate-700">Shop name<input type="text" id="purchase-shop" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm font-normal"></label>
-                            <label class="text-xs font-bold text-slate-700">Purchase date<input type="date" id="purchase-date" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm font-normal"></label>
-                            <label class="text-xs font-bold text-slate-700 sm:col-span-2">Shop address<input type="text" id="purchase-address" class="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm font-normal"></label>
-                        </div>
-                    </div>
-
-                    <div id="purchase-import-editor" class="hidden rounded-2xl border border-amber-200 bg-amber-50/50 p-5 md:p-6 shadow-sm mb-6">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                            <div>
-                                <h2 class="font-extrabold text-slate-900">Check extracted details</h2>
-                                <p class="text-xs text-slate-600 mt-1">Correct extracted values and fill any blank inventory fields before saving.</p>
-                            </div>
-                            <button type="button" onclick="saveImportedPurchaseDetails()" class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700">✅ Save corrected details</button>
-                        </div>
-                        <div id="purchase-import-rows" class="space-y-4"></div>
-                    </div>
-
-                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                        <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-5 py-4">
-                            <div>
-                                <h2 class="font-extrabold text-slate-800">Saved purchase records</h2>
-                                <p class="text-xs text-slate-500 mt-1">Each row is linked to its inventory product.</p>
-                            </div>
-                            <span id="purchase-record-count" class="text-xs font-bold uppercase tracking-wider text-slate-400">0 records</span>
-                        </div>
-                        <div class="overflow-x-auto h-[600px]">
-                            <table class="w-full text-left border-collapse min-w-[1050px]">
-                                <thead class="sticky top-0 bg-slate-900 shadow-lg z-10">
-                                    <tr class="border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-300">
-                                        <th class="px-5 py-4 font-extrabold">Product</th>
-                                        <th class="px-5 py-4 font-extrabold">Shop</th>
-                                        <th class="px-5 py-4 font-extrabold">Purchase date</th>
-                                        <th class="px-5 py-4 font-extrabold">Address</th>
-                                        <th class="px-5 py-4 font-extrabold text-right">Quantity</th>
-                                        <th class="px-5 py-4 font-extrabold text-right">Purchase price</th>
-                                        <th class="px-5 py-4 font-extrabold">Files</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="purchase-details-body" class="text-sm divide-y divide-slate-100">
-                                    <tr><td colspan="7" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -735,28 +822,20 @@
                                     </select>
                                 </div>
 
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
-                                    <select id="in-cat" onchange="generateProductCode()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                <div class="col-span-1 sm:col-span-2 relative">
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Category (Synced to Settings/DB)</label>
+                                    <select id="in-cat" onchange="handleCategoryChange()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                        <!-- Populated Dynamically via Settings/DB -->
                                         <option value="">-- Select --</option>
-                                        <option value="Chain">Chain</option>
-                                        <option value="Ring">Ring</option>
-                                        <option value="Earring">Earring</option>
-                                        <option value="Pendant">Pendant</option>
-                                        <option value="Bracelet">Bracelet</option>
-                                        <option value="Necklace">Necklace</option>
-                                        <option value="Toe Rings">Toe Rings</option>
-                                        <option value="Anklet">Anklet</option>
-                                        <option value="Rakhi">Rakhi</option>
-                                        <option value="Nose Pin">Nose Pin</option>
-                                        <option value="Bali">Bali</option>
-                                        <option value="Set">Set</option>
-                                        <option value="Other">Other</option>
                                     </select>
+                                    <div id="new-cat-container" class="hidden mt-2">
+                                        <input type="text" id="in-new-cat" class="w-full border border-slate-300 border-l-4 border-l-indigo-500 rounded-lg p-2.5 text-sm" placeholder="Enter new category name..." oninput="generateProductCode()">
+                                    </div>
                                 </div>
                                 <div><label class="block text-xs font-bold text-slate-700 mb-1">Product Code</label><input type="text" id="in-code" readonly class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2.5 text-sm font-bold text-primary"></div>
+                                
                                 <div><label class="block text-xs font-bold text-slate-700 mb-1">Size</label><input type="text" id="in-size" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
-                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Weight</label><input type="number" step="0.001" id="in-weight" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                                <div class="sm:col-span-2"><label class="block text-xs font-bold text-slate-700 mb-1">Weight</label><input type="number" step="0.001" id="in-weight" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
                                 
                                 <div class="col-span-1 sm:col-span-3"><label class="block text-xs font-bold text-slate-700 mb-1">Product Description</label><textarea id="in-desc" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></textarea></div>
                                 <div class="col-span-1 sm:col-span-3"><label class="block text-xs font-bold text-slate-700 mb-1">Product Photos / Videos</label><input type="file" id="in-product-media" accept="image/*,video/*" multiple class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white"><p class="text-[11px] text-slate-500 mt-1">Optional product images or videos. Files are grouped in a folder named after the product.</p></div>
@@ -880,7 +959,7 @@
                                     <div>
                                         <span class="block text-3xl sm:text-4xl font-semibold tracking-[0.3em] text-[#5A2C31] mb-2">WISHRITE</span>
                                         <p class="text-sm text-slate-500 mt-1">Premium Jewelry & Accessories</p>
-                                        <p class="text-sm text-slate-500 font-medium text-indigo-600">www.wishrite.com</p>
+                                        <p class="text-sm text-slate-500 font-medium text-indigo-600" id="inv-biz-name-display">www.wishrite.com</p>
                                         <p class="text-sm text-slate-500">support@wishrite.com | GSTIN: 19AWBPX1234</p>
                                     </div>
                                     <div class="text-right">
@@ -968,23 +1047,37 @@
         let salesData = [];
         let importedPurchaseRows = [];
         let importedPurchaseFile = null;
-        const categoryPrefixes = {
-            'Chain': 'CHN',
-            'Thread': 'MISC',
-            'Other': 'MISC',
-            'Toe Ring': 'TRN',
-            'Toe Rings': 'TRN',
-            'Bracelet': 'BRL',
-            'Pendant': 'PDT',
-            'Ring': 'RNG',
-            'Necklace': 'NKC',
-            'Earring': 'ERN',
-            'Anklet': 'ANC',
-            'Rakhi': 'RKH',
-            'Nose Pin': 'NSP',
-            'Bali': 'BLI',
-            'Set': 'SET'
+
+        // Dynamic System Configuration 
+        let systemConfig = JSON.parse(localStorage.getItem('wishrite_config')) || {
+            businessType: 'Jewelry',
+            fields: { size: true, weight: true },
+            categories: [
+                { name: 'Chain', prefix: 'CHN' },
+                { name: 'Ring', prefix: 'RNG' },
+                { name: 'Earring', prefix: 'ERN' },
+                { name: 'Pendant', prefix: 'PDT' },
+                { name: 'Bracelet', prefix: 'BRL' },
+                { name: 'Necklace', prefix: 'NKC' },
+                { name: 'Anklet', prefix: 'ANC' }
+            ]
         };
+
+        function saveSystemConfig() {
+            systemConfig.businessType = document.getElementById('setting-biz-name').value;
+            systemConfig.fields.size = document.getElementById('setting-f-size').checked;
+            systemConfig.fields.weight = document.getElementById('setting-f-weight').checked;
+            localStorage.setItem('wishrite_config', JSON.stringify(systemConfig));
+            populateCategoryDropdowns();
+            alert("Settings successfully saved and synced across ERP!");
+        }
+
+        function initSettingsUI() {
+            document.getElementById('setting-biz-name').value = systemConfig.businessType;
+            document.getElementById('setting-f-size').checked = systemConfig.fields.size;
+            document.getElementById('setting-f-weight').checked = systemConfig.fields.weight;
+            document.getElementById('inv-biz-name-display').innerText = `www.${systemConfig.businessType.toLowerCase().replace(/\s+/g, '')}.com`;
+        }
 
         // Influencer Collab Variables
         let activeInfluencer = null;
@@ -993,16 +1086,10 @@
         // --- AUTH & VIEW SWITCHING ---
         function togglePasswordVis(inputId) {
             const el = document.getElementById(inputId);
-            if (el.type === "password") {
-                el.type = "text";
-            } else {
-                el.type = "password";
-            }
+            el.type = el.type === "password" ? "text" : "password";
         }
 
-        // --- SIDEBAR LOGIC (Desktop/Mobile) ---
         let isDesktopCollapsed = false;
-        
         function toggleDesktopSidebar() {
             isDesktopCollapsed = !isDesktopCollapsed;
             const sidebar = document.getElementById('main-sidebar');
@@ -1027,16 +1114,11 @@
 
         function toggleMobileSidebar() {
             const sidebar = document.getElementById('main-sidebar');
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-            }
+            sidebar.classList.toggle('-translate-x-full');
         }
 
         function toggleDbSetup() {
-            const form = document.getElementById('db-setup-form');
-            form.classList.toggle('hidden');
+            document.getElementById('db-setup-form').classList.toggle('hidden');
         }
 
         function saveDbSetup(e) {
@@ -1066,7 +1148,6 @@
             };
             
             const { data, error } = await supaClient.from('employees').insert([payload]).select();
-            
             if(error) return alert("Setup Error: " + error.message);
             
             alert(`🎉 SYSTEM UNLOCKED!\n\nYour Master Admin ID is: ${data[0].user_id}\n\nPlease write this down. You will now be redirected to login.`);
@@ -1080,7 +1161,6 @@
         async function handleRegister(e) {
             e.preventDefault();
             if(!supaClient) return alert("Database connection error.");
-            
             if(currentUser?.role !== 'Admin') return alert("Unauthorized. Only System Administrators can register new employees.");
             
             const pwd = document.getElementById('reg-password').value;
@@ -1103,7 +1183,6 @@
             };
             
             const { data, error } = await supaClient.from('employees').insert([payload]).select();
-            
             if(error) return alert("Error registering employee: " + error.message);
             
             alert(`🎉 Employee registered successfully!\n\nTheir System User ID is: ${data[0].user_id}\n\nPlease share this with the employee so they can log in.`);
@@ -1112,7 +1191,6 @@
 
         function setupUserUI() {
             const fullName = `${currentUser.first_name} ${currentUser.last_name || ''}`.trim();
-            
             document.getElementById('dash-welcome').innerText = `Welcome back, ${currentUser.first_name}! 👋`;
             document.getElementById('top-ui-name').innerText = fullName;
             document.getElementById('top-ui-role').innerText = currentUser.role;
@@ -1120,7 +1198,6 @@
             const avatarTxt = currentUser.first_name.substring(0,2).toUpperCase();
             document.getElementById('top-ui-avatar').innerText = avatarTxt;
             
-            // Profile Page Populating
             document.getElementById('profile-avatar').innerText = avatarTxt;
             document.getElementById('profile-name').innerText = fullName;
             document.getElementById('profile-role').innerText = currentUser.role;
@@ -1143,19 +1220,12 @@
             const role = document.getElementById('login-role').value;
             
             const { data, error } = await supaClient.from('employees').select('*').eq('user_id', userId).single();
-            
-            if(error || !data) {
-                return alert("Login Failed: User ID not found in database.");
-            }
-            if(data.password !== passwordInput) {
-                return alert("Login Failed: Incorrect password.");
-            }
-            if(data.role !== role) {
-                return alert(`Login Failed: User found, but role does not match. Expected ${data.role}, got ${role}.`);
-            }
+            if(error || !data) return alert("Login Failed: User ID not found in database.");
+            if(data.password !== passwordInput) return alert("Login Failed: Incorrect password.");
+            if(data.role !== role) return alert(`Login Failed: User found, but role does not match. Expected ${data.role}, got ${role}.`);
 
             currentUser = data;
-            localStorage.setItem('wishrite_user', JSON.stringify(data)); // Persistent login
+            localStorage.setItem('wishrite_user', JSON.stringify(data)); 
             
             document.getElementById('auth-wrapper').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
@@ -1166,32 +1236,32 @@
 
         function logout() {
             currentUser = null;
-            localStorage.removeItem('wishrite_user'); // Clear persistent login
+            localStorage.removeItem('wishrite_user'); 
             document.getElementById('app-container').style.display = 'none';
             document.getElementById('auth-wrapper').style.display = 'flex';
             document.getElementById('login-form').reset();
         }
 
         function applyRolePermissions(role) {
-            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
+            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers', 'nav-settings'];
             buttons.forEach(id => {
                 if(document.getElementById(id)) document.getElementById(id).style.display = 'flex';
             });
 
             if (role === 'Manager') {
                 document.getElementById('nav-employees').style.display = 'none';
-            } 
-            else if (role === 'Agent') {
+                document.getElementById('nav-settings').style.display = 'none';
+            } else if (role === 'Agent') {
                 document.getElementById('nav-stock-in').style.display = 'none';
                 document.getElementById('nav-purchase-details').style.display = 'none';
                 document.getElementById('nav-stock-out').style.display = 'none';
                 document.getElementById('nav-invoice').style.display = 'none';
                 document.getElementById('nav-employees').style.display = 'none';
                 document.getElementById('nav-sales-dash').style.display = 'none';
+                document.getElementById('nav-settings').style.display = 'none';
             }
         }
 
-        // --- CORE NAVIGATION & DB ---
         function navigate(targetId) {
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('bg-primary', 'text-white');
@@ -1214,6 +1284,7 @@
             if (targetId === 'inventory') renderFullInventory();
             if (targetId === 'purchase-details') renderPurchaseDetails();
             if (targetId === 'sales-dashboard') renderSalesDashboard();
+            if (targetId === 'settings') initSettingsUI();
             if (supaClient) { fetchInventory(); fetchSales(); }
         }
 
@@ -1245,13 +1316,13 @@
                     document.getElementById('login-title').innerText = "SYSTEM SETUP";
                     document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
                 } else {
-                    // Check local storage for persistent login
                     const storedUser = localStorage.getItem('wishrite_user');
                     if (storedUser) {
                         currentUser = JSON.parse(storedUser);
                         document.getElementById('auth-wrapper').style.display = 'none';
                         document.getElementById('app-container').style.display = 'flex';
                         setupUserUI();
+                        initSettingsUI();
                         navigate('dashboard');
                     } else {
                         document.getElementById('login-form').style.display = 'block';
@@ -1261,16 +1332,8 @@
                     }
                 }
 
-                // Connect Realtime listeners
-                supaClient.channel('inventory-sync-channel')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
-                        fetchInventory(); 
-                    }).subscribe();
-                    
-                supaClient.channel('sales-sync-channel')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, payload => {
-                        fetchSales(); 
-                    }).subscribe();
+                supaClient.channel('inventory-sync-channel').on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => { fetchInventory(); }).subscribe();
+                supaClient.channel('sales-sync-channel').on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, payload => { fetchSales(); }).subscribe();
 
             } catch (err) {
                 console.error("Database connection failed:", err.message);
@@ -1313,6 +1376,7 @@
             const { data, error } = await supaClient.from('inventory').select('*').order('created_at', { ascending: false });
             if(!error) {
                 inventoryData = data || [];
+                populateCategoryDropdowns();
                 renderDashboard();
                 if(document.getElementById('inventory').classList.contains('active')) renderFullInventory();
                 if(document.getElementById('purchase-details').classList.contains('active')) renderPurchaseDetails();
@@ -1323,7 +1387,94 @@
             }
         }
 
-        // --- SEARCH LOGIC ---
+        // --- CATEGORY DYNAMIC SYNC LOGIC ---
+        function populateCategoryDropdowns() {
+            // Extract unique categories from DB to blend with manual ones
+            const dbCats = [...new Set(inventoryData.map(item => item.category).filter(Boolean))];
+            
+            // Merge DB categories and locally set config categories
+            let mergedCats = [...systemConfig.categories];
+            dbCats.forEach(cat => {
+                if(!mergedCats.find(c => c.name.toLowerCase() === cat.toLowerCase())) {
+                    mergedCats.push({ name: cat, prefix: cat.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() });
+                }
+            });
+            
+            // Sort merged alphabetically
+            mergedCats.sort((a,b) => a.name.localeCompare(b.name));
+            
+            // Update Configuration State
+            systemConfig.categories = mergedCats;
+            localStorage.setItem('wishrite_config', JSON.stringify(systemConfig));
+
+            const filterOptions = '<option value="">All Categories</option>' + mergedCats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            
+            document.querySelectorAll('.filter-cat-select, #filter-cat').forEach(el => {
+                const val = el.value;
+                el.innerHTML = filterOptions;
+                el.value = val;
+            });
+
+            const inCat = document.getElementById('in-cat');
+            if(inCat) {
+                const currentInCat = inCat.value;
+                inCat.innerHTML = '<option value="">-- Select --</option>' + 
+                    mergedCats.map(c => `<option value="${c.name}">${c.name}</option>`).join('') + 
+                    '<option value="NEW_CATEGORY_OPTION" class="font-bold text-indigo-600">+ Add New Category...</option>';
+                inCat.value = currentInCat;
+            }
+
+            const settingsCatList = document.getElementById('settings-category-list');
+            if(settingsCatList) {
+                settingsCatList.innerHTML = mergedCats.map((c, idx) => `
+                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="font-bold text-slate-700">${c.name}</span>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-slate-400 bg-white px-2 py-1 rounded border border-slate-200 font-mono">${c.prefix}</span>
+                            <button onclick="removeDynamicCategory(${idx})" class="text-rose-500 hover:text-rose-700 font-bold px-1" title="Remove">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function addDynamicCategory(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-cat-name').value.trim();
+            const prefix = document.getElementById('new-cat-prefix').value.trim().toUpperCase();
+            
+            if(systemConfig.categories.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+                return alert("Category already exists.");
+            }
+            
+            systemConfig.categories.push({ name, prefix });
+            saveSystemConfig();
+            document.getElementById('new-cat-name').value = '';
+            document.getElementById('new-cat-prefix').value = '';
+        }
+
+        function removeDynamicCategory(idx) {
+            if(confirm("Remove this category from the dropdowns? (Products in DB will retain their existing category)")) {
+                systemConfig.categories.splice(idx, 1);
+                saveSystemConfig();
+            }
+        }
+
+        function handleCategoryChange() {
+            const catSelect = document.getElementById('in-cat');
+            const newCatContainer = document.getElementById('new-cat-container');
+            const newCatInput = document.getElementById('in-new-cat');
+            
+            if (catSelect.value === 'NEW_CATEGORY_OPTION') {
+                newCatContainer.classList.remove('hidden');
+                newCatInput.required = true;
+            } else {
+                newCatContainer.classList.add('hidden');
+                newCatInput.required = false;
+            }
+            generateProductCode();
+        }
+
         function handleGlobalSearch() {
             if(document.getElementById('dashboard').classList.contains('active')) {
                 renderDashboard();
@@ -1377,6 +1528,7 @@
             const maxPrice = parseFloat(document.getElementById('filter-max').value) || Infinity;
             const category = document.getElementById('filter-cat').value.toLowerCase();
             const globalSearch = document.getElementById('global-search').value.toLowerCase();
+            
             const filteredData = inventoryData.filter(item => {
                 const price = item.selling_price;
                 const matchesStock = stockStatus === 'all' || (stockStatus === 'in' && item.stock_quantity > 0) || (stockStatus === 'out' && item.stock_quantity === 0);
@@ -1469,20 +1621,12 @@
             };
         }
 
-        // --- NEW PDF INVOICE TABULAR PARSING LOGIC ---
         function inferCategory(name) {
-            name = name.toLowerCase();
-            if(name.includes('chain')) return 'Chain';
-            if(name.includes('earring') || name.includes('baali') || name.includes('bali') || name.includes('cuff')) return 'Earring';
-            if(name.includes('nose pin')) return 'Nose Pin';
-            if(name.includes('necklace') || name.includes('mangalsutra')) return 'Necklace';
-            if(name.includes('ring') || name.includes('band') || name.includes('bangle')) return 'Ring';
-            if(name.includes('pendant')) return 'Pendant';
-            if(name.includes('bracelet') || name.includes('kada') || name.includes('pola') || name.includes('ruli')) return 'Bracelet';
-            if(name.includes('payal') || name.includes('anklet')) return 'Anklet';
-            if(name.includes('toe')) return 'Toe Rings';
-            if(name.includes('rakhi')) return 'Rakhi';
-            if(name.includes('set')) return 'Set';
+            const lowerName = name.toLowerCase();
+            // Lookup dynamically from settings
+            for (let cat of systemConfig.categories) {
+                if (lowerName.includes(cat.name.toLowerCase())) return cat.name;
+            }
             return 'Other';
         }
 
@@ -1494,7 +1638,6 @@
             for (let i = 0; i < lines.length; i++) {
                 let line = lines[i].replace(/\s+\|\s+/g, '|').replace(/\|+/g, '|');
                 
-                // Matches standard piped row format e.g. "1 Indian Baby Payal | 2 | 27.000 | 1.100 | 24.800 | 242.00 | 6002 | 25 | 620"
                 if (line.includes('|')) {
                     let parts = line.split('|').map(p => p.trim());
                     if (parts.length >= 5) {
@@ -1516,7 +1659,6 @@
                     }
                 }
                 
-                // Catches fragmented lines broken up by PDF extractors
                 const itemMatch = line.match(/^(\d+)\s+([A-Za-z\s\+]+(?:Chain|Pendant|Payal|Ring|Earring|Baali|Bali|Kada|Bracelet|Necklace|Anklet|Pola|Cuff)[A-Za-z\s\+]*)/i);
                 if (itemMatch) {
                     pendingProducts.push({
@@ -1643,10 +1785,7 @@
                     text = await extractPdfText(file);
                     if(text.replace(/\s/g, '').length < 20) text = await extractScannedPdfText(file);
                     
-                    // Attempt specialised table invoice parsing first
                     rows = parseTabularInvoiceData(text);
-                    
-                    // Fallback to standard labelled field mapping if tabular fails
                     if(!rows.length || !Object.values(rows[0] || {}).some(Boolean)) {
                         rows = parseLabelledText(text);
                     }
@@ -1724,8 +1863,10 @@
             document.getElementById('filter-stock').value = 'all';
             document.getElementById('filter-min').value = '';
             document.getElementById('filter-max').value = '';
-            document.getElementById('filter-cat').value = '';
+            
+            document.querySelectorAll('.filter-cat-select, #filter-cat').forEach(el => el.value = '');
             document.getElementById('global-search').value = '';
+            
             renderFullInventory();
         }
 
@@ -1796,7 +1937,13 @@
         }
 
         async function getNextProductCode(category) {
-            const prefix = categoryPrefixes[category] || 'PRD';
+            let prefix = categoryPrefixes[category];
+            if (!prefix) {
+                const configuredCat = systemConfig.categories.find(c => c.name === category);
+                prefix = configuredCat ? configuredCat.prefix : category.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+                if (prefix.length < 3) prefix = 'PRD';
+            }
+
             if(!supaClient) throw new Error('Database is not connected.');
 
             const { data, error } = await supaClient
@@ -1817,11 +1964,16 @@
             const isUpdatingOld = document.getElementById('update-old-stock').checked;
             if(isUpdatingOld) return; 
             
-            const cat = document.getElementById('in-cat').value;
+            let cat = document.getElementById('in-cat').value;
+            if (cat === 'NEW_CATEGORY_OPTION') {
+                cat = document.getElementById('in-new-cat').value.trim();
+            }
+
             if(!cat) {
                 document.getElementById('in-code').value = '';
                 return;
             }
+            
             const codeInput = document.getElementById('in-code');
             codeInput.value = 'Checking database...';
             codeInput.disabled = true;
@@ -1871,10 +2023,22 @@
 
             if(isUpdatingOld && !document.getElementById('in-name-select').value) return alert("Please select an existing product.");
             if(!productName) return alert("Please enter or select a product name.");
+            
+            let finalCategory = document.getElementById('in-cat').value;
+            if (finalCategory === 'NEW_CATEGORY_OPTION') {
+                finalCategory = document.getElementById('in-new-cat').value.trim();
+                
+                // Add new category to local dynamic state immediately
+                if(finalCategory && !systemConfig.categories.find(c => c.name.toLowerCase() === finalCategory.toLowerCase())) {
+                    systemConfig.categories.push({ name: finalCategory, prefix: finalCategory.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() });
+                    saveSystemConfig();
+                }
+            }
+            if(!finalCategory) return alert("Please provide a valid category.");
 
             if(!isUpdatingOld) {
                 try {
-                    const databaseCode = await getNextProductCode(document.getElementById('in-cat').value);
+                    const databaseCode = await getNextProductCode(finalCategory);
                     if(code !== databaseCode) {
                         document.getElementById('in-code').value = databaseCode;
                         return alert(`The latest database code is ${databaseCode}. The form has been updated; please click Save again.`);
@@ -1886,13 +2050,13 @@
             
             const payload = {
                 product_code: code,
-                category: document.getElementById('in-cat').value,
+                category: finalCategory,
                 size: document.getElementById('in-size').value || null,
                 purchase_price: parseFloat(document.getElementById('in-buy').value),
                 selling_price: parseFloat(document.getElementById('in-sale').value),
-                shop_name: document.getElementById('stock-purchase-shop').value.trim(),
+                shop_name: document.getElementById('stock-purchase-shop').value.trim() || null,
                 shop_address: document.getElementById('stock-purchase-address').value.trim() || null,
-                purchase_date: document.getElementById('stock-purchase-date').value,
+                purchase_date: document.getElementById('stock-purchase-date').value || null,
                 product_description: document.getElementById('in-desc').value || null,
                 weight: isNaN(weightVal) ? null : weightVal,
                 product_name: productName
@@ -1933,6 +2097,7 @@
             alert("Inventory successfully saved to Supabase!");
             document.getElementById('update-old-stock').checked = false;
             toggleStockInMode();
+            document.getElementById('new-cat-container').classList.add('hidden');
         }
 
         function checkStockAvailability() {
@@ -2157,7 +2322,7 @@
                 totalVal += (item.stock_quantity * item.purchase_price);
                 expectedSale += (item.stock_quantity * item.selling_price);
 
-                const sizeBadge = item.size ? `<span class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded ml-2">Size: ${item.size}</span>` : '';
+                const sizeBadge = item.size && systemConfig.fields.size ? `<span class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded ml-2">Size: ${item.size}</span>` : '';
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                         <td class="p-4 font-medium text-primary">${item.product_code}</td>
@@ -2174,7 +2339,6 @@
             if(document.getElementById('dash-sale-val')) document.getElementById('dash-sale-val').innerText = '₹' + expectedSale.toLocaleString('en-IN');
         }
 
-        // --- MOCK INFLUENCER API LOGIC ---
         function fetchInfluencer() {
             const handle = document.getElementById('insta-id').value.trim().replace('@', '');
             if(!handle) return alert("Please enter an Instagram ID.");
@@ -2207,9 +2371,7 @@
         function addToCollab() {
             if(!activeInfluencer) return;
             
-            // Check if already exists in roster
             if(!collabRoster.find(i => i.handle === activeInfluencer.handle)) {
-                // Add with a placeholder for a tagged product
                 collabRoster.push({...activeInfluencer, taggedProduct: null});
             }
             
