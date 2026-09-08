@@ -156,6 +156,9 @@
                     <button onclick="navigate('inventory')" id="nav-inventory" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="inventory">
                         <span class="text-lg">📦</span> <span class="nav-text truncate">Full Inventory</span>
                     </button>
+                    <button onclick="navigate('business-setup')" id="nav-business-setup" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="business-setup">
+                        <span class="text-lg">⚙️</span> <span class="nav-text truncate">Business Setup</span>
+                    </button>
                     <button onclick="navigate('stock-in')" id="nav-stock-in" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="stock-in">
                         <span class="text-lg">📥</span> <span class="nav-text truncate">Stock In (Receive)</span>
                     </button>
@@ -501,19 +504,6 @@
                                 <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Category</label>
                                 <select id="filter-cat" class="w-full border border-slate-200 bg-white rounded-xl p-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" onchange="renderFullInventory()">
                                 <option value="">All Categories</option>
-                                <option value="Chain">Chain</option>
-                                <option value="Ring">Ring</option>
-                                <option value="Earring">Earring</option>
-                                <option value="Pendant">Pendant</option>
-                                <option value="Bracelet">Bracelet</option>
-                                <option value="Necklace">Necklace</option>
-                                <option value="Toe Rings">Toe Rings</option>
-                                <option value="Anklet">Anklet</option>
-                                <option value="Rakhi">Rakhi</option>
-                                <option value="Nose Pin">Nose Pin</option>
-                                <option value="Bali">Bali</option>
-                                <option value="Set">Set</option>
-                                <option value="Other">Other</option>
                                 </select>
                             </div>
                         </div>
@@ -544,6 +534,38 @@
                             </table>
                         </div>
                     </div>
+                </div>
+
+                <!-- BUSINESS SETUP -->
+                <div id="business-setup" class="page">
+                    <div class="mb-6">
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600 mb-2">System model</p>
+                        <h1 class="text-3xl font-black tracking-tight text-slate-900">Business Setup</h1>
+                        <p class="text-sm text-slate-500 mt-1">Define Business Type → Product Fields → Categories → Workflows.</p>
+                    </div>
+                    <form id="business-config-form" onsubmit="saveBusinessConfiguration(event)" class="space-y-6 max-w-5xl">
+                        <section class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 shadow-sm">
+                            <h2 class="font-extrabold text-slate-800 mb-1">Business Type</h2>
+                            <p class="text-xs text-slate-500 mb-4">This label describes the operating model used by the workspace.</p>
+                            <input id="business-type" class="w-full max-w-xl border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="e.g. Jewelry Retail and Wholesale" required>
+                        </section>
+                        <section class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 shadow-sm">
+                            <h2 class="font-extrabold text-slate-800 mb-1">Product Fields</h2>
+                            <p class="text-xs text-slate-500 mb-4">Choose which product attributes appear in Stock In.</p>
+                            <div id="business-fields" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                        </section>
+                        <section class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 shadow-sm">
+                            <h2 class="font-extrabold text-slate-800 mb-1">Categories</h2>
+                            <p class="text-xs text-slate-500 mb-4">One category per line using the format <span class="font-mono">Category | PREFIX</span>. Existing database categories are preserved.</p>
+                            <textarea id="business-categories" rows="8" class="w-full border border-slate-300 rounded-lg p-3 text-sm font-mono" placeholder="Chain | CHN"></textarea>
+                        </section>
+                        <section class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 shadow-sm">
+                            <h2 class="font-extrabold text-slate-800 mb-1">Workflows</h2>
+                            <p class="text-xs text-slate-500 mb-4">Enable the workflows used by this business.</p>
+                            <div id="business-workflows" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                        </section>
+                        <button type="submit" class="w-full sm:w-auto bg-primary text-white px-5 py-3 rounded-lg text-sm font-bold hover:bg-indigo-700">Save Business Configuration</button>
+                    </form>
                 </div>
 
                 <!-- MANAGE USERS (ADMIN ONLY) -->
@@ -737,36 +759,21 @@
 
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
-                                    <select id="in-cat" onchange="generateProductCode()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
-                                        <option value="">-- Select --</option>
-                                        <option value="Chain">Chain</option>
-                                        <option value="Ring">Ring</option>
-                                        <option value="Earring">Earring</option>
-                                        <option value="Pendant">Pendant</option>
-                                        <option value="Bracelet">Bracelet</option>
-                                        <option value="Necklace">Necklace</option>
-                                        <option value="Toe Rings">Toe Rings</option>
-                                        <option value="Anklet">Anklet</option>
-                                        <option value="Rakhi">Rakhi</option>
-                                        <option value="Nose Pin">Nose Pin</option>
-                                        <option value="Bali">Bali</option>
-                                        <option value="Set">Set</option>
-                                        <option value="Other">Other</option>
-                                    </select>
+                                    <select id="in-cat" onchange="generateProductCode()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></select>
                                 </div>
                                 <div><label class="block text-xs font-bold text-slate-700 mb-1">Product Code</label><input type="text" id="in-code" readonly class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2.5 text-sm font-bold text-primary"></div>
-                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Size</label><input type="text" id="in-size" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
-                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Weight</label><input type="number" step="0.001" id="in-weight" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                                <div id="stock-field-size"><label class="block text-xs font-bold text-slate-700 mb-1">Size</label><input type="text" id="in-size" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                                <div id="stock-field-weight"><label class="block text-xs font-bold text-slate-700 mb-1">Weight</label><input type="number" step="0.001" id="in-weight" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
                                 
-                                <div class="col-span-1 sm:col-span-3"><label class="block text-xs font-bold text-slate-700 mb-1">Product Description</label><textarea id="in-desc" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></textarea></div>
+                                <div id="stock-field-description" class="col-span-1 sm:col-span-3"><label class="block text-xs font-bold text-slate-700 mb-1">Product Description</label><textarea id="in-desc" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></textarea></div>
                                 <div class="col-span-1 sm:col-span-3"><label class="block text-xs font-bold text-slate-700 mb-1">Product Photos / Videos</label><input type="file" id="in-product-media" accept="image/*,video/*" multiple class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white"><p class="text-[11px] text-slate-500 mt-1">Optional product images or videos. Files are grouped in a folder named after the product.</p></div>
                             </div>
                             
                             <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Pricing & Quantity</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
-                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Purchase Price (₹)</label><input type="number" id="in-buy" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
-                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Selling Price (₹)</label><input type="number" id="in-sale" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
-                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Stock Quantity</label><input type="number" id="in-qty" min="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold" required></div>
+                                <div id="stock-field-purchase_price"><label class="block text-xs font-bold text-slate-700 mb-1">Purchase Price (₹)</label><input type="number" id="in-buy" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div id="stock-field-selling_price"><label class="block text-xs font-bold text-slate-700 mb-1">Selling Price (₹)</label><input type="number" id="in-sale" min="0" step="0.01" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></div>
+                                <div id="stock-field-stock_quantity"><label class="block text-xs font-bold text-slate-700 mb-1">Stock Quantity</label><input type="number" id="in-qty" min="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold" required></div>
                             </div>
                             <button type="submit" class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors">📥 Save & Sync to Supabase</button>
                         </form>
@@ -968,23 +975,21 @@
         let salesData = [];
         let importedPurchaseRows = [];
         let importedPurchaseFile = null;
-        const categoryPrefixes = {
-            'Chain': 'CHN',
-            'Thread': 'MISC',
-            'Other': 'MISC',
-            'Toe Ring': 'TRN',
-            'Toe Rings': 'TRN',
-            'Bracelet': 'BRL',
-            'Pendant': 'PDT',
-            'Ring': 'RNG',
-            'Necklace': 'NKC',
-            'Earring': 'ERN',
-            'Anklet': 'ANC',
-            'Rakhi': 'RKH',
-            'Nose Pin': 'NSP',
-            'Bali': 'BLI',
-            'Set': 'SET'
+        const defaultBusinessConfig = {
+            business_type: 'Jewelry Retail and Wholesale',
+            product_fields: { product_name: true, product_code: true, category: true, size: true, weight: true, description: true, purchase_price: true, selling_price: true, stock_quantity: true },
+            categories: [
+                { name: 'Chain', prefix: 'CHN' }, { name: 'Ring', prefix: 'RNG' }, { name: 'Earring', prefix: 'ERN' },
+                { name: 'Pendant', prefix: 'PDT' }, { name: 'Bracelet', prefix: 'BRL' }, { name: 'Necklace', prefix: 'NKC' },
+                { name: 'Toe Rings', prefix: 'TRN' }, { name: 'Anklet', prefix: 'ANC' }, { name: 'Rakhi', prefix: 'RKH' },
+                { name: 'Nose Pin', prefix: 'NSP' }, { name: 'Bali', prefix: 'BLI' }, { name: 'Set', prefix: 'SET' }, { name: 'Other', prefix: 'MISC' }
+            ],
+            workflows: { inventory: true, purchases: true, stock_adjustments: true, sales: true, invoices: true, revenue: true, influencers: true }
         };
+        let businessConfig = JSON.parse(JSON.stringify(defaultBusinessConfig));
+        let categoryPrefixes = Object.fromEntries(businessConfig.categories.map(category => [category.name, category.prefix]));
+        const workflowLabels = { inventory: 'Inventory Management', purchases: 'Purchases', stock_adjustments: 'Stock Adjustments', sales: 'Sales Dashboard', invoices: 'Invoices', revenue: 'Revenue', influencers: 'Influencers' };
+        const productFieldLabels = { product_name: 'Product Name', product_code: 'Product Code', category: 'Category', size: 'Size', weight: 'Weight', description: 'Description', purchase_price: 'Purchase Price', selling_price: 'Selling Price', stock_quantity: 'Stock Quantity' };
 
         // Influencer Collab Variables
         let activeInfluencer = null;
@@ -1132,6 +1137,8 @@
             document.getElementById('profile-address').innerText = addressParts.length > 0 ? addressParts.join(', ') : '-';
             
             applyRolePermissions(currentUser.role);
+            applyWorkflowVisibility();
+            applyProductFieldVisibility();
         }
 
         async function handleLogin(e) {
@@ -1173,15 +1180,17 @@
         }
 
         function applyRolePermissions(role) {
-            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
+            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-business-setup', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
             buttons.forEach(id => {
                 if(document.getElementById(id)) document.getElementById(id).style.display = 'flex';
             });
 
             if (role === 'Manager') {
                 document.getElementById('nav-employees').style.display = 'none';
+                document.getElementById('nav-business-setup').style.display = 'none';
             } 
             else if (role === 'Agent') {
+                document.getElementById('nav-business-setup').style.display = 'none';
                 document.getElementById('nav-stock-in').style.display = 'none';
                 document.getElementById('nav-purchase-details').style.display = 'none';
                 document.getElementById('nav-stock-out').style.display = 'none';
@@ -1212,6 +1221,7 @@
             }
 
             if (targetId === 'inventory') renderFullInventory();
+            if (targetId === 'business-setup') renderBusinessConfiguration();
             if (targetId === 'purchase-details') renderPurchaseDetails();
             if (targetId === 'sales-dashboard') renderSalesDashboard();
             if (supaClient) { fetchInventory(); fetchSales(); }
@@ -1234,6 +1244,7 @@
 
         async function checkInitialSetup() {
             try {
+                await loadBusinessConfiguration();
                 const { count, error } = await supaClient.from('employees').select('*', { count: 'exact', head: true });
                 if(error) throw error;
                 
@@ -1297,6 +1308,112 @@
             }
         }
 
+        async function loadBusinessConfiguration() {
+            businessConfig = JSON.parse(JSON.stringify(defaultBusinessConfig));
+            if(!supaClient) return;
+            const { data, error } = await supaClient.from('business_config').select('*').eq('id', 1).maybeSingle();
+            if(error) {
+                console.warn('Business configuration table is unavailable; using defaults.', error.message);
+                return;
+            }
+            if(data) {
+                businessConfig = {
+                    ...businessConfig,
+                    ...data,
+                    product_fields: { ...businessConfig.product_fields, ...(data.product_fields || {}) },
+                    categories: Array.isArray(data.categories) && data.categories.length ? data.categories : businessConfig.categories,
+                    workflows: { ...businessConfig.workflows, ...(data.workflows || {}) }
+                };
+            }
+            categoryPrefixes = Object.fromEntries(businessConfig.categories.map(category => [category.name, category.prefix]));
+            renderBusinessConfiguration();
+            populateCategoryOptions();
+        }
+
+        function mergeInventoryCategories() {
+            const configured = new Map(businessConfig.categories.map(category => [category.name.toLowerCase(), category]));
+            inventoryData.forEach(item => {
+                const name = String(item.category || 'Other').trim();
+                if(!configured.has(name.toLowerCase())) {
+                    const prefix = String(item.product_code || '').split('-')[0] || name.replace(/[^a-z]/gi, '').slice(0, 3).toUpperCase() || 'MISC';
+                    configured.set(name.toLowerCase(), { name, prefix });
+                }
+            });
+            businessConfig.categories = Array.from(configured.values());
+            categoryPrefixes = Object.fromEntries(businessConfig.categories.map(category => [category.name, category.prefix]));
+        }
+
+        function populateCategoryOptions() {
+            mergeInventoryCategories();
+            const options = businessConfig.categories.map(category => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join('');
+            const filter = document.getElementById('filter-cat');
+            const currentFilter = filter.value;
+            filter.innerHTML = '<option value="">All Categories</option>' + options;
+            filter.value = currentFilter;
+            const categorySelect = document.getElementById('in-cat');
+            const currentCategory = categorySelect.value;
+            categorySelect.innerHTML = '<option value="">-- Select --</option>' + options;
+            categorySelect.value = currentCategory;
+        }
+
+        function renderBusinessConfiguration() {
+            const businessType = document.getElementById('business-type');
+            const fields = document.getElementById('business-fields');
+            const categories = document.getElementById('business-categories');
+            const workflows = document.getElementById('business-workflows');
+            if(!businessType || !fields || !categories || !workflows) return;
+            businessType.value = businessConfig.business_type;
+            fields.innerHTML = Object.entries(productFieldLabels).map(([key, label]) => `<label class="flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm font-semibold text-slate-700"><input type="checkbox" data-product-field="${key}" class="h-4 w-4 text-primary" ${businessConfig.product_fields[key] !== false ? 'checked' : ''}>${label}</label>`).join('');
+            categories.value = businessConfig.categories.map(category => `${category.name} | ${category.prefix}`).join('\n');
+            workflows.innerHTML = Object.entries(workflowLabels).map(([key, label]) => `<label class="flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm font-semibold text-slate-700"><input type="checkbox" data-workflow="${key}" class="h-4 w-4 text-primary" ${businessConfig.workflows[key] !== false ? 'checked' : ''}>${label}</label>`).join('');
+        }
+
+        async function saveBusinessConfiguration(event) {
+            event.preventDefault();
+            if(!supaClient) return alert('Please connect database in Settings first.');
+            const categories = document.getElementById('business-categories').value.split(/\r?\n/).map(line => {
+                const [name, prefix] = line.split('|').map(value => value.trim());
+                return name && prefix ? { name, prefix: prefix.toUpperCase() } : null;
+            }).filter(Boolean);
+            if(!categories.length) return alert('Add at least one category with its prefix.');
+            const config = {
+                id: 1,
+                business_type: document.getElementById('business-type').value.trim(),
+                product_fields: Object.fromEntries(Object.keys(productFieldLabels).map(key => [key, document.querySelector(`[data-product-field="${key}"]`).checked])),
+                categories,
+                workflows: Object.fromEntries(Object.keys(workflowLabels).map(key => [key, document.querySelector(`[data-workflow="${key}"]`).checked]))
+            };
+            const { error } = await supaClient.from('business_config').upsert(config, { onConflict: 'id' });
+            if(error) return alert('Business configuration could not be saved: ' + error.message);
+            businessConfig = config;
+            categoryPrefixes = Object.fromEntries(categories.map(category => [category.name, category.prefix]));
+            populateCategoryOptions();
+            applyWorkflowVisibility();
+            applyProductFieldVisibility();
+            alert('Business configuration saved.');
+        }
+
+        function applyWorkflowVisibility() {
+            const workflowNavigation = { inventory: ['nav-inventory', 'nav-stock-in'], purchases: ['nav-purchase-details'], stock_adjustments: ['nav-stock-out'], sales: ['nav-sales-dash'], invoices: ['nav-invoice'], influencers: ['nav-influencers'] };
+            Object.entries(workflowNavigation).forEach(([workflow, navigationIds]) => {
+                navigationIds.forEach(navigationId => {
+                    const element = document.getElementById(navigationId);
+                    if(element) element.style.display = businessConfig.workflows[workflow] === false ? 'none' : 'flex';
+                });
+            });
+        }
+
+        function applyProductFieldVisibility() {
+            Object.keys(productFieldLabels).forEach(field => {
+                const container = document.getElementById(`stock-field-${field}`);
+                if(container) {
+                    const isEnabled = businessConfig.product_fields[field] !== false;
+                    container.classList.toggle('hidden', !isEnabled);
+                    container.querySelectorAll('input, textarea, select').forEach(input => input.required = isEnabled && ['purchase_price', 'selling_price', 'stock_quantity'].includes(field));
+                }
+            });
+        }
+
         async function fetchSales() {
             if(!supaClient) return;
             const { data, error } = await supaClient.from('sales').select('*').order('created_at', { ascending: false });
@@ -1313,6 +1430,7 @@
             const { data, error } = await supaClient.from('inventory').select('*').order('created_at', { ascending: false });
             if(!error) {
                 inventoryData = data || [];
+                populateCategoryOptions();
                 renderDashboard();
                 if(document.getElementById('inventory').classList.contains('active')) renderFullInventory();
                 if(document.getElementById('purchase-details').classList.contains('active')) renderPurchaseDetails();
