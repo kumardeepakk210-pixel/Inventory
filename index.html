@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wishrite | Inventory </title>
+    <title>Wishrite | Inventory & ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -44,93 +44,451 @@
             white-space: nowrap; 
             letter-spacing: 0.2em;
         }
-    </style>
-    <script>
-        tailwind.config = { theme: { extend: { colors: { primary: '#4f46e5', sidebar: '#0f172a' } } } }
-    </script>
-</head>
-<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden">
 
-    <!-- AUTHENTICATION WRAPPER -->
-    <div id="auth-wrapper" class="h-full w-full items-center justify-center bg-slate-900 absolute inset-0 z-50 overflow-y-auto py-10 px-4">
+        /* Top Bar & Pincode */
+        .top-bar {
+            background: var(--dark);
+            color: #FFF;
+            display: flex;
+            align-items: center;
+            min-height: 42px;
+            padding: 0 5%;
+            font-size: 0.68rem;
+            letter-spacing: 1.2px;
+            position: relative;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+        .top-bar-section { display: flex; align-items: center; min-width: 0; height: 42px; }
+        .top-bar-center { flex: 1 1 auto; min-width: 0; border-left: 1px solid rgba(255,255,255,0.16); border-right: 1px solid rgba(255,255,255,0.16); }
+        .top-bar-right { flex: 0 0 130px; justify-content: flex-end; padding-left: 1.25rem; white-space: nowrap; }
+        .top-bar-currency { cursor: pointer; }
+        .marquee { width: 100%; overflow: hidden; white-space: nowrap; }
+        .marquee-track { display: inline-flex; width: max-content; animation: marqueeScroll 28s linear infinite; }
+        .marquee-text { display: inline-block; padding-right: 4rem; color: #E8E6E1; }
+        @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         
-        <!-- LOGIN / INITIAL SETUP SCREEN -->
-        <div id="login-container" class="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl w-full max-w-md relative my-auto">
-            
-            <button onclick="toggleDbSetup()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-indigo-600 font-bold flex items-center gap-1">
-                ⚙️ DB Setup
-            </button>
+        .nav-pincode-container { position: relative; width: 280px; display: flex; flex-direction: column; align-items: stretch; margin-left: 0.5rem; }
+        .nav-pincode-container .pincode-controls { display: flex; align-items: center; width: 100%; height: 44px; background: #FFFFFF; border: 1px solid #E8E6E1; border-radius: 50px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); padding: 0; padding-left: 1.2rem; position: relative;}
+        .nav-pincode-container .pin-icon-svg { flex-shrink: 0; margin-right: 0.6rem; }
+        .nav-pincode-container input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 0.85rem; color: #333; font-family: 'Inter', sans-serif; padding-right: 10px;}
+        .nav-pincode-container input::placeholder { color: #888; }
+        .nav-pincode-container button { height: 44px; padding: 0 1.8rem; border: none; border-radius: 50px; background: linear-gradient(to right, #9a1f44, #73132e); color: #FFFFFF; font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 500; letter-spacing: 0.5px; cursor: pointer; box-shadow: -4px 0 12px rgba(154, 31, 68, 0.15); transition: transform 0.2s, background 0.3s; margin-left: auto;}
+        .nav-pincode-container button:hover { background: linear-gradient(to right, #87193b, #5d0f25); }
+        .pin-messages { position: absolute; top: 48px; left: 1rem; width: 100%; display: flex; flex-direction: column; gap: 0.2rem; }
+        .pin-messages span { font-size: 0.65rem; font-weight: 500; white-space: nowrap; }
 
-            <div class="text-center mb-8">
-                <span id="login-title" class="block text-2xl sm:text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
-                <p id="login-subtitle" class="text-slate-500 text-sm mt-2">Enterprise Resource Planning OS</p>
+        @media (min-width: 761px) {
+            .navbar { padding: 1.1rem 5%; }
+            .nav-links { gap: 1.75rem; }
+            .nav-icons { gap: 1rem; }
+            .nav-pincode-container { flex: 0 0 280px; width: 280px; }
+        }
+
+        /* Navbar & Shared Store UI */
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 5%; border-bottom: 1px solid var(--border); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { text-align: center; cursor: pointer; }
+        .logo-main { font-family: 'Inter', sans-serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 0.22em; color: #5A343D; transform: scaleX(1.04); transform-origin: center; }
+        .nav-links { display: flex; gap: 2.5rem; }
+        .nav-links a { text-decoration: none; color: var(--dark); font-size: 0.85rem; position: relative; transition: var(--transition); cursor: pointer; }
+        .nav-links a::after { content: ''; position: absolute; width: 0; height: 1px; bottom: -4px; left: 0; background-color: var(--dark); transition: var(--transition); }
+        .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+        .nav-icons { display: flex; gap: 1.5rem; font-size: 1.2rem; align-items: center; cursor: pointer; }
+        
+        .search-wrapper { position: relative; display: flex; align-items: center; }
+        .search-input { position: absolute; right: 30px; width: 0; padding: 0; border: none; border-bottom: 1px solid var(--dark); background: #FFF; outline: none; font-family: 'Inter', sans-serif; transition: all 0.3s ease; opacity: 0; z-index: 10; }
+        .search-input.active { width: 220px; padding: 0.4rem; opacity: 1; }
+        .cart-icon, .wishlist-icon { position: relative; }
+        .cart-count { position: absolute; top: -6px; right: -10px; background: var(--dark); color: #FFF; font-size: 0.6rem; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+        #nav-wishlist { display: none; color: #e74c3c; }
+
+        .user-menu-wrapper { position: relative; }
+        .user-dropdown { display: none; position: absolute; right: 0; top: 30px; background: #FFF; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.05); min-width: 160px; flex-direction: column; text-align: left; z-index: 101; }
+        .user-dropdown.show { display: flex; }
+        .user-dropdown a { padding: 0.8rem 1.2rem; color: var(--dark); font-size: 0.85rem; text-decoration: none; border-bottom: 1px solid var(--border); transition: background 0.3s; }
+        .user-dropdown a:hover { background: var(--light-bg); }
+
+        .auth-section { display: flex; justify-content: center; align-items: center; padding: 6rem 5%; background: var(--light-bg); min-height: 70vh;}
+        .auth-card { background: #FFF; padding: 3rem; border: 1px solid var(--border); width: 100%; max-width: 450px; text-align: center;}
+        .auth-card h2 { font-size: 2.5rem; margin-bottom: 2rem; }
+        .form-group { text-align: left; margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--border); font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.3s;}
+        .auth-card .btn-solid { width: 100%; display: block; text-align: center; margin-top: 1rem; border: none;}
+        .auth-links { margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); }
+        .auth-links a { color: var(--dark); text-decoration: underline; cursor: pointer; }
+        .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+        .auth-tab { flex: 1; padding: 0.8rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; font: inherit; }
+        .auth-tab.active { border-bottom-color: var(--dark); color: var(--dark); }
+        .auth-message { min-height: 1.2rem; margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); }
+        .auth-message.error { color: #b42318; }
+        .auth-message.success { color: #18794e; }
+        .phone-input { display: flex; gap: 0.5rem; }
+        .phone-input select { width: 82px; }
+        .phone-input input { flex: 1; }
+        .otp-step { display: none; }
+        .otp-step.show { display: block; }
+
+        .hero { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: stretch; min-height: 430px; background: var(--light-bg); }
+        .hero-left { display: flex; flex-direction: column; justify-content: center; padding: 4rem 8%; }
+        .hero-carousel { position: relative; min-height: 430px; overflow: hidden; background: #e9e5dc; }
+        .hero-slide { position: absolute; inset: 0; opacity: 0; background-size: cover; background-position: center; transform: scale(1.04); transition: opacity 0.8s ease, transform 6s ease; }
+        .hero-slide.active { opacity: 1; transform: scale(1); }
+        .hero-carousel::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(26,26,26,0.08), transparent 45%), linear-gradient(0deg, rgba(26,26,26,0.25), transparent 35%); pointer-events: none; }
+        .hero-dots { position: absolute; z-index: 2; left: 2rem; bottom: 1.75rem; display: flex; gap: 0.5rem; }
+        .hero-dot { width: 28px; height: 3px; border: 0; padding: 0; background: rgba(255,255,255,0.55); cursor: pointer; transition: var(--transition); }
+        .hero-dot.active { background: #FFF; width: 46px; }
+        .hero-slide-label { position: absolute; z-index: 2; right: 2rem; bottom: 1.7rem; color: #FFF; font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; }
+        .hero-subtitle { font-size: 0.75rem; letter-spacing: 3px; margin-bottom: 1.5rem; color: var(--accent); }
+        .hero h1 { font-size: clamp(2.5rem, 4vw, 4.5rem); line-height: 1.05; margin-bottom: 1.25rem; color: var(--dark); }
+        .hero p { font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.6; font-weight: 300;}
+        .hero-buttons { display: flex; gap: 1.5rem; }
+        .btn-solid, .btn-outline { padding: 1rem 2.5rem; text-decoration: none; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; transition: var(--transition); cursor: pointer; display: inline-block; }
+        .btn-solid { background: var(--dark); color: #FFF; border: 1px solid var(--dark); }
+        .btn-solid:hover { background: #333; }
+        .btn-outline { background: transparent; color: var(--dark); border: 1px solid var(--dark); }
+        .btn-outline:hover { background: var(--dark); color: #FFF; }
+
+        .trust-badges { display: flex; justify-content: space-around; padding: 4rem 5%; flex-wrap: wrap; gap: 2rem; background: var(--light-bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .badge { display: flex; align-items: center; gap: 1.2rem; font-size: 0.85rem; color: var(--dark); line-height: 1.5; font-weight: 500;}
+        .badge span { color: var(--text-muted); font-weight: 300; }
+
+        .product-card { cursor: pointer; display: flex; flex-direction: column; }
+        .product-card:hover .product-image { background-size: 105%; }
+        .product-image { height: 380px; margin-bottom: 1.5rem; position: relative; display: flex; align-items: flex-end; padding: 1.5rem; background-size: 100%; background-repeat: no-repeat; transition: background-size 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .heart-icon { position: absolute; top: 1.5rem; right: 1.5rem; background: rgba(255,255,255,0.9); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: var(--transition); color: var(--text-muted); }
+        .heart-icon:hover { background: var(--dark); color: #FFF; }
+        .heart-icon.active { color: #e74c3c; }
+        .tag { font-size: 0.65rem; padding: 6px 12px; letter-spacing: 1.5px; text-transform: uppercase; background: #FFF; font-weight: 500;}
+        .tag-dark { background: var(--dark); color: #FFF; }
+        .product-card h3 { font-size: 1.2rem; margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; font-weight: 400; }
+        .product-card p { font-size: 1.1rem; font-weight: 400; color: var(--text-muted); margin-bottom: 1rem; }
+        .add-to-cart-btn { margin-top: auto; padding: 0.75rem; border: 1px solid var(--dark); background: transparent; color: var(--dark); cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-size: 0.75rem; transition: all 0.3s; }
+        .add-to-cart-btn:hover { background: var(--dark); color: #FFF; }
+
+        .bestsellers { padding: 8rem 5%; }
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4rem; }
+        .sub-label { font-size: 0.75rem; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; display: block; margin-bottom: 1rem; }
+        .section-header h2 { font-size: 3.5rem; margin-bottom: 0.5rem; }
+        .section-header p { color: var(--text-muted); font-weight: 300; font-size: 1.1rem; }
+        .view-all { color: var(--dark); text-decoration: none; font-weight: 400; font-size: 0.9rem; border-bottom: 1px solid var(--dark); padding-bottom: 4px; letter-spacing: 1px; transition: var(--transition); cursor: pointer; }
+        .product-carousel { display: flex; gap: 2rem; overflow-x: auto; padding-bottom: 2rem; scrollbar-width: none; }
+        .product-carousel .product-card { min-width: 300px; flex: 1; }
+
+        .shop-header { text-align: center; padding: 6rem 5% 3rem; background: var(--light-bg); }
+        .shop-header h1 { font-size: 3.5rem; margin-bottom: 1rem; }
+        .shop-header p { color: var(--text-muted); font-weight: 300; font-size: 1.1rem; }
+        .shop-controls { display: flex; justify-content: space-between; padding: 2rem 5%; border-bottom: 1px solid var(--border); }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 3rem; padding: 4rem 5%; }
+
+        .cart-container { max-width: 900px; margin: 2rem auto 6rem; padding: 0 5%; min-height: 40vh; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 0; border-bottom: 1px solid var(--border); }
+        .cart-item-info { display: flex; align-items: center; gap: 1.5rem; }
+        .cart-img { width: 90px; height: 90px; background-size: cover; background-position: center; border-radius: 4px; }
+        .cart-summary { text-align: right; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid var(--dark); }
+        .cart-summary h3 { font-size: 1.8rem; margin-bottom: 1.5rem; font-family: 'Inter', sans-serif; font-weight: 400; }
+
+        .site-footer { background: var(--dark); color: #FFF; text-align: center; padding: 4rem 5% 2rem; }
+        .site-footer .logo-main { color: #FFF; margin-bottom: 2rem;}
+        .footer-links { margin-bottom: 2rem; }
+        .footer-links a { color: #CCC; text-decoration: none; margin: 0 1rem; font-size: 0.85rem; cursor: pointer; transition: 0.3s;}
+        .footer-links a:hover { color: #FFF; }
+        .copyright { color: #888; font-size: 0.75rem; }
+        
+        @media (max-width: 760px) {
+            .hero { grid-template-columns: 1fr; }
+            .hero-left { min-height: 360px; padding: 3.5rem 7%; }
+            .navbar { padding: 1rem 5%; flex-wrap: wrap; row-gap: 0.75rem; }
+            .logo { flex: 1 1 auto; text-align: left; order: 1; }
+            .logo-main { font-size: 1.65rem; letter-spacing: 0.16em; }
+            .nav-icons { flex: 0 0 auto; display: flex; justify-content: flex-end; gap: 0.8rem; font-size: 1.05rem; order: 2; }
+            .nav-pincode-container { flex: 0 0 100%; width: 100%; max-width: 100%; margin: 0; order: 3; }
+            .nav-pincode-container .pincode-controls { height: 40px; }
+            .nav-pincode-container input { width: auto; font-size: 0.8rem; }
+            .nav-pincode-container button { height: 40px; padding: 0 1.2rem; font-size: 0.75rem; }
+            .nav-pincode-container #pin-msg { display: none; }
+            .nav-pincode-container #pin-location { font-size: 0.52rem; }
+            .nav-links { flex: 0 0 100%; display: flex; overflow-x: auto; gap: 1.5rem; padding: 0.8rem 0 0.2rem; border-top: 1px solid var(--border); order: 4; -webkit-overflow-scrolling: touch; } 
+            .nav-links::-webkit-scrollbar { display: none; }
+            .top-bar { padding: 0 0.75rem; font-size: 0.58rem; }
+            .top-bar-center { min-width: 0; }
+            .top-bar-right { flex: 0 0 88px; padding-left: 0.6rem; font-size: 0.56rem; }
+            .hero h1 { font-size: 2.7rem; }
+            .hero p { font-size: 0.92rem; }
+            .hero-buttons { flex-wrap: wrap; gap: 0.75rem; }
+            .hero-buttons .btn-solid, .hero-buttons .btn-outline { padding: 0.85rem 1.25rem; }
+            .section-header { align-items: flex-start; flex-direction: column; gap: 1.5rem; margin-bottom: 2.5rem; }
+            .section-header h2, .shop-header h1 { font-size: 2.5rem; }
+            .section-header p, .shop-header p { font-size: 0.95rem; }
+            .bestsellers { padding: 5rem 5%; }
+            .shop-header { padding: 4rem 5% 2rem; }
+            .shop-controls { flex-wrap: wrap; gap: 1rem; padding: 1.25rem 5%; }
+            .shop-controls select { max-width: 100%; }
+            .shop-grid { grid-template-columns: 1fr; gap: 2.5rem; padding: 3rem 5%; }
+            .product-image { height: min(110vw, 380px); }
+            .cart-item { align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+            .cart-item-info { min-width: 0; }
+            .cart-summary { text-align: left; }
+            .auth-card { padding: 2rem 1.25rem; }
+        }
+
+        @media (max-width: 420px) {
+            .top-bar-right { flex-basis: 78px; font-size: 0.5rem; }
+            .logo-main { font-size: 1.4rem; }
+            .nav-icons { gap: 0.55rem; }
+            .nav-pincode-container .pincode-controls { min-height: 34px; }
+            .nav-pincode-container input { width: auto; }
+            .product-image { height: 88vw; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-section top-bar-center">
+            <div class="marquee" aria-label="Store announcements">
+                <div class="marquee-track">
+                    <span class="marquee-text">FREE SHIPPING ON ALL ORDERS ABOVE ₹2,999 &nbsp; • &nbsp; 100% HALLMARKED SILVER &nbsp; • &nbsp; COMPLIMENTARY GIFT PACKAGING &nbsp; • &nbsp;</span>
+                    <span class="marquee-text" aria-hidden="true">FREE SHIPPING ON ALL ORDERS ABOVE ₹2,999 &nbsp; • &nbsp; 100% HALLMARKED SILVER &nbsp; • &nbsp; COMPLIMENTARY GIFT PACKAGING &nbsp; • &nbsp;</span>
+                </div>
             </div>
-
-            <!-- Standard Login Form -->
-            <form id="login-form" onsubmit="handleLogin(event)">
-                <div class="mb-4">
-                    <label class="block text-sm font-bold text-slate-700 mb-1">User ID</label>
-                    <input type="text" id="login-user-id" placeholder="e.g. DEWR00001" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none uppercase" required>
-                </div>
-                <div class="mb-4 relative">
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Password</label>
-                    <input type="password" id="login-password" placeholder="••••••••" class="w-full border border-slate-300 rounded-lg p-3 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                    <button type="button" onclick="togglePasswordVis('login-password')" class="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                    </button>
-                </div>
-                <div class="mb-2">
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Role</label>
-                    <select id="login-role" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                        <option value="Admin">Admin</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Agent">Agent</option>
-                    </select>
-                </div>
-                
-                <div class="flex justify-between items-center mb-6 px-1">
-                    <a href="#" onclick="alert('Please contact your System Administrator to reset or change your password.')" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password?</a>
-                </div>
-
-                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">Secure Login</button>
-            </form>
-
-            <!-- Initial Master Admin Setup Form (Hidden by default) -->
-            <form id="initial-setup-form" onsubmit="handleInitialSetup(event)" class="hidden">
-                <div class="mb-4 bg-rose-50 border border-rose-200 p-4 rounded-lg">
-                    <p class="text-xs font-bold text-rose-700">No users found in database.</p>
-                    <p class="text-xs text-rose-600 mt-1">Please create the Master Admin account to unlock the system.</p>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-bold text-slate-700 mb-1">First Name</label>
-                    <input type="text" id="setup-fname" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Phone Number</label>
-                    <input type="text" id="setup-phone" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                </div>
-                <div class="mb-6 relative">
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Master Password</label>
-                    <input type="password" id="setup-password" class="w-full border border-slate-300 rounded-lg p-3 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                    <button type="button" onclick="togglePasswordVis('setup-password')" class="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                    </button>
-                    <p class="text-[10px] text-slate-500 mt-1 font-medium">Must be 8+ chars with 1 uppercase, 1 lowercase, 1 number, and 1 special character.</p>
-                </div>
-                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200">Create Master Admin</button>
-            </form>
-
-            <!-- Hidden DB Setup Form -->
-            <form id="db-setup-form" onsubmit="saveDbSetup(event)" class="hidden mt-6 pt-6 border-t border-slate-200">
-                <p class="text-xs font-bold text-rose-600 mb-3 uppercase">Supabase Connection</p>
-                <input type="text" id="setup-supa-url" placeholder="Supabase URL" class="w-full border border-slate-300 rounded-lg p-2 mb-2 text-xs" required>
-                <input type="password" id="setup-supa-key" placeholder="Supabase Anon Key" class="w-full border border-slate-300 rounded-lg p-2 mb-3 text-xs" required>
-                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2 rounded-lg text-xs hover:bg-slate-900 transition-colors">Save Keys</button>
-            </form>
+        </div>
+        <div class="top-bar-section top-bar-right">
+            <div class="top-bar-currency">INDIA (INR) ˅</div>
         </div>
     </div>
 
-    <!-- MAIN APP CONTAINER -->
+    <!-- Navigation -->
+    <header class="navbar">
+        <div class="logo" onclick="navigateTo('home')">
+            <div class="logo-main">WISHRITE</div>
+        </div>
+        <nav class="nav-links">
+            <a onclick="navigateTo('home')" id="nav-home" class="active">Home</a>
+            <a onclick="navigateTo('shop')" id="nav-shop">Shop</a>
+            <a onclick="navigateTo('about')" id="nav-about">Our Story</a>
+        </nav>
+        <div class="nav-icons">
+            <div class="search-wrapper">
+                <input type="text" id="nav-search-input" class="search-input" placeholder="Search products..." oninput="handleSearch(this.value)">
+                <span class="icon" onclick="toggleSearch(event)">🔍</span>
+            </div>
+            
+            <span class="icon wishlist-icon" id="nav-wishlist" onclick="navigateTo('wishlist')">❤️<span class="cart-count" id="wishlist-count">0</span></span>
+            
+            <div class="user-menu-wrapper">
+                <span class="icon" onclick="toggleUserDropdown(event)">👤</span>
+                <div class="user-dropdown" id="user-dropdown"></div>
+            </div>
+
+            <span class="icon cart-icon" onclick="navigateTo('cart')">🛍️<span class="cart-count" id="cart-count">0</span></span>
+            
+            <div class="pincode-container nav-pincode-container">
+                <div class="pincode-controls">
+                    <svg class="pin-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#9a1f44"/>
+                        <circle cx="12" cy="9" r="3" fill="#FFFFFF"/>
+                    </svg>
+                    <input type="text" id="pincode-input" value="" maxlength="6" placeholder="Enter PIN Code" aria-label="Enter delivery pincode">
+                    <button onclick="validatePincode()">CHECK</button>
+                </div>
+                <div class="pin-messages">
+                    <span id="pin-msg" role="status" aria-live="polite"></span>
+                    <span id="pin-location" aria-live="polite" style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- VIEWS CONTAINER -->
+    <main>
+        
+        <!-- HOME VIEW -->
+        <div id="home-view">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-left">
+                    <div class="hero-subtitle">TIMELESS | VERSATILE | YOURS</div>
+                    <h1>Modern Silver.<br>Lasting Stories.</h1>
+                    <p>Thoughtfully crafted silver jewellery for<br>everyday elegance and life's special moments.</p>
+                    <div class="hero-buttons">
+                        <a onclick="navigateTo('shop')" class="btn-solid">SHOP NOW →</a>
+                        <a onclick="navigateTo('about')" class="btn-outline">OUR STORY</a>
+                    </div>
+                </div>
+                <div class="hero-carousel" id="hero-carousel">
+                    <div class="hero-slide active" style="background-image: url('https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1200&q=85')"></div>
+                    <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=85')"></div>
+                    <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=85')"></div>
+                    <div class="hero-dots">
+                        <button class="hero-dot active"></button>
+                        <button class="hero-dot"></button>
+                        <button class="hero-dot"></button>
+                    </div>
+                    <span class="hero-slide-label">More than jewellery</span>
+                </div>
+            </section>
+
+            <!-- Trust Badges -->
+            <section class="trust-badges">
+                <div class="badge">💎 <span>925<br>Hallmarked Silver</span></div>
+                <div class="badge">🚚 <span>Free Shipping<br>Above ₹2,999</span></div>
+                <div class="badge">🎁 <span>Elegant Packaging<br>For Every Order</span></div>
+                <div class="badge">🛡️ <span>Trusted by<br>10,000+ Customers</span></div>
+            </section>
+
+            <!-- Bestsellers -->
+            <section class="bestsellers">
+                <div class="section-header">
+                    <div>
+                        <span class="sub-label">CURATED FOR YOU</span>
+                        <h2>Bestsellers</h2>
+                        <p>Loved by many, made for you.</p>
+                    </div>
+                    <a onclick="navigateTo('shop')" class="view-all">View All →</a>
+                </div>
+                
+                <div class="product-carousel" id="bestsellers-container"></div>
+            </section>
+        </div>
+
+        <!-- SHOP / SEARCH VIEW -->
+        <div id="shop-view" style="display: none;">
+            <div class="shop-header">
+                <h1 id="shop-title">All Collections</h1>
+                <p>Discover our complete range of premium 925 sterling silver.</p>
+            </div>
+            
+            <div class="shop-controls">
+                <div class="filter-group">
+                    <!-- Categories populate dynamically here -->
+                    <select id="filter-cat" onchange="renderFullInventory()"><option value="">All Categories</option></select>
+                </div>
+                <div class="sort-group">
+                    <select><option>Sort by: Featured</option><option>Price: Low to High</option></select>
+                </div>
+            </div>
+
+            <div class="shop-grid" id="shop-grid-container"></div>
+        </div>
+
+        <!-- CART VIEW -->
+        <div id="cart-view" style="display: none;">
+            <div class="shop-header">
+                <h1>Shopping Cart</h1>
+                <p>Review your selected pieces.</p>
+            </div>
+            
+            <div class="cart-container">
+                <div id="cart-items-container">
+                    <p style="text-align: center; color: var(--text-muted); margin-top: 3rem;">Your cart is currently empty.</p>
+                </div>
+                <div class="cart-summary" id="cart-summary" style="display: none;">
+                    <h3>Subtotal: <span id="cart-total">₹0</span></h3>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem;">Shipping and taxes calculated at checkout.</p>
+                    <button class="btn-solid" style="padding: 1rem 3rem; font-size: 0.9rem;">PROCEED TO CHECKOUT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- WISHLIST VIEW -->
+        <div id="wishlist-view" style="display: none;">
+            <div class="shop-header">
+                <h1>My Wishlist</h1>
+                <p>Pieces you've saved for later.</p>
+            </div>
+            <div class="shop-grid" id="wishlist-grid-container"></div>
+        </div>
+
+        <!-- ABOUT VIEW -->
+        <div id="about-view" style="display: none;">
+            <div class="about-header">
+                <h1>Our Story</h1>
+                <p>At WishRite, we believe silver is more than a metal — it's a story of self-expression, heritage, and a brighter tomorrow.</p>
+            </div>
+        </div>
+
+        <!-- LOGIN VIEW -->
+        <div id="login-view" style="display: none;" class="auth-section">
+            <div class="auth-card">
+                <h2>Login</h2>
+                <div class="auth-tabs" role="tablist" aria-label="Login method">
+                    <button type="button" class="auth-tab active" id="email-login-tab" onclick="switchLoginMethod('email')">Email</button>
+                    <button type="button" class="auth-tab" id="mobile-login-tab" onclick="switchLoginMethod('mobile')">Mobile</button>
+                </div>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group" id="email-login-field">
+                        <label for="login-email">Email Address</label>
+                        <input id="login-email" type="email" autocomplete="email" required>
+                    </div>
+                    <div class="form-group" id="mobile-login-field" style="display: none;">
+                        <label for="login-mobile">Mobile Number</label>
+                        <div class="phone-input"><select id="login-country-code" aria-label="Country code"><option value="+91">+91</option></select><input id="login-mobile" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input id="login-password" type="password" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn-solid">Sign In</button>
+                    <p id="login-message" class="auth-message" role="alert"></p>
+                </form>
+                <div class="auth-links">Don't have an account? <a onclick="navigateTo('register')">Create one</a></div>
+            </div>
+        </div>
+
+        <!-- REGISTER VIEW -->
+        <div id="register-view" style="display: none;" class="auth-section">
+            <div class="auth-card" id="register-step-1">
+                <h2>Create Account</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Please verify your mobile number to continue.</p>
+                
+                <form id="register-form" onsubmit="handleRegister(event)">
+                    <div class="registration-fields">
+                        <div class="form-group"><label for="register-name">Full Name</label><input id="register-name" type="text" autocomplete="name" required></div>
+                        <div class="form-group"><label for="register-email">Email Address</label><input id="register-email" type="email" autocomplete="email" required></div>
+                        <div class="form-group"><label for="register-mobile">Mobile Number (required)</label><div class="phone-input"><select id="register-country-code" aria-label="Country code"><option value="+91">+91</option></select><input id="register-mobile" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel" required></div></div>
+                        <div class="form-group"><label for="register-password">Password</label><input id="register-password" type="password" autocomplete="new-password" minlength="6" required></div>
+                        <button type="submit" class="btn-solid">Send OTP</button>
+                    </div>
+                    <p id="register-message" class="auth-message" role="alert"></p>
+                </form>
+                <div class="auth-links">Already have an account? <a onclick="navigateTo('login')">Login here</a></div>
+            </div>
+
+            <!-- OTP Verification Step -->
+            <div class="auth-card" id="register-step-2" style="display: none;">
+                <h2>Verify Mobile</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">
+                    Enter the 4-digit OTP sent to <br><strong id="display-phone" style="color: var(--dark);"></strong>
+                </p>
+                
+                <form onsubmit="verifyRegistrationOtp(event)">
+                    <div class="otp-container" id="otp-inputs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; justify-content: center;">
+                        <input type="text" class="otp-input" style="width: 45px; height: 45px; text-align: center; font-size: 1.2rem;" maxlength="1" required onkeyup="moveToNext(this, event)">
+                        <input type="text" class="otp-input" style="width: 45px; height: 45px; text-align: center; font-size: 1.2rem;" maxlength="1" required onkeyup="moveToNext(this, event)">
+                        <input type="text" class="otp-input" style="width: 45px; height: 45px; text-align: center; font-size: 1.2rem;" maxlength="1" required onkeyup="moveToNext(this, event)">
+                        <input type="text" class="otp-input" style="width: 45px; height: 45px; text-align: center; font-size: 1.2rem;" maxlength="1" required onkeyup="moveToNext(this, event)">
+                    </div>
+                    <button type="submit" class="btn-solid">Verify & Register</button>
+                </form>
+                <div class="auth-links">
+                    <a onclick="resetRegistration()" style="color: var(--text-muted);">← Back to Details</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE VIEW -->
+        <div id="profile-view" style="display: none;">
+            <div class="profile-header">
+                <h1>My Profile</h1>
+                <p>Welcome back! Manage your account and view recent orders.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MAIN APP CONTAINER (ERP SIDE) -->
     <div id="app-container" class="h-full w-full flex overflow-hidden">
         
         <!-- RESPONSIVE SIDEBAR -->
@@ -170,6 +528,9 @@
                     </button>
                     <button onclick="navigate('employees')" id="nav-employees" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="employees">
                         <span class="text-lg">👥</span> <span class="nav-text truncate">Manage Users</span>
+                    </button>
+                    <button onclick="navigate('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="settings">
+                        <span class="text-lg">⚙️</span> <span class="nav-text truncate">Settings & Workflows</span>
                     </button>
                     
                     <div class="pt-4 mt-4 border-t border-slate-800">
@@ -216,9 +577,6 @@
                         </div>
                         
                         <div class="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-2 hidden group-hover:block">
-                            <button onclick="navigate('profile')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center gap-2 font-medium">
-                                👤 My Profile
-                            </button>
                             <div class="border-t border-slate-100 my-1"></div>
                             <button onclick="logout()" class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-2 font-bold">
                                 🚪 Secure Logout
@@ -230,38 +588,6 @@
 
             <div class="flex-1 overflow-auto p-4 md:p-8 relative w-full">
                 
-                <!-- USER PROFILE PAGE -->
-                <div id="profile" class="page">
-                    <h1 class="text-2xl font-bold text-slate-900 mb-6">My Profile</h1>
-                    <div class="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm max-w-2xl">
-                        <div class="flex items-center gap-4 md:gap-5 mb-8 pb-8 border-b border-slate-200">
-                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-indigo-100 flex items-center justify-center text-2xl md:text-3xl font-bold text-indigo-700 shadow-sm" id="profile-avatar">XX</div>
-                            <div>
-                                <h2 class="text-xl md:text-2xl font-extrabold text-slate-900" id="profile-name">Name</h2>
-                                <p class="text-sm font-bold text-indigo-600" id="profile-role">Role</p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
-                            <div>
-                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">System User ID</p>
-                                <p class="text-sm font-medium text-slate-900 bg-slate-50 border border-slate-200 rounded p-2 inline-block" id="profile-id">-</p>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Phone Number</p>
-                                <p class="text-sm font-medium text-slate-900" id="profile-phone">-</p>
-                            </div>
-                            <div class="col-span-1 sm:col-span-2">
-                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email Address</p>
-                                <p class="text-sm font-medium text-slate-900 break-all" id="profile-email">-</p>
-                            </div>
-                            <div class="col-span-1 sm:col-span-2">
-                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Full Registered Address</p>
-                                <p class="text-sm font-medium text-slate-900 leading-relaxed" id="profile-address">-</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- INVENTORY DASHBOARD -->
                 <div id="dashboard" class="page active">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
@@ -385,13 +711,10 @@
                     </div>
                 </div>
 
-                <!-- INFLUENCER TAB (UPDATED LAYOUT) -->
+                <!-- INFLUENCER TAB -->
                 <div id="influencers" class="page">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">Influencer Marketing Analytics</h1>
-                    
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        
-                        <!-- Left Side: Search & Preview -->
                         <div class="lg:col-span-4 flex flex-col gap-6">
                             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Instagram Username / ID</label>
@@ -403,8 +726,6 @@
                                     <button onclick="fetchInfluencer()" class="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 py-2 rounded-lg text-sm font-bold hover:shadow-lg transition-all whitespace-nowrap">Fetch</button>
                                 </div>
                             </div>
-
-                            <!-- Influencer Post Card -->
                             <div id="influencer-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden w-full relative">
                                  <div class="h-24 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 relative"></div>
                                  <div class="px-6 pb-6 relative">
@@ -435,7 +756,6 @@
                             </div>
                         </div>
 
-                        <!-- Right Side: Collab Gallery -->
                         <div class="lg:col-span-8 bg-white p-6 rounded-xl border border-slate-200 shadow-sm min-h-[400px]">
                             <div class="flex justify-between items-end border-b border-slate-100 pb-3 mb-4">
                                 <h2 class="font-bold text-slate-800">Selected Influencer Collabs</h2>
@@ -499,21 +819,9 @@
                             </div>
                             <div>
                                 <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Category</label>
-                                <select id="filter-cat" class="w-full border border-slate-200 bg-white rounded-xl p-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" onchange="renderFullInventory()">
-                                <option value="">All Categories</option>
-                                <option value="Chain">Chain</option>
-                                <option value="Ring">Ring</option>
-                                <option value="Earring">Earring</option>
-                                <option value="Pendant">Pendant</option>
-                                <option value="Bracelet">Bracelet</option>
-                                <option value="Necklace">Necklace</option>
-                                <option value="Toe Rings">Toe Rings</option>
-                                <option value="Anklet">Anklet</option>
-                                <option value="Rakhi">Rakhi</option>
-                                <option value="Nose Pin">Nose Pin</option>
-                                <option value="Bali">Bali</option>
-                                <option value="Set">Set</option>
-                                <option value="Other">Other</option>
+                                <select id="filter-cat" class="filter-cat-select w-full border border-slate-200 bg-white rounded-xl p-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" onchange="renderFullInventory()">
+                                    <!-- Populated Dynamically -->
+                                    <option value="">All Categories</option>
                                 </select>
                             </div>
                         </div>
@@ -609,6 +917,57 @@
             
                             <button type="submit" class="w-full mt-4 bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">Add New Employee</button>
                         </form>
+                    </div>
+                </div>
+
+                <!-- SETTINGS & WORKFLOWS -->
+                <div id="settings" class="page">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">Business Settings & Workflows</h1>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        
+                        <!-- Business Profile -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">1. Business Profile</h2>
+                            <div class="space-y-4">
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Business Name</label><input type="text" value="Wishrite" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50" disabled></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Primary Currency</label><input type="text" value="INR (₹)" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50" disabled></div>
+                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Tax ID / GSTIN</label><input type="text" value="19AWBPX1234" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50" disabled></div>
+                            </div>
+                        </div>
+
+                        <!-- Categories -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center border-b pb-2 mb-4">
+                                <h2 class="text-lg font-bold text-slate-800">2. Product Categories</h2>
+                                <span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase tracking-wider">Synced to DB</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4 leading-relaxed">Categories are automatically populated from your active inventory. Add new categories seamlessly via the <strong>Stock In</strong> portal.</p>
+                            <div id="settings-category-list" class="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Workflows -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">3. Sales Workflows</h2>
+                            <div class="flex gap-4 overflow-x-auto pb-4">
+                                <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg min-w-[200px] flex-1">
+                                    <div class="font-bold text-slate-700 mb-1 flex items-center gap-2">🛒 Order Placed</div>
+                                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">Initial state triggered when an invoice is generated via the ERP system.</p>
+                                </div>
+                                <div class="text-slate-400 flex items-center">➔</div>
+                                <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg min-w-[200px] flex-1">
+                                    <div class="font-bold text-indigo-700 mb-1 flex items-center gap-2">📦 Processing</div>
+                                    <p class="text-xs text-indigo-600/80 mt-2 leading-relaxed">Inventory count is instantly deducted. Operations team begins packing process.</p>
+                                </div>
+                                <div class="text-slate-400 flex items-center">➔</div>
+                                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg min-w-[200px] flex-1">
+                                    <div class="font-bold text-emerald-700 mb-1 flex items-center gap-2">✅ Fulfilled</div>
+                                    <p class="text-xs text-emerald-600/80 mt-2 leading-relaxed">Order successfully completed. Revenue logged in sales analytics dashboard.</p>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -735,28 +1094,20 @@
                                     </select>
                                 </div>
 
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
-                                    <select id="in-cat" onchange="generateProductCode()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                <div class="col-span-1 sm:col-span-2 relative">
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Category (Synced to DB)</label>
+                                    <select id="in-cat" onchange="handleCategoryChange()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                        <!-- Populated Dynamically -->
                                         <option value="">-- Select --</option>
-                                        <option value="Chain">Chain</option>
-                                        <option value="Ring">Ring</option>
-                                        <option value="Earring">Earring</option>
-                                        <option value="Pendant">Pendant</option>
-                                        <option value="Bracelet">Bracelet</option>
-                                        <option value="Necklace">Necklace</option>
-                                        <option value="Toe Rings">Toe Rings</option>
-                                        <option value="Anklet">Anklet</option>
-                                        <option value="Rakhi">Rakhi</option>
-                                        <option value="Nose Pin">Nose Pin</option>
-                                        <option value="Bali">Bali</option>
-                                        <option value="Set">Set</option>
-                                        <option value="Other">Other</option>
                                     </select>
+                                    <div id="new-cat-container" class="hidden mt-2">
+                                        <input type="text" id="in-new-cat" class="w-full border border-slate-300 border-l-4 border-l-indigo-500 rounded-lg p-2.5 text-sm" placeholder="Enter new category name..." oninput="generateProductCode()">
+                                    </div>
                                 </div>
                                 <div><label class="block text-xs font-bold text-slate-700 mb-1">Product Code</label><input type="text" id="in-code" readonly class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2.5 text-sm font-bold text-primary"></div>
+                                
                                 <div><label class="block text-xs font-bold text-slate-700 mb-1">Size</label><input type="text" id="in-size" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
-                                <div><label class="block text-xs font-bold text-slate-700 mb-1">Weight</label><input type="number" step="0.001" id="in-weight" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
+                                <div class="sm:col-span-2"><label class="block text-xs font-bold text-slate-700 mb-1">Weight</label><input type="number" step="0.001" id="in-weight" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
                                 
                                 <div class="col-span-1 sm:col-span-3"><label class="block text-xs font-bold text-slate-700 mb-1">Product Description</label><textarea id="in-desc" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></textarea></div>
                                 <div class="col-span-1 sm:col-span-3"><label class="block text-xs font-bold text-slate-700 mb-1">Product Photos / Videos</label><input type="file" id="in-product-media" accept="image/*,video/*" multiple class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white"><p class="text-[11px] text-slate-500 mt-1">Optional product images or videos. Files are grouped in a folder named after the product.</p></div>
@@ -1173,13 +1524,14 @@
         }
 
         function applyRolePermissions(role) {
-            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
+            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers', 'nav-settings'];
             buttons.forEach(id => {
                 if(document.getElementById(id)) document.getElementById(id).style.display = 'flex';
             });
 
             if (role === 'Manager') {
                 document.getElementById('nav-employees').style.display = 'none';
+                document.getElementById('nav-settings').style.display = 'none';
             } 
             else if (role === 'Agent') {
                 document.getElementById('nav-stock-in').style.display = 'none';
@@ -1188,6 +1540,7 @@
                 document.getElementById('nav-invoice').style.display = 'none';
                 document.getElementById('nav-employees').style.display = 'none';
                 document.getElementById('nav-sales-dash').style.display = 'none';
+                document.getElementById('nav-settings').style.display = 'none';
             }
         }
 
@@ -1313,6 +1666,7 @@
             const { data, error } = await supaClient.from('inventory').select('*').order('created_at', { ascending: false });
             if(!error) {
                 inventoryData = data || [];
+                populateCategoryDropdowns();
                 renderDashboard();
                 if(document.getElementById('inventory').classList.contains('active')) renderFullInventory();
                 if(document.getElementById('purchase-details').classList.contains('active')) renderPurchaseDetails();
@@ -1321,6 +1675,62 @@
                 setDbStatus(false, "Sync Failed");
                 console.error("Fetch error: ", error);
             }
+        }
+
+        // --- CATEGORY DYNAMIC SYNC LOGIC ---
+        function populateCategoryDropdowns() {
+            // Extract unique categories from DB
+            const uniqueCats = [...new Set(inventoryData.map(item => item.category).filter(Boolean))].sort();
+            
+            // Fallback for empty DB scenario
+            if(uniqueCats.length === 0) {
+                uniqueCats.push('Chain', 'Ring', 'Earring', 'Pendant', 'Bracelet', 'Necklace', 'Anklet');
+            }
+
+            const filterOptions = '<option value="">All Categories</option>' + uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            // Update Filter Dropdowns
+            document.querySelectorAll('.filter-cat-select, #filter-cat').forEach(el => {
+                const val = el.value;
+                el.innerHTML = filterOptions;
+                el.value = val;
+            });
+
+            // Update Stock-in Dropdown
+            const inCat = document.getElementById('in-cat');
+            if(inCat) {
+                const currentInCat = inCat.value;
+                inCat.innerHTML = '<option value="">-- Select --</option>' + 
+                    uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('') + 
+                    '<option value="NEW_CATEGORY_OPTION" class="font-bold text-indigo-600">+ Add New Category...</option>';
+                inCat.value = currentInCat;
+            }
+
+            // Update Settings Menu List
+            const settingsCatList = document.getElementById('settings-category-list');
+            if(settingsCatList) {
+                settingsCatList.innerHTML = uniqueCats.map(c => `
+                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="font-bold text-slate-700">${c}</span>
+                        <span class="text-xs text-slate-400 bg-white px-2 py-1 rounded border border-slate-200">${categoryPrefixes[c] || c.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase()}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function handleCategoryChange() {
+            const catSelect = document.getElementById('in-cat');
+            const newCatContainer = document.getElementById('new-cat-container');
+            const newCatInput = document.getElementById('in-new-cat');
+            
+            if (catSelect.value === 'NEW_CATEGORY_OPTION') {
+                newCatContainer.classList.remove('hidden');
+                newCatInput.required = true;
+            } else {
+                newCatContainer.classList.add('hidden');
+                newCatInput.required = false;
+            }
+            generateProductCode();
         }
 
         // --- SEARCH LOGIC ---
@@ -1724,8 +2134,10 @@
             document.getElementById('filter-stock').value = 'all';
             document.getElementById('filter-min').value = '';
             document.getElementById('filter-max').value = '';
-            document.getElementById('filter-cat').value = '';
+            
+            document.querySelectorAll('.filter-cat-select, #filter-cat').forEach(el => el.value = '');
             document.getElementById('global-search').value = '';
+            
             renderFullInventory();
         }
 
@@ -1796,7 +2208,12 @@
         }
 
         async function getNextProductCode(category) {
-            const prefix = categoryPrefixes[category] || 'PRD';
+            let prefix = categoryPrefixes[category];
+            if (!prefix) {
+                prefix = category.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+                if (prefix.length < 3) prefix = 'PRD';
+            }
+
             if(!supaClient) throw new Error('Database is not connected.');
 
             const { data, error } = await supaClient
@@ -1817,11 +2234,16 @@
             const isUpdatingOld = document.getElementById('update-old-stock').checked;
             if(isUpdatingOld) return; 
             
-            const cat = document.getElementById('in-cat').value;
+            let cat = document.getElementById('in-cat').value;
+            if (cat === 'NEW_CATEGORY_OPTION') {
+                cat = document.getElementById('in-new-cat').value.trim();
+            }
+
             if(!cat) {
                 document.getElementById('in-code').value = '';
                 return;
             }
+            
             const codeInput = document.getElementById('in-code');
             codeInput.value = 'Checking database...';
             codeInput.disabled = true;
@@ -1871,10 +2293,16 @@
 
             if(isUpdatingOld && !document.getElementById('in-name-select').value) return alert("Please select an existing product.");
             if(!productName) return alert("Please enter or select a product name.");
+            
+            let finalCategory = document.getElementById('in-cat').value;
+            if (finalCategory === 'NEW_CATEGORY_OPTION') {
+                finalCategory = document.getElementById('in-new-cat').value.trim();
+            }
+            if(!finalCategory) return alert("Please provide a valid category.");
 
             if(!isUpdatingOld) {
                 try {
-                    const databaseCode = await getNextProductCode(document.getElementById('in-cat').value);
+                    const databaseCode = await getNextProductCode(finalCategory);
                     if(code !== databaseCode) {
                         document.getElementById('in-code').value = databaseCode;
                         return alert(`The latest database code is ${databaseCode}. The form has been updated; please click Save again.`);
@@ -1886,13 +2314,13 @@
             
             const payload = {
                 product_code: code,
-                category: document.getElementById('in-cat').value,
+                category: finalCategory,
                 size: document.getElementById('in-size').value || null,
                 purchase_price: parseFloat(document.getElementById('in-buy').value),
                 selling_price: parseFloat(document.getElementById('in-sale').value),
-                shop_name: document.getElementById('stock-purchase-shop').value.trim(),
+                shop_name: document.getElementById('stock-purchase-shop').value.trim() || null,
                 shop_address: document.getElementById('stock-purchase-address').value.trim() || null,
-                purchase_date: document.getElementById('stock-purchase-date').value,
+                purchase_date: document.getElementById('stock-purchase-date').value || null,
                 product_description: document.getElementById('in-desc').value || null,
                 weight: isNaN(weightVal) ? null : weightVal,
                 product_name: productName
@@ -1933,6 +2361,7 @@
             alert("Inventory successfully saved to Supabase!");
             document.getElementById('update-old-stock').checked = false;
             toggleStockInMode();
+            document.getElementById('new-cat-container').classList.add('hidden');
         }
 
         function checkStockAvailability() {
@@ -2207,9 +2636,7 @@
         function addToCollab() {
             if(!activeInfluencer) return;
             
-            // Check if already exists in roster
             if(!collabRoster.find(i => i.handle === activeInfluencer.handle)) {
-                // Add with a placeholder for a tagged product
                 collabRoster.push({...activeInfluencer, taggedProduct: null});
             }
             
