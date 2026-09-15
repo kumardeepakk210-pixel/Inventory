@@ -11,8 +11,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
-    <!-- Link to your local config.js file containing SUPABASE_URL and SUPABASE_ANON_KEY -->
-    <script src="config.js"></script>
+    <!-- Local Supabase configuration. It must be served from this same folder. -->
+    <script>
+        window.wishriteConfigLoadError = false;
+    </script>
+    <script src="config.js" onerror="window.wishriteConfigLoadError = true;"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
@@ -1304,9 +1307,18 @@
         }
 
         function initSupabase(url, key) {
-            if(!url || !key) throw new Error('Supabase URL and key are required.');
+            if(!url || !key) throw new Error('Supabase URL and publishable/anon key are required.');
+            let parsedUrl;
+            try {
+                parsedUrl = new URL(url.trim());
+            } catch {
+                throw new Error('Supabase URL is invalid.');
+            }
+            if(parsedUrl.protocol !== 'https:' || !parsedUrl.hostname.endsWith('.supabase.co')) {
+                throw new Error('Supabase URL must be a valid https://<project>.supabase.co URL.');
+            }
             if(!window.supabase || typeof window.supabase.createClient !== 'function') {
-                throw new Error('Supabase client library did not load. Check your network connection.');
+                throw new Error('Supabase client library did not load. Check your network connection or serve this app through a local web server.');
             }
             supaClient = window.supabase.createClient(url.trim(), key.trim());
             return supaClient;
@@ -1506,12 +1518,17 @@
         async function initializeApplication() {
             setDbStatus(false, "Checking DB...");
             
-            // Allow config.js or localStorage
-            const configuredUrl = (typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL) ? SUPABASE_URL : localStorage.getItem('supa_url');
-            const configuredKey = (typeof SUPABASE_ANON_KEY !== 'undefined' && SUPABASE_ANON_KEY) ? SUPABASE_ANON_KEY : localStorage.getItem('supa_key');
+            // Prefer the explicit config object, then support older config.js files and DB Setup values.
+            const config = window.WISHRITE_CONFIG || {};
+            const configuredUrl = config.supabaseUrl || window.SUPABASE_URL || localStorage.getItem('supa_url');
+            const configuredKey = config.supabaseAnonKey || window.SUPABASE_ANON_KEY || localStorage.getItem('supa_key');
             
             if(!configuredUrl || !configuredKey) {
-                setDbStatus(false, "config.js or settings missing");
+                const message = window.wishriteConfigLoadError
+                    ? 'config.js could not be loaded; verify it is beside index.html'
+                    : 'Supabase configuration is missing';
+                setDbStatus(false, message);
+                console.error(message);
                 return;
             }
             try {
