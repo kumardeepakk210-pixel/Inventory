@@ -922,6 +922,7 @@
                                             <th class="p-2 font-semibold text-right">Disc.</th>
                                             <th class="p-2 font-semibold text-right">Tax</th>
                                             <th class="p-2 font-semibold text-right">Total</th>
+                                            <th class="p-2 font-semibold text-center">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody id="invoice-items-body" class="text-sm"></tbody>
@@ -2203,7 +2204,7 @@
             let totalDiscount = 0;
             let grandTotal = 0;
 
-            invoiceItems.forEach(item => {
+            invoiceItems.forEach((item, index) => {
                 totalItems += (item.price * item.qty);
                 totalTax += item.tax;
                 totalDiscount += item.discount;
@@ -2218,12 +2219,19 @@
                         <td class="p-2 text-right text-emerald-600">-₹${item.discount.toFixed(2)}</td>
                         <td class="p-2 text-right">₹${item.tax.toFixed(2)}</td>
                         <td class="p-2 text-right font-medium">₹${item.total.toFixed(2)}</td>
+                        <td class="p-2 text-center"><button type="button" onclick="removeInvoiceItem(${index})" title="Remove item" class="text-rose-600 hover:text-rose-800 font-bold">🗑️</button></td>
                     </tr>`;
             });
             document.getElementById('inv-subtotal').innerText = '₹' + totalItems.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('inv-totaltax').innerText = '₹' + totalTax.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('inv-totaldiscount').innerText = '-₹' + totalDiscount.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('inv-grandtotal').innerText = '₹' + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        }
+
+        function removeInvoiceItem(index) {
+            if(index < 0 || index >= invoiceItems.length) return;
+            invoiceItems.splice(index, 1);
+            renderInvoiceTable();
         }
 
         async function processSaleAndDownload() {
