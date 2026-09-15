@@ -110,10 +110,6 @@
         <!-- LOGIN / INITIAL SETUP SCREEN -->
         <div id="login-container" class="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl w-full max-w-md relative my-auto">
             
-            <button onclick="toggleDbSetup()" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-indigo-600 font-bold flex items-center gap-1">
-                ⚙️ DB Setup
-            </button>
-
             <div class="text-center mb-8">
                 <span id="login-title" class="block text-2xl sm:text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
                 <p id="login-subtitle" class="text-slate-500 text-sm mt-2">Enterprise Resource Planning OS</p>
@@ -173,13 +169,6 @@
                 <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200">Create Master Admin</button>
             </form>
 
-            <!-- Hidden DB Setup Form -->
-            <form id="db-setup-form" onsubmit="saveDbSetup(event)" class="hidden mt-6 pt-6 border-t border-slate-200">
-                <p class="text-xs font-bold text-rose-600 mb-3 uppercase">Supabase Connection</p>
-                <input type="text" id="setup-supa-url" placeholder="Supabase URL" class="w-full border border-slate-300 rounded-lg p-2 mb-2 text-xs" required>
-                <input type="password" id="setup-supa-key" placeholder="Supabase Anon Key" class="w-full border border-slate-300 rounded-lg p-2 mb-3 text-xs" required>
-                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2 rounded-lg text-xs hover:bg-slate-900 transition-colors">Save Keys</button>
-            </form>
         </div>
     </div>
 
@@ -1301,11 +1290,6 @@
             }
         }
 
-        function toggleDbSetup() {
-            const form = document.getElementById('db-setup-form');
-            form.classList.toggle('hidden');
-        }
-
         function initSupabase(url, key) {
             if(!url || !key) throw new Error('Supabase URL and publishable/anon key are required.');
             let parsedUrl;
@@ -1322,23 +1306,6 @@
             }
             supaClient = window.supabase.createClient(url.trim(), key.trim());
             return supaClient;
-        }
-
-        function saveDbSetup(e) {
-            e.preventDefault();
-            const url = document.getElementById('setup-supa-url').value;
-            const key = document.getElementById('setup-supa-key').value;
-            localStorage.setItem('supa_url', url);
-            localStorage.setItem('supa_key', key);
-            try {
-                initSupabase(url, key);
-                alert("Database credentials saved! Checking system status...");
-                toggleDbSetup();
-                checkInitialSetup();
-            } catch(error) {
-                setDbStatus(false, error.message);
-                alert("Database setup failed: " + error.message);
-            }
         }
 
         async function handleInitialSetup(e) {
@@ -1430,7 +1397,7 @@
         async function handleLogin(e) {
             e.preventDefault();
             if(!supaClient) {
-                return alert("System not connected to database. Please click '⚙️ DB Setup' in the top right to enter your Supabase credentials, or add them to config.js.");
+                return alert("System not connected to database. Verify Inventory/config.js and reload the application.");
             }
 
             const userId = document.getElementById('login-user-id').value.toUpperCase();
@@ -1524,10 +1491,11 @@
         async function initializeApplication() {
             setDbStatus(false, "Checking DB...");
             
-            // Prefer the explicit config object, then support older config.js files and DB Setup values.
+            // Connection details are centrally managed in config.js; no browser-stored
+            // credentials or manual setup can override this configuration.
             const config = window.WISHRITE_CONFIG || {};
-            const configuredUrl = config.supabaseUrl || window.SUPABASE_URL || localStorage.getItem('supa_url');
-            const configuredKey = config.supabaseAnonKey || window.SUPABASE_ANON_KEY || localStorage.getItem('supa_key');
+            const configuredUrl = config.supabaseUrl;
+            const configuredKey = config.supabaseAnonKey;
             
             if(!configuredUrl || !configuredKey) {
                 const message = window.wishriteConfigLoadError
