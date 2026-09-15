@@ -878,9 +878,14 @@
                             <h1 class="text-2xl font-bold text-slate-900">Sales & Invoice Generator</h1>
                             <p class="text-sm text-slate-500 mt-1">Process a sale to automatically update inventory and log the transaction.</p>
                         </div>
-                        <button onclick="processSaleAndDownload()" class="bg-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex justify-center items-center gap-2 shadow-sm whitespace-nowrap">
-                            ✅ Complete Sale & Download PDF
-                        </button>
+                        <div class="flex flex-wrap justify-end gap-2">
+                            <button onclick="downloadInvoiceOnly()" class="border border-[#5E3435] text-[#5E3435] px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-[#FAF8F4] transition-colors flex justify-center items-center gap-2 shadow-sm whitespace-nowrap">
+                                ↓ Download Invoice
+                            </button>
+                            <button onclick="completeSale()" class="bg-[#5E3435] text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-[#482728] transition-colors flex justify-center items-center gap-2 shadow-sm whitespace-nowrap">
+                                ✓ Complete Sale
+                            </button>
+                        </div>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 h-fit">
@@ -937,10 +942,10 @@
                             <div id="invoice-document" class="p-7 sm:p-11 border border-[#E8DED2] shadow-sm mx-auto min-w-[600px]" style="min-height: 297mm; max-width: 210mm;">
                                 <div class="flex justify-between items-start border-b pb-6 mb-7 content-layer invoice-rule">
                                     <div>
-                                        <span class="invoice-serif block text-4xl sm:text-5xl font-semibold tracking-[0.18em] text-[#5E3435] leading-none">WISH RITE</span>
+                                        <span class="invoice-serif block text-4xl sm:text-5xl font-semibold tracking-[0.18em] text-[#5E3435] leading-none">WISHRITE</span>
                                         <p class="text-[10px] uppercase tracking-[0.22em] text-[#806565] mt-3">925 Sterling Silver Jewellery &amp; Accessories</p>
                                         <p class="text-xs text-[#806565] mt-2">www.wishrite.com <span class="mx-1 text-[#B79A68]">•</span> support@wishrite.com</p>
-                                        <p class="text-[10px] text-[#806565] mt-1">GSTIN: 19AWBPX1234</p>
+                                        <p class="text-[10px] text-[#806565] mt-1">GSTIN: 19BAEPD1067K1ZQ</p>
                                     </div>
                                     <div class="text-right">
                                         <h2 class="invoice-serif text-3xl font-semibold tracking-[0.18em] text-[#5E3435] mb-4">INVOICE</h2>
@@ -1002,7 +1007,7 @@
                                 </div>
                                 <div class="invoice-footer content-layer border-t invoice-rule mt-10 pt-5 flex justify-between gap-8 text-[10px]">
                                     <div class="max-w-[62%]"><p class="font-bold uppercase tracking-[0.16em] text-[#5E3435] mb-2">Jewellery Care</p><p>Keep your jewellery away from perfumes, chemicals and moisture. Store safely in the provided jewellery box or pouch when not in use.</p></div>
-                                    <div class="text-right"><p class="invoice-serif text-lg font-semibold text-[#5E3435]">Thank you for choosing WISH RITE.</p><p class="mt-1">Crafted to be cherished.</p><p class="mt-2">www.wishrite.com<br>support@wishrite.com</p></div>
+                                    <div class="text-right"><p class="invoice-serif text-lg font-semibold text-[#5E3435]">Thank you for choosing WISHRITE.</p><p class="mt-1">Crafted to be cherished.</p><p class="mt-2">www.wishrite.com<br>support@wishrite.com</p></div>
                                 </div>
                                 <div class="invoice-monogram" aria-hidden="true">WR</div>
                             </div>
@@ -2335,7 +2340,22 @@
             renderInvoiceTable();
         }
 
-        async function processSaleAndDownload() {
+        async function downloadInvoiceOnly() {
+            if(invoiceItems.length === 0) return alert("Please add at least one item to the invoice.");
+            updateInvoiceCustomerDisplay();
+            updatePaymentSummary();
+            await generateInvoicePdf();
+        }
+
+        async function generateInvoicePdf() {
+            const element = document.getElementById('invoice-document');
+            return html2pdf()
+                .set({ margin: 0, filename: `Wishrite_INV_${document.getElementById('inv-number').innerText}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } })
+                .from(element)
+                .save();
+        }
+
+        async function completeSale() {
             if(invoiceItems.length === 0) return alert("Please add at least one item to the invoice.");
             if(!supaClient) return alert("Please connect database in Settings first.");
 
@@ -2379,22 +2399,15 @@
             }
 
             alert("Sale completed and database successfully updated!");
-
-            const element = document.getElementById('invoice-document');
-            html2pdf()
-                .set({ margin: 0, filename: `Wishrite_INV_${document.getElementById('inv-number').innerText}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } })
-                .from(element)
-                .save()
-                .then(() => {
-                    invoiceItems = [];
-                    renderInvoiceTable();
-                    todayInvoiceSeq++; 
-                    setDailyInvoiceNumber(); 
-                    ['cust-name', 'cust-phone', 'cust-email', 'cust-pin', 'cust-address', 'cust-city', 'cust-state', 'cust-country'].forEach(id => document.getElementById(id).value = '');
-                    document.getElementById('inv-paid').value = '0';
-                    updatePaymentSummary();
-                    fetchInventory();
-                });
+            await generateInvoicePdf();
+            invoiceItems = [];
+            renderInvoiceTable();
+            todayInvoiceSeq++;
+            setDailyInvoiceNumber();
+            ['cust-name', 'cust-phone', 'cust-email', 'cust-pin', 'cust-address', 'cust-city', 'cust-state', 'cust-country'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('inv-paid').value = '0';
+            updatePaymentSummary();
+            fetchInventory();
         }
 
         function renderDashboard() {
