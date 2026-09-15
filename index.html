@@ -112,7 +112,7 @@
             
             <div class="text-center mb-8">
                 <span id="login-title" class="block text-2xl sm:text-3xl font-semibold tracking-[0.3em] text-[#5A2C31]">WISHRITE</span>
-                <p id="login-subtitle" class="text-slate-500 text-sm mt-2">Enterprise Resource Planning OS</p>
+                <p id="login-subtitle" class="text-slate-500 text-sm mt-2">Inventory Planning OS</p>
             </div>
 
             <!-- Standard Login Form -->
@@ -1291,7 +1291,22 @@
             }
         }
 
-        function initSupabase(url, key) {
+        async function ensureSupabaseLibrary() {
+            if(window.supabase && typeof window.supabase.createClient === 'function') return;
+
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+                script.async = true;
+                script.onload = () => window.supabase && typeof window.supabase.createClient === 'function'
+                    ? resolve()
+                    : reject(new Error('Supabase client library loaded without a browser client.'));
+                script.onerror = () => reject(new Error('Supabase client library could not be loaded. Check your internet connection.'));
+                document.head.appendChild(script);
+            });
+        }
+
+        async function initSupabase(url, key) {
             if(!url || !key) throw new Error('Supabase URL and publishable/anon key are required.');
             let parsedUrl;
             try {
@@ -1302,9 +1317,7 @@
             if(parsedUrl.protocol !== 'https:' || !parsedUrl.hostname.endsWith('.supabase.co')) {
                 throw new Error('Supabase URL must be a valid https://<project>.supabase.co URL.');
             }
-            if(!window.supabase || typeof window.supabase.createClient !== 'function') {
-                throw new Error('Supabase client library did not load. Check your network connection or serve this app through a local web server.');
-            }
+            await ensureSupabaseLibrary();
             supaClient = window.supabase.createClient(url.trim(), key.trim());
             return supaClient;
         }
@@ -1397,6 +1410,11 @@
 
         async function handleLogin(e) {
             e.preventDefault();
+            if(!supaClient) {
+                // Retry on submit in case the first automatic startup ran before a
+                // network-dependent browser script became available.
+                await initializeApplication();
+            }
             if(!supaClient) {
                 return alert(`System not connected to database. ${databaseConnectionError || 'Verify Inventory/config.js and reload the application.'}`);
             }
@@ -1511,7 +1529,7 @@
                 return;
             }
             try {
-                initSupabase(configuredUrl, configuredKey);
+                await initSupabase(configuredUrl, configuredKey);
                 await checkInitialSetup();
             } catch(error) {
                 console.error("Supabase startup failed:", error);
