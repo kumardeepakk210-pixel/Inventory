@@ -73,7 +73,33 @@
         tailwind.config = { theme: { extend: { colors: { primary: '#4f46e5', sidebar: '#0f172a' } } } }
     </script>
 </head>
-<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden">
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden relative">
+
+    <!-- CUSTOMER AUTH MODALS (INVOICE FLOW) -->
+    <div id="customer-auth-overlay" class="hidden fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative p-8">
+            <button onclick="closeCustomerAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            
+            <!-- Step 1: OTP Entry -->
+            <div id="modal-step-otp" class="hidden">
+                <h2 class="text-xl font-bold tracking-[0.1em] text-[#5A2C31] mb-2 uppercase text-center">Verify Mobile</h2>
+                <p class="text-sm text-slate-500 text-center mb-6">OTP sent to <span id="otp-display-phone" class="font-bold text-slate-800"></span></p>
+                <input type="text" id="otp-input" placeholder="Enter 6-digit OTP" class="w-full border border-slate-300 rounded-lg p-3 text-center tracking-[0.5em] text-lg font-bold focus:ring-2 focus:ring-[#5E3435] outline-none mb-4" maxlength="6">
+                <button onclick="verifyCustomerOTP()" class="w-full bg-[#5E3435] text-white font-bold py-3 rounded-lg hover:bg-[#482728] transition-colors shadow-lg">Verify OTP</button>
+            </div>
+
+            <!-- Step 2: Password Setup -->
+            <div id="modal-step-password" class="hidden">
+                <h2 class="text-xl font-bold tracking-[0.1em] text-[#5A2C31] mb-2 uppercase text-center">Create Password</h2>
+                <p class="text-sm text-slate-500 text-center mb-6">Secure this customer account for future logins.</p>
+                <input type="password" id="cust-setup-pass" placeholder="Password" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#5E3435] outline-none mb-3">
+                <input type="password" id="cust-setup-confirm" placeholder="Confirm Password" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#5E3435] outline-none mb-6">
+                <button onclick="finalizeCustomerAccount()" class="w-full bg-[#5E3435] text-white font-bold py-3 rounded-lg hover:bg-[#482728] transition-colors shadow-lg">Create Account</button>
+            </div>
+        </div>
+    </div>
 
     <!-- AUTHENTICATION WRAPPER -->
     <div id="auth-wrapper" class="h-full w-full items-center justify-center bg-slate-900 absolute inset-0 z-50 overflow-y-auto py-10 px-4">
@@ -924,12 +950,17 @@
                             </div>
                             <button onclick="addItemToInvoice()" class="w-full bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors">➕ Add to Invoice List</button>
                             <div id="invoice-edit-items" class="invoice-app-only mt-4 space-y-2"></div>
+                            
+                            <!-- UPDATED CUSTOMER SECTION -->
                             <div class="invoice-editor mt-6 border-t border-slate-200 pt-5">
                                 <h3 class="font-bold text-slate-800 mb-1">Customer details</h3>
-                                <p class="text-xs text-slate-500 mb-3">These details appear on the invoice.</p>
+                                <p class="text-xs text-slate-500 mb-3">Lookup by phone to ensure accurate records.</p>
                                 <div class="space-y-2">
+                                    <div class="relative">
+                                        <input type="tel" id="cust-phone" placeholder="Phone Number *" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#5E3435] outline-none" required onblur="handleCustomerPhoneBlur()">
+                                        <span id="cust-phone-status" class="absolute right-3 top-2.5 text-xs font-bold text-emerald-600 hidden">✓ Verified</span>
+                                    </div>
                                     <input type="text" id="cust-name" placeholder="Customer Name *" class="w-full border border-slate-300 rounded-lg p-2 text-sm" required>
-                                    <input type="text" id="cust-phone" placeholder="Phone Number" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
                                     <input type="email" id="cust-email" placeholder="Email Address" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
                                     <input type="text" id="cust-pin" placeholder="PIN Code" inputmode="numeric" maxlength="6" oninput="handlePinLookup()" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
                                     <input type="text" id="cust-address" placeholder="Address" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
@@ -940,6 +971,7 @@
                                     <input type="text" id="cust-country" placeholder="Country" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
                                 </div>
                             </div>
+
                             <div class="mt-6 border-t border-slate-200 pt-5">
                                 <h3 class="font-bold text-slate-800 mb-1">Payment</h3>
                                 <p class="text-xs text-slate-500 mb-3">Enter the amount received. The remaining balance is due.</p>
@@ -1035,6 +1067,122 @@
     </div>
 
     <script>
+        // --- CUSTOMER IDENTITY WORKFLOW ---
+        let currentCustomerPhone = "";
+
+        function normalizeMobile(phone) {
+            let cleaned = phone.replace(/\D/g, '');
+            if (cleaned.length === 10) return '+91' + cleaned;
+            if (cleaned.startsWith('91') && cleaned.length === 12) return '+' + cleaned;
+            return '+' + cleaned;
+        }
+
+        async function handleCustomerPhoneBlur() {
+            const rawPhone = document.getElementById('cust-phone').value;
+            if (!rawPhone || rawPhone.length < 10) return;
+            
+            const normalized = normalizeMobile(rawPhone);
+            document.getElementById('cust-phone').value = normalized;
+            currentCustomerPhone = normalized;
+
+            if(!supaClient) return;
+
+            // 1. Search existing customer
+            const { data: customer, error } = await supaClient
+                .from('customers')
+                .select('*')
+                .eq('customer_phone', normalized)
+                .maybeSingle();
+
+            if (customer) {
+                // Populate existing details
+                document.getElementById('cust-name').value = customer.customer_name || '';
+                document.getElementById('cust-email').value = customer.customer_email || '';
+                document.getElementById('cust-address').value = customer.customer_address || '';
+                document.getElementById('cust-city').value = customer.customer_city || '';
+                document.getElementById('cust-state').value = customer.customer_state || '';
+                document.getElementById('cust-country').value = customer.customer_country || 'India';
+                document.getElementById('cust-pin').value = customer.customer_pin || '';
+                document.getElementById('cust-phone-status').classList.remove('hidden');
+                updateInvoiceCustomerDisplay();
+            } else {
+                // 2. Initiate New Customer OTP
+                if (confirm("New customer detected. Send OTP to register?")) {
+                    initiateCustomerOTP(normalized);
+                }
+            }
+        }
+
+        async function initiateCustomerOTP(phone) {
+            const { error } = await supaClient.auth.signInWithOtp({ phone: phone });
+            if (error) return alert("Failed to send OTP: " + error.message);
+            
+            document.getElementById('customer-auth-overlay').classList.remove('hidden');
+            document.getElementById('modal-step-otp').classList.remove('hidden');
+            document.getElementById('modal-step-password').classList.add('hidden');
+            document.getElementById('otp-display-phone').innerText = phone;
+        }
+
+        async function verifyCustomerOTP() {
+            const otp = document.getElementById('otp-input').value;
+            if (otp.length !== 6) return alert("Enter a valid 6-digit OTP.");
+
+            const { data, error } = await supaClient.auth.verifyOtp({
+                phone: currentCustomerPhone,
+                token: otp,
+                type: 'sms'
+            });
+
+            if (error) return alert("OTP Verification Failed: " + error.message);
+
+            // OTP Success - UPSERT to reserve the unique phone number immediately
+            await supaClient.from('customers').upsert({
+                customer_phone: currentCustomerPhone,
+                customer_name: document.getElementById('cust-name').value || 'Pending Setup',
+                is_phone_verified: true,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'customer_phone' });
+
+            // Move to Password Setup
+            document.getElementById('modal-step-otp').classList.add('hidden');
+            document.getElementById('modal-step-password').classList.remove('hidden');
+        }
+
+        async function finalizeCustomerAccount() {
+            const pass = document.getElementById('cust-setup-pass').value;
+            const confirmPass = document.getElementById('cust-setup-confirm').value;
+            
+            if (pass.length < 8) return alert("Password must be at least 8 characters.");
+            if (pass !== confirmPass) return alert("Passwords do not match.");
+
+            // Update Supabase Auth User with Password
+            const { data: authData, error: authError } = await supaClient.auth.updateUser({
+                password: pass
+            });
+
+            if (authError) return alert("Error setting password: " + authError.message);
+
+            // Update the final customer record mapping the auth ID
+            await supaClient.from('customers').update({
+                user_id: authData.user.id,
+                password_set: true,
+                updated_at: new Date().toISOString()
+            }).eq('customer_phone', currentCustomerPhone);
+
+            closeCustomerAuthModal();
+            document.getElementById('cust-phone-status').classList.remove('hidden');
+            alert("Customer account successfully created and linked!");
+        }
+
+        function closeCustomerAuthModal() {
+            document.getElementById('customer-auth-overlay').classList.add('hidden');
+            document.getElementById('otp-input').value = '';
+            document.getElementById('cust-setup-pass').value = '';
+            document.getElementById('cust-setup-confirm').value = '';
+        }
+
+        // --- END CUSTOMER IDENTITY WORKFLOW ---
+
         let todayInvoiceSeq = 1;
 
         document.getElementById('purchase-date').valueAsDate = new Date();
@@ -2507,6 +2655,22 @@
                 payment_status: payment.status
             }));
 
+            // Sync Customer Information directly before inserting the sales log
+            const normalizedPhone = normalizeMobile(document.getElementById('cust-phone').value || '');
+            if(normalizedPhone) {
+                await supaClient.from('customers').upsert({
+                    customer_phone: normalizedPhone,
+                    customer_name: custName,
+                    customer_email: document.getElementById('cust-email').value || null,
+                    customer_address: document.getElementById('cust-address').value || null,
+                    customer_city: document.getElementById('cust-city').value || null,
+                    customer_state: document.getElementById('cust-state').value || null,
+                    customer_pin: document.getElementById('cust-pin').value || null,
+                    customer_country: document.getElementById('cust-country').value || 'India',
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'customer_phone' });
+            }
+
             const { error: salesError } = await supaClient.from('sales').insert(salesPayload);
             if(salesError) return alert("Error saving to Sales table: " + salesError.message);
 
@@ -2525,6 +2689,7 @@
             setDailyInvoiceNumber();
             ['cust-name', 'cust-phone', 'cust-email', 'cust-pin', 'cust-address', 'cust-city', 'cust-state', 'cust-country'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('inv-paid').value = '0';
+            document.getElementById('cust-phone-status').classList.add('hidden');
             updatePaymentSummary();
             fetchInventory();
         }
