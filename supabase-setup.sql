@@ -67,3 +67,39 @@ on public.business_config for all
 to anon, authenticated
 using (true)
 with check (true);
+
+create table if not exists public.sales (
+    id uuid primary key default gen_random_uuid(),
+    product_code text,
+    product_name text,
+    product_description text,
+    category text,
+    quantity integer not null default 1,
+    selling_price numeric not null default 0,
+    discount numeric not null default 0,
+    tax numeric not null default 0,
+    weight numeric,
+    size text,
+    customer_name text not null,
+    customer_phone text,
+    customer_email text,
+    customer_address text,
+    customer_city text,
+    customer_state text,
+    customer_pin text,
+    customer_country text,
+    created_at timestamptz not null default now()
+);
+
+alter table public.sales enable row level security;
+drop policy if exists "Sales are readable" on public.sales;
+create policy "Sales are readable"
+on public.sales for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Sales can be recorded" on public.sales;
+create policy "Sales can be recorded"
+on public.sales for insert
+to anon, authenticated
+with check (true);
