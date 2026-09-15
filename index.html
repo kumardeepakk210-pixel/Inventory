@@ -130,11 +130,12 @@
                 </div>
                 <div class="mb-2">
                     <label class="block text-sm font-bold text-slate-700 mb-1">Role</label>
-                    <select id="login-role" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                    <select id="login-role" class="hidden" required>
                         <option value="Admin">Admin</option>
                         <option value="Manager">Manager</option>
                         <option value="Agent">Agent</option>
                     </select>
+                    <div id="login-role-dropdown" class="relative"></div>
                 </div>
                 
                 <div class="flex justify-between items-center mb-6 px-1">
@@ -522,11 +523,12 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                             <div>
                                 <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Stock status</label>
-                                <select id="filter-stock" class="w-full border border-slate-200 bg-white rounded-xl p-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" onchange="renderFullInventory()">
+                                <select id="filter-stock" class="hidden" onchange="renderFullInventory()">
                                 <option value="all">All Inventory</option>
                                 <option value="in">In Stock Only</option>
                                 <option value="out">Out of Stock Only</option>
                                 </select>
+                                <div id="filter-stock-dropdown" class="relative"></div>
                             </div>
                             <div>
                                 <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Minimum price</label>
@@ -544,9 +546,8 @@
                             </div>
                             <div>
                                 <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Category</label>
-                                <select id="filter-cat" class="w-full border border-slate-200 bg-white rounded-xl p-3 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition" onchange="renderFullInventory()">
-                                <option value="">All Categories</option>
-                                </select>
+                                <select id="filter-cat" class="hidden" onchange="renderFullInventory()"><option value="">All Categories</option></select>
+                                <div id="filter-cat-dropdown" class="relative"></div>
                             </div>
                         </div>
                     </div>
@@ -655,11 +656,12 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Assign Role *</label>
-                                    <select id="reg-role" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required>
+                                    <select id="reg-role" class="hidden" required>
                                         <option value="Admin">Admin</option>
                                         <option value="Manager">Manager</option>
                                         <option value="Agent">Agent</option>
                                     </select>
+                                    <div id="reg-role-dropdown" class="relative"></div>
                                 </div>
                                 <div class="col-span-1 sm:col-span-2 relative">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Secure Password *</label>
@@ -797,31 +799,18 @@
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Product Name</label>
                                     <input type="text" id="in-name" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Enter new product name" required>
                                     
-                                    <div id="stockin-custom-dropdown" class="relative hidden">
+                                    <div id="stockin-custom-dropdown" class="hidden">
                                         <select id="in-name-select" class="hidden" onchange="autoFillExistingProduct()">
                                             <option value="">-- Select Existing Product --</option>
                                         </select>
-                                        
-                                        <button type="button" id="stockin-trigger" onclick="toggleStockinDropdown()" onkeydown="handleStockinTriggerKeydown(event)" aria-haspopup="listbox" aria-expanded="false" class="w-full flex items-center justify-between gap-3 border border-slate-300 bg-white rounded-lg p-2.5 text-sm text-left transition hover:border-[#5E3435] focus:outline-none focus:ring-2 focus:ring-[#5E3435]/15 shadow-sm">
-                                            <span id="stockin-label" class="truncate text-slate-500">-- Select Existing Product --</span>
-                                            <svg class="w-4 h-4 shrink-0 text-slate-400 transition-transform" id="stockin-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"></path></svg>
-                                        </button>
-                                        
-                                        <div id="stockin-panel" role="listbox" class="hidden absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl origin-top transition-all">
-                                            <div class="border-b border-slate-100 bg-slate-50 p-2">
-                                                <div class="relative">
-                                                    <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"></path></svg>
-                                                    <input type="search" id="stockin-search" placeholder="Search SKU or product name..." autocomplete="off" oninput="filterStockinOptions()" onkeydown="handleStockinSearchKeydown(event)" class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[#5E3435] focus:ring-2 focus:ring-[#5E3435]/15">
-                                                </div>
-                                            </div>
-                                            <div id="stockin-options" class="max-h-60 overflow-y-auto p-1.5" role="presentation"></div>
-                                        </div>
+                                        <div id="stockin-product-dropdown" class="relative"></div>
                                     </div>
                                 </div>
 
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
-                                    <select id="in-cat" onchange="generateProductCode()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required></select>
+                                    <select id="in-cat" onchange="generateProductCode()" class="hidden"></select>
+                                    <div id="in-cat-dropdown" class="relative"></div>
                                 </div>
                                 <div><label class="block text-xs font-bold text-slate-700 mb-1">Product Code</label><input type="text" id="in-code" readonly class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2.5 text-sm font-bold text-primary"></div>
                                 <div id="stock-field-size"><label class="block text-xs font-bold text-slate-700 mb-1">Size</label><input type="text" id="in-size" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Optional"></div>
@@ -852,10 +841,8 @@
                             <form onsubmit="handleStockOut(event)" class="mb-6">
                                 <div class="mb-5">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Select Product by Code & Size</label>
-                                    <input type="search" id="out-product-search" oninput="filterStockOutProducts()" placeholder="Search product code or name..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm mb-2">
-                                    <select id="out-product" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-shadow" required onchange="checkStockAvailability()">
-                                        <option value="">-- Choose Product --</option>
-                                    </select>
+                                    <select id="out-product" class="hidden" onchange="checkStockAvailability()"><option value="">-- Choose Product --</option></select>
+                                    <div id="out-product-dropdown" class="relative"></div>
                                 </div>
                                 <div class="mb-5">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Quantity to Deduct</label>
@@ -933,19 +920,6 @@
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Product Code</label>
                                 <div id="invoice-product-dropdown" class="relative">
                                     <input type="hidden" id="inv-product" value="">
-                                    <button type="button" id="inv-product-trigger" onclick="toggleInvoiceProductDropdown()" onkeydown="handleInvoiceProductTriggerKeydown(event)" aria-haspopup="listbox" aria-expanded="false" aria-controls="inv-product-panel" role="combobox" class="w-full flex items-center justify-between gap-3 border border-slate-300 bg-white rounded-lg p-2.5 text-sm text-left transition hover:border-[#5E3435] focus:outline-none focus:ring-2 focus:ring-[#5E3435]/15">
-                                        <span id="inv-product-label" class="truncate text-slate-500">-- Select SKU --</span>
-                                        <svg class="w-4 h-4 shrink-0 text-[#5E3435] transition-transform" id="inv-product-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"></path></svg>
-                                    </button>
-                                    <div id="inv-product-panel" role="listbox" aria-label="Products" class="hidden absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-[#E8DED2] bg-white shadow-xl ring-1 ring-black/5 origin-top transition-all">
-                                        <div class="border-b border-[#E8DED2] bg-[#FAF8F4] p-2">
-                                            <div class="relative">
-                                                <svg class="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#806565]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"></path></svg>
-                                                <input type="search" id="inv-product-search" placeholder="Search SKU or product name..." autocomplete="off" aria-label="Search SKU or product name" oninput="filterInvoiceProductOptions()" onkeydown="handleInvoiceProductKeydown(event)" class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[#5E3435] focus:ring-2 focus:ring-[#5E3435]/15">
-                                            </div>
-                                        </div>
-                                        <div id="inv-product-options" class="max-h-72 overflow-y-auto p-1.5" role="presentation"></div>
-                                    </div>
                                 </div>
                             </div>
                             <div class="mb-4">
@@ -1222,8 +1196,7 @@
         let salesData = [];
         let importedPurchaseRows = [];
         let importedPurchaseFile = null;
-        let invoiceProductOptions = [];
-        let invoiceProductHighlight = -1;
+        const searchableDropdowns = {};
         const defaultBusinessConfig = {
             business_type: 'Jewelry Retail and Wholesale',
             product_fields: { product_name: true, product_code: true, category: true, size: true, weight: true, description: true, purchase_price: true, selling_price: true, stock_quantity: true },
@@ -1244,9 +1217,6 @@
         let activeInfluencer = null;
         let collabRoster = [];
         
-        initializeInvoiceProductDropdown();
-        initializeStockinProductDropdown();
-
         // --- AUTH & VIEW SWITCHING ---
         function togglePasswordVis(inputId) {
             const el = document.getElementById(inputId);
@@ -1380,6 +1350,7 @@
             
             alert(`🎉 Employee registered successfully!\n\nTheir System User ID is: ${data[0].user_id}\n\nPlease share this with the employee so they can log in.`);
             document.getElementById('register-form').reset();
+            searchableDropdowns.regRole?.sync();
         }
 
         function setupUserUI() {
@@ -1451,6 +1422,7 @@
             document.getElementById('app-container').style.display = 'none';
             document.getElementById('auth-wrapper').style.display = 'flex';
             document.getElementById('login-form').reset();
+            searchableDropdowns.loginRole?.sync();
         }
 
         function applyRolePermissions(role) {
@@ -1657,6 +1629,7 @@
             const currentCategory = categorySelect.value;
             categorySelect.innerHTML = '<option value="">-- Select --</option>' + options;
             categorySelect.value = currentCategory;
+            refreshSearchableDropdowns();
         }
 
         function renderBusinessConfiguration() {
@@ -2148,17 +2121,18 @@
             document.getElementById('filter-min').value = '';
             document.getElementById('filter-max').value = '';
             document.getElementById('filter-cat').value = '';
+            searchableDropdowns.inventoryCategory?.sync();
+            searchableDropdowns.filterStock?.sync();
             document.getElementById('global-search').value = '';
             renderFullInventory();
         }
 
         function populateSelects() {
             const availableOnly = inventoryData.filter(i => i.stock_quantity > 0);
-            filterStockOutProducts();
-            
-            // For Invoice
-            invoiceProductOptions = availableOnly;
-            renderInvoiceProductOptions();
+            const stockOutSelect = document.getElementById('out-product');
+            const currentStockOut = stockOutSelect.value;
+            stockOutSelect.innerHTML = '<option value="">-- Choose Product --</option>' + availableOnly.map(item => `<option value="${escapeHtml(item.product_code)}">${escapeHtml(item.product_code)} - ${escapeHtml(item.product_name || '')}</option>`).join('');
+            stockOutSelect.value = availableOnly.some(item => item.product_code === currentStockOut) ? currentStockOut : '';
             
             // For Stock In - Update Native hidden select options 
             const inNameSelectOptions = '<option value="">-- Select Existing Product --</option>' + 
@@ -2174,271 +2148,138 @@
                 inNameSelect.value = currentSelection;
             }
             
-            // Render Stock In Custom Options
-            renderStockinOptions();
+            refreshSearchableDropdowns();
         }
 
-        // --- INVOICE DROPDOWN LOGIC ---
-        function initializeInvoiceProductDropdown() {
-            document.addEventListener('click', event => {
-                const dropdown = document.getElementById('invoice-product-dropdown');
-                if(dropdown && !dropdown.contains(event.target)) closeInvoiceProductDropdown();
-            });
-            renderInvoiceProductOptions();
-        }
+        // --- REUSABLE SEARCHABLE DROPDOWN ---
+        // This is the Invoice Product picker behavior extracted into one configurable
+        // component. All options are filtered in-memory, capped at 250, and share one
+        // click-outside listener for performance.
+        class SearchableDropdown {
+            static instances = [];
+            static outsideListenerInstalled = false;
 
-        function toggleInvoiceProductDropdown() {
-            const panel = document.getElementById('inv-product-panel');
-            const trigger = document.getElementById('inv-product-trigger');
-            const isOpen = !panel.classList.contains('hidden');
-            if(isOpen) return closeInvoiceProductDropdown();
-            panel.classList.remove('hidden');
-            trigger.setAttribute('aria-expanded', 'true');
-            invoiceProductHighlight = Math.max(0, invoiceProductOptions.findIndex(item => item.product_code === document.getElementById('inv-product').value));
-            renderInvoiceProductOptions();
-            document.getElementById('inv-product-search').focus();
-        }
+            constructor(config) {
+                this.config = config;
+                this.root = document.getElementById(config.rootId);
+                this.valueInput = document.getElementById(config.valueId);
+                this.highlight = -1;
+                if(!this.root || !this.valueInput) return;
+                this.id = config.rootId;
+                this.root.insertAdjacentHTML('beforeend', `
+                    <button type="button" id="${this.id}-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="${this.id}-panel" role="combobox" class="w-full flex items-center justify-between gap-3 border border-slate-300 bg-white rounded-lg p-2.5 text-sm text-left transition hover:border-[#5E3435] focus:outline-none focus:ring-2 focus:ring-[#5E3435]/15">
+                        <span class="truncate text-slate-500">${escapeHtml(config.placeholder)}</span>
+                        <svg class="w-4 h-4 shrink-0 text-[#5E3435]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"></path></svg>
+                    </button>
+                    <div id="${this.id}-panel" role="listbox" aria-label="${escapeHtml(config.label)}" class="hidden absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-[#E8DED2] bg-white shadow-xl ring-1 ring-black/5 origin-top">
+                        <div class="border-b border-[#E8DED2] bg-[#FAF8F4] p-2 ${config.enableSearch === false ? 'hidden' : ''}"><div class="relative">
+                            <svg class="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#806565]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"></path></svg>
+                            <input type="search" aria-label="Search ${escapeHtml(config.label)}" placeholder="${escapeHtml(config.searchPlaceholder || 'Search...')}" autocomplete="off" class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[#5E3435] focus:ring-2 focus:ring-[#5E3435]/15">
+                        </div></div>
+                        <div class="max-h-72 overflow-y-auto p-1.5" role="presentation"></div>
+                    </div>`);
+                this.trigger = document.getElementById(`${this.id}-trigger`);
+                this.panel = document.getElementById(`${this.id}-panel`);
+                this.search = this.panel.querySelector('input');
+                this.optionsElement = this.panel.querySelector('[role="presentation"]');
+                this.trigger.addEventListener('click', () => this.toggle());
+                this.trigger.addEventListener('keydown', event => this.handleTriggerKeydown(event));
+                this.search.addEventListener('input', () => { this.highlight = 0; this.render(); });
+                this.search.addEventListener('keydown', event => this.handleSearchKeydown(event));
+                this.optionsElement.addEventListener('click', event => {
+                    const option = event.target.closest('[data-dropdown-index]');
+                    if(option) this.select(this.filteredOptions()[Number(option.dataset.dropdownIndex)]);
+                });
+                SearchableDropdown.instances.push(this);
+                if(!SearchableDropdown.outsideListenerInstalled) {
+                    document.addEventListener('click', event => SearchableDropdown.instances.forEach(instance => {
+                        if(instance.root && !instance.root.contains(event.target)) instance.close();
+                    }));
+                    SearchableDropdown.outsideListenerInstalled = true;
+                }
+                this.sync();
+            }
 
-        function handleInvoiceProductTriggerKeydown(event) {
-            if(event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
-                event.preventDefault();
-                toggleInvoiceProductDropdown();
-            } else if(event.key === 'Escape') {
-                closeInvoiceProductDropdown();
+            options() { return this.config.getOptions() || []; }
+            filteredOptions() {
+                const query = this.search.value.trim().toLowerCase();
+                return !query ? this.options() : this.options().filter(option => this.config.searchText(option).toLowerCase().includes(query));
+            }
+            async toggle() {
+                if(!this.panel.classList.contains('hidden')) return this.close();
+                if(this.config.beforeOpen) await this.config.beforeOpen(this);
+                this.panel.classList.remove('hidden');
+                this.trigger.setAttribute('aria-expanded', 'true');
+                this.highlight = Math.max(0, this.filteredOptions().findIndex(option => this.config.value(option) === this.valueInput.value));
+                this.render();
+                if(this.config.enableSearch !== false) this.search.focus();
+            }
+            close() { this.panel.classList.add('hidden'); this.trigger.setAttribute('aria-expanded', 'false'); this.search.value = ''; this.highlight = -1; }
+            setLoading(message) { this.optionsElement.innerHTML = `<div class="px-3 py-5 text-center text-sm text-slate-500">${escapeHtml(message)}</div>`; }
+            render() {
+                const options = this.filteredOptions();
+                if(this.highlight >= options.length) this.highlight = options.length - 1;
+                if(!options.length) { this.optionsElement.innerHTML = `<div class="px-3 py-5 text-center text-sm text-slate-500"><p class="font-semibold text-slate-700">${escapeHtml(this.config.noResultsMessage || 'No options found')}</p><p class="mt-1 text-xs">Try a different search.</p></div>`; return; }
+                this.optionsElement.innerHTML = options.slice(0, 250).map((option, index) => {
+                    const selected = this.config.value(option) === this.valueInput.value;
+                    return `<button type="button" role="option" aria-selected="${selected}" data-dropdown-index="${index}" class="w-full rounded-lg px-3 py-2.5 text-left transition ${index === this.highlight ? 'bg-[#FAF8F4]' : 'hover:bg-[#FAF8F4]'} ${selected ? 'ring-1 ring-inset ring-[#B79A68]' : ''}">${this.config.renderOption(option)}</button>`;
+                }).join('') + (options.length > 250 ? '<p class="px-3 py-2 text-center text-[11px] text-slate-400">Showing first 250 matches. Refine your search.</p>' : '');
+            }
+            select(option) {
+                if(!option) return;
+                this.valueInput.value = this.config.value(option);
+                this.valueInput.dispatchEvent(new Event('change', { bubbles: true }));
+                this.sync();
+                if(this.config.onSelect) this.config.onSelect(option);
+                this.close();
+            }
+            sync() {
+                const selected = this.options().find(option => this.config.value(option) === this.valueInput.value);
+                const label = selected ? this.config.triggerLabel(selected) : this.config.placeholder;
+                this.trigger.querySelector('span').textContent = label;
+                this.trigger.querySelector('span').className = selected ? 'truncate font-semibold text-[#5E3435]' : 'truncate text-slate-500';
+                const disabled = Boolean(this.valueInput.disabled || this.config.disabled?.());
+                this.trigger.disabled = disabled;
+                this.trigger.classList.toggle('cursor-not-allowed', disabled);
+                this.trigger.classList.toggle('opacity-60', disabled);
+                this.render();
+            }
+            handleTriggerKeydown(event) {
+                if(['Enter', ' ', 'ArrowDown'].includes(event.key)) { event.preventDefault(); this.toggle(); }
+                else if(event.key === 'Escape') this.close();
+            }
+            handleSearchKeydown(event) {
+                const options = this.filteredOptions();
+                if(event.key === 'ArrowDown') { event.preventDefault(); this.highlight = Math.min(this.highlight + 1, options.length - 1); this.render(); }
+                else if(event.key === 'ArrowUp') { event.preventDefault(); this.highlight = Math.max(this.highlight - 1, 0); this.render(); }
+                else if(event.key === 'Enter' && options[this.highlight]) { event.preventDefault(); this.select(options[this.highlight]); }
+                else if(event.key === 'Escape') { event.preventDefault(); this.close(); this.trigger.focus(); }
             }
         }
 
-        function closeInvoiceProductDropdown() {
-            const panel = document.getElementById('inv-product-panel');
-            const trigger = document.getElementById('inv-product-trigger');
-            if(!panel || !trigger) return;
-            panel.classList.add('hidden');
-            trigger.setAttribute('aria-expanded', 'false');
-            document.getElementById('inv-product-search').value = '';
-            invoiceProductHighlight = -1;
+        const productDropdownOption = item => `<span class="block text-[10px] font-bold tracking-wider text-[#806565]">${escapeHtml(item.product_code)}</span><span class="block truncate text-sm font-semibold text-[#252525]">${escapeHtml(item.product_name || 'Unnamed product')}${item.size ? ` <span class="text-slate-400">(Size: ${escapeHtml(item.size)})</span>` : ''}</span>`;
+        const categoryDropdownOption = item => `<span class="block truncate text-sm font-semibold text-[#252525]">${escapeHtml(item.text)}</span>`;
+        const selectOptions = id => Array.from(document.getElementById(id).options).filter(option => option.value).map(option => ({ value: option.value, text: option.text }));
+
+        function initializeSearchableDropdowns() {
+            searchableDropdowns.invoiceProduct = new SearchableDropdown({ rootId: 'invoice-product-dropdown', valueId: 'inv-product', label: 'Products', placeholder: '-- Select SKU --', searchPlaceholder: 'Search SKU or product name...', noResultsMessage: 'No products found', getOptions: () => inventoryData.filter(item => item.stock_quantity > 0), value: item => item.product_code, searchText: item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`, renderOption: productDropdownOption, triggerLabel: item => item.product_code, onSelect: autoFillInvoiceItem });
+            searchableDropdowns.stockinProduct = new SearchableDropdown({ rootId: 'stockin-product-dropdown', valueId: 'in-name-select', label: 'Products', placeholder: '-- Select Existing Product --', searchPlaceholder: 'Search SKU or product name...', noResultsMessage: 'No products found', getOptions: () => inventoryData, value: item => item.product_code, searchText: item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`, renderOption: productDropdownOption, triggerLabel: item => `${item.product_code} - ${item.product_name}`, beforeOpen: async dropdown => { dropdown.setLoading('Refreshing products from database…'); await refreshStockInProducts(); } });
+            searchableDropdowns.stockoutProduct = new SearchableDropdown({ rootId: 'out-product-dropdown', valueId: 'out-product', label: 'Products', placeholder: '-- Choose Product --', searchPlaceholder: 'Search SKU or product name...', noResultsMessage: 'No products found', getOptions: () => inventoryData.filter(item => item.stock_quantity > 0), value: item => item.product_code, searchText: item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`, renderOption: productDropdownOption, triggerLabel: item => `${item.product_code} - ${item.product_name}` });
+            searchableDropdowns.inventoryCategory = new SearchableDropdown({ rootId: 'filter-cat-dropdown', valueId: 'filter-cat', label: 'Categories', placeholder: 'All Categories', searchPlaceholder: 'Search categories...', noResultsMessage: 'No categories found', getOptions: () => selectOptions('filter-cat'), value: item => item.value, searchText: item => item.text, renderOption: categoryDropdownOption, triggerLabel: item => item.text });
+            searchableDropdowns.stockinCategory = new SearchableDropdown({ rootId: 'in-cat-dropdown', valueId: 'in-cat', label: 'Categories', placeholder: '-- Select --', searchPlaceholder: 'Search categories...', noResultsMessage: 'No categories found', getOptions: () => selectOptions('in-cat'), value: item => item.value, searchText: item => item.text, renderOption: categoryDropdownOption, triggerLabel: item => item.text });
+            
+            // New Simple List Dropdowns (Search Disabled)
+            searchableDropdowns.loginRole = new SearchableDropdown({ rootId: 'login-role-dropdown', valueId: 'login-role', label: 'Role', placeholder: 'Select Role', enableSearch: false, getOptions: () => selectOptions('login-role'), value: item => item.value, searchText: item => item.text, renderOption: categoryDropdownOption, triggerLabel: item => item.text });
+            searchableDropdowns.filterStock = new SearchableDropdown({ rootId: 'filter-stock-dropdown', valueId: 'filter-stock', label: 'Stock Status', placeholder: 'All Inventory', enableSearch: false, getOptions: () => selectOptions('filter-stock'), value: item => item.value, searchText: item => item.text, renderOption: categoryDropdownOption, triggerLabel: item => item.text, onSelect: renderFullInventory });
+            searchableDropdowns.regRole = new SearchableDropdown({ rootId: 'reg-role-dropdown', valueId: 'reg-role', label: 'Role', placeholder: 'Assign Role', enableSearch: false, getOptions: () => selectOptions('reg-role'), value: item => item.value, searchText: item => item.text, renderOption: categoryDropdownOption, triggerLabel: item => item.text });
         }
 
-        function filterInvoiceProductOptions() {
-            invoiceProductHighlight = 0;
-            renderInvoiceProductOptions();
-        }
-
-        function getFilteredInvoiceProducts() {
-            const query = (document.getElementById('inv-product-search')?.value || '').trim().toLowerCase();
-            if(!query) return invoiceProductOptions;
-            return invoiceProductOptions.filter(item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`.toLowerCase().includes(query));
-        }
-
-        function renderInvoiceProductOptions() {
-            const optionsContainer = document.getElementById('inv-product-options');
-            if(!optionsContainer) return;
-            const products = getFilteredInvoiceProducts();
-            const selectedCode = document.getElementById('inv-product')?.value;
-            if(invoiceProductHighlight >= products.length) invoiceProductHighlight = products.length - 1;
-            if(!products.length) {
-                optionsContainer.innerHTML = '<div class="px-3 py-5 text-center text-sm text-slate-500"><p class="font-semibold text-slate-700">No products found</p><p class="mt-1 text-xs">Try searching by SKU or product name.</p></div>';
-                return;
-            }
-            optionsContainer.innerHTML = products.slice(0, 250).map((item, index) => {
-                const sizeLabel = item.size ? ` <span class="text-slate-400">(Size: ${escapeHtml(item.size)})</span>` : '';
-                const isSelected = item.product_code === selectedCode;
-                const isHighlighted = index === invoiceProductHighlight;
-                return `<button type="button" role="option" aria-selected="${isSelected}" data-product-code="${escapeHtml(item.product_code)}" onclick="selectInvoiceProduct('${escapeHtml(item.product_code)}')" class="w-full rounded-lg px-3 py-2.5 text-left transition ${isHighlighted ? 'bg-[#FAF8F4]' : 'hover:bg-[#FAF8F4]'} ${isSelected ? 'ring-1 ring-inset ring-[#B79A68]' : ''}">
-                    <span class="block text-[10px] font-bold tracking-wider text-[#806565]">${escapeHtml(item.product_code)}</span>
-                    <span class="block truncate text-sm font-semibold text-[#252525]">${escapeHtml(item.product_name || 'Unnamed product')}${sizeLabel}</span>
-                </button>`;
-            }).join('');
-            if(products.length > 250) optionsContainer.insertAdjacentHTML('beforeend', '<p class="px-3 py-2 text-center text-[11px] text-slate-400">Showing first 250 matches. Refine your search.</p>');
-        }
-
-        function selectInvoiceProduct(code) {
-            const product = invoiceProductOptions.find(item => item.product_code === code);
-            if(!product) return;
-            document.getElementById('inv-product').value = code;
-            const label = document.getElementById('inv-product-label');
-            label.innerText = product.product_code;
-            label.className = 'truncate font-semibold text-[#5E3435]';
-            autoFillInvoiceItem();
-            closeInvoiceProductDropdown();
-        }
-
-        function handleInvoiceProductKeydown(event) {
-            const products = getFilteredInvoiceProducts();
-            if(event.key === 'ArrowDown') {
-                event.preventDefault();
-                invoiceProductHighlight = Math.min(invoiceProductHighlight + 1, products.length - 1);
-                renderInvoiceProductOptions();
-            } else if(event.key === 'ArrowUp') {
-                event.preventDefault();
-                invoiceProductHighlight = Math.max(invoiceProductHighlight - 1, 0);
-                renderInvoiceProductOptions();
-            } else if(event.key === 'Enter' && invoiceProductHighlight >= 0 && products[invoiceProductHighlight]) {
-                event.preventDefault();
-                selectInvoiceProduct(products[invoiceProductHighlight].product_code);
-            } else if(event.key === 'Escape') {
-                event.preventDefault();
-                closeInvoiceProductDropdown();
-                document.getElementById('inv-product-trigger').focus();
-            }
-        }
-        
-        // --- STOCK IN DROPDOWN LOGIC ---
-        let stockinHighlightIndex = -1;
-
-        function initializeStockinProductDropdown() {
-            document.addEventListener('click', event => {
-                const dropdown = document.getElementById('stockin-custom-dropdown');
-                if(dropdown && !dropdown.contains(event.target)) closeStockinDropdown();
-            });
-            renderStockinOptions();
-        }
+        function refreshSearchableDropdowns() { Object.values(searchableDropdowns).forEach(dropdown => dropdown?.sync()); }
+        initializeSearchableDropdowns();
 
         async function refreshStockInProducts() {
-            const trigger = document.getElementById('stockin-trigger');
-            const options = document.getElementById('stockin-options');
             if(!supaClient) return false;
-
-            if(trigger) trigger.disabled = true;
-            if(options) options.innerHTML = '<div class="px-3 py-5 text-center text-sm text-slate-500">Refreshing products from database…</div>';
-            try {
-                const products = await fetchInventory();
-                return Array.isArray(products);
-            } finally {
-                if(trigger) trigger.disabled = false;
-            }
-        }
-
-        async function toggleStockinDropdown() {
-            const panel = document.getElementById('stockin-panel');
-            const trigger = document.getElementById('stockin-trigger');
-            const isOpen = !panel.classList.contains('hidden');
-            if(isOpen) return closeStockinDropdown();
-
-            // A product may have been added or edited in another session after the
-            // Stock In page was opened. Fetch before rendering the choices.
-            await refreshStockInProducts();
-            
-            panel.classList.remove('hidden');
-            trigger.setAttribute('aria-expanded', 'true');
-            
-            const currentVal = document.getElementById('in-name-select').value;
-            const products = getFilteredStockinProducts();
-            stockinHighlightIndex = Math.max(0, products.findIndex(item => item.product_code === currentVal));
-            
-            renderStockinOptions();
-            document.getElementById('stockin-search').focus();
-        }
-
-        function closeStockinDropdown() {
-            const panel = document.getElementById('stockin-panel');
-            const trigger = document.getElementById('stockin-trigger');
-            if(!panel || !trigger) return;
-            panel.classList.add('hidden');
-            trigger.setAttribute('aria-expanded', 'false');
-            document.getElementById('stockin-search').value = '';
-            stockinHighlightIndex = -1;
-        }
-
-        function getFilteredStockinProducts() {
-            const query = (document.getElementById('stockin-search')?.value || '').trim().toLowerCase();
-            if(!query) return inventoryData;
-            return inventoryData.filter(item => 
-                `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`.toLowerCase().includes(query)
-            );
-        }
-
-        function filterStockinOptions() {
-            stockinHighlightIndex = 0;
-            renderStockinOptions();
-        }
-
-        function renderStockinOptions() {
-            const container = document.getElementById('stockin-options');
-            if(!container) return;
-            
-            const products = getFilteredStockinProducts();
-            const selectedCode = document.getElementById('in-name-select').value;
-            
-            if(stockinHighlightIndex >= products.length) stockinHighlightIndex = products.length - 1;
-            
-            if(!products.length) {
-                container.innerHTML = '<div class="px-3 py-5 text-center text-sm text-slate-500"><p class="font-semibold text-slate-700">No products found</p><p class="mt-1 text-xs">Try searching by SKU or product name.</p></div>';
-                return;
-            }
-            
-            container.innerHTML = products.slice(0, 250).map((item, index) => {
-                const sizeLabel = item.size ? ` <span class="text-slate-400">(Size: ${escapeHtml(item.size)})</span>` : '';
-                const isSelected = item.product_code === selectedCode;
-                const isHighlighted = index === stockinHighlightIndex;
-                
-                return `<button type="button" role="option" aria-selected="${isSelected}" onclick="selectStockinProduct('${escapeHtml(item.product_code)}')" class="w-full rounded-lg px-3 py-2.5 text-left transition ${isHighlighted ? 'bg-[#FAF8F4]' : 'hover:bg-[#FAF8F4]'} ${isSelected ? 'ring-1 ring-inset ring-[#5E3435] bg-[#FAF8F4]' : ''}">
-                    <div class="flex flex-col">
-                        <span class="text-[10px] font-bold tracking-wider text-[#806565]">${escapeHtml(item.product_code)}</span>
-                        <span class="truncate text-sm font-semibold text-[#252525]">${escapeHtml(item.product_name || 'Unnamed product')}${sizeLabel}</span>
-                    </div>
-                </button>`;
-            }).join('');
-            
-            if(products.length > 250) {
-                container.insertAdjacentHTML('beforeend', '<p class="px-3 py-2 text-center text-[11px] text-slate-400">Showing first 250 matches. Refine your search.</p>');
-            }
-        }
-
-        function selectStockinProduct(code) {
-            const product = inventoryData.find(item => item.product_code === code);
-            if(!product) return;
-            
-            const selectEl = document.getElementById('in-name-select');
-            selectEl.value = code;
-            
-            const label = document.getElementById('stockin-label');
-            label.innerText = `${product.product_code} - ${product.product_name}`;
-            label.className = 'truncate font-bold text-[#5E3435]';
-            
-            autoFillExistingProduct();
-            closeStockinDropdown();
-        }
-
-        function handleStockinSearchKeydown(event) {
-            const products = getFilteredStockinProducts();
-            if(event.key === 'ArrowDown') {
-                event.preventDefault();
-                stockinHighlightIndex = Math.min(stockinHighlightIndex + 1, products.length - 1);
-                renderStockinOptions();
-            } else if(event.key === 'ArrowUp') {
-                event.preventDefault();
-                stockinHighlightIndex = Math.max(stockinHighlightIndex - 1, 0);
-                renderStockinOptions();
-            } else if(event.key === 'Enter' && stockinHighlightIndex >= 0 && products[stockinHighlightIndex]) {
-                event.preventDefault();
-                selectStockinProduct(products[stockinHighlightIndex].product_code);
-            } else if(event.key === 'Escape') {
-                event.preventDefault();
-                closeStockinDropdown();
-                document.getElementById('stockin-trigger').focus();
-            }
-        }
-
-        function handleStockinTriggerKeydown(event) {
-            if(event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
-                event.preventDefault();
-                toggleStockinDropdown();
-            } else if(event.key === 'Escape') {
-                closeStockinDropdown();
-            }
-        }
-
-        function filterStockOutProducts() {
-            const search = (document.getElementById('out-product-search')?.value || '').trim().toLowerCase();
-            const select = document.getElementById('out-product');
-            if(!select) return;
-            const currentValue = select.value;
-            const availableProducts = inventoryData.filter(item => item.stock_quantity > 0 && (!search || `${item.product_code} ${item.product_name}`.toLowerCase().includes(search)));
-            select.innerHTML = '<option value="">-- Choose Product --</option>' + availableProducts.map(item => {
-                const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
-                return `<option value="${escapeHtml(item.product_code)}">${escapeHtml(item.product_code)} - ${escapeHtml(item.product_name)}${sizeLabel}</option>`;
-            }).join('');
-            select.value = availableProducts.some(item => item.product_code === currentValue) ? currentValue : '';
+            return Array.isArray(await fetchInventory());
         }
 
         let pinLookupTimer = null;
@@ -2489,11 +2330,7 @@
                 document.getElementById('in-code').value = '';
                 
                 document.getElementById('in-name-select').value = '';
-                const label = document.getElementById('stockin-label');
-                if(label) {
-                    label.innerText = '-- Select Existing Product --';
-                    label.className = 'truncate text-slate-500';
-                }
+                searchableDropdowns.stockinProduct?.sync();
             }
         }
 
@@ -2594,6 +2431,7 @@
             const productFiles = Array.from(document.getElementById('in-product-media').files);
 
             if(!productName) return alert("Please enter or select a product name.");
+            if(!document.getElementById('in-cat').value) return alert("Please select a category.");
 
             if(!isUpdatingOld) {
                 try {
@@ -2680,6 +2518,7 @@
             if(!supaClient) return alert("Please connect database in Settings first.");
             const code = document.getElementById('out-product').value;
             const qty = parseInt(document.getElementById('out-qty').value);
+            if(!code) return alert("Please choose a product.");
             
             let product = inventoryData.find(i => i.product_code === code);
             if (product && qty <= product.stock_quantity) {
@@ -2755,8 +2594,7 @@
                 renderInvoiceTable();
                 
                 document.getElementById('inv-product').value = '';
-                document.getElementById('inv-product-label').innerText = '-- Select SKU --';
-                document.getElementById('inv-product-label').className = 'truncate text-slate-500';
+                searchableDropdowns.invoiceProduct?.sync();
                 document.getElementById('inv-desc').value = '';
                 document.getElementById('inv-price').value = '';
                 document.getElementById('inv-qty').value = '1';
