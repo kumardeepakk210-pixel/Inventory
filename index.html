@@ -1042,7 +1042,6 @@
         document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
         ['cust-name', 'cust-phone', 'cust-email', 'cust-pin', 'cust-address', 'cust-city', 'cust-state', 'cust-country'].forEach(id => document.getElementById(id).addEventListener('input', updateInvoiceCustomerDisplay));
         updateInvoiceCustomerDisplay();
-        initializeInvoiceProductDropdown();
         
         function setDailyInvoiceNumber() {
             const now = new Date();
@@ -1083,6 +1082,7 @@
         // Influencer Collab Variables
         let activeInfluencer = null;
         let collabRoster = [];
+        initializeInvoiceProductDropdown();
 
         // --- AUTH & VIEW SWITCHING ---
         function togglePasswordVis(inputId) {
