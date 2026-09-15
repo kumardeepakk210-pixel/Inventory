@@ -799,12 +799,32 @@
 
                             <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-4">Product Details</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6">
+                                
+                                <!-- UPDATED STOCK IN PRODUCT SELECTOR -->
                                 <div class="col-span-1 sm:col-span-3">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Product Name</label>
                                     <input type="text" id="in-name" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="Enter new product name" required>
-                                    <select id="in-name-select" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm hidden" onchange="autoFillExistingProduct()">
-                                        <option value="">-- Select Existing Product --</option>
-                                    </select>
+                                    
+                                    <div id="stockin-custom-dropdown" class="relative hidden">
+                                        <select id="in-name-select" class="hidden" onchange="autoFillExistingProduct()">
+                                            <option value="">-- Select Existing Product --</option>
+                                        </select>
+                                        
+                                        <button type="button" id="stockin-trigger" onclick="toggleStockinDropdown()" onkeydown="handleStockinTriggerKeydown(event)" aria-haspopup="listbox" aria-expanded="false" class="w-full flex items-center justify-between gap-3 border border-slate-300 bg-white rounded-lg p-2.5 text-sm text-left transition hover:border-[#5E3435] focus:outline-none focus:ring-2 focus:ring-[#5E3435]/15 shadow-sm">
+                                            <span id="stockin-label" class="truncate text-slate-500">-- Select Existing Product --</span>
+                                            <svg class="w-4 h-4 shrink-0 text-slate-400 transition-transform" id="stockin-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"></path></svg>
+                                        </button>
+                                        
+                                        <div id="stockin-panel" role="listbox" class="hidden absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl origin-top transition-all">
+                                            <div class="border-b border-slate-100 bg-slate-50 p-2">
+                                                <div class="relative">
+                                                    <svg class="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"></path></svg>
+                                                    <input type="search" id="stockin-search" placeholder="Search SKU or product name..." autocomplete="off" oninput="filterStockinOptions()" onkeydown="handleStockinSearchKeydown(event)" class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[#5E3435] focus:ring-2 focus:ring-[#5E3435]/15">
+                                                </div>
+                                            </div>
+                                            <div id="stockin-options" class="max-h-60 overflow-y-auto p-1.5" role="presentation"></div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -1230,7 +1250,9 @@
         // Influencer Collab Variables
         let activeInfluencer = null;
         let collabRoster = [];
+        
         initializeInvoiceProductDropdown();
+        initializeStockinProductDropdown();
 
         // --- AUTH & VIEW SWITCHING ---
         function togglePasswordVis(inputId) {
@@ -2087,20 +2109,30 @@
         function populateSelects() {
             const availableOnly = inventoryData.filter(i => i.stock_quantity > 0);
             filterStockOutProducts();
+            
+            // For Invoice
             invoiceProductOptions = availableOnly;
             renderInvoiceProductOptions();
             
+            // For Stock In - Update Native hidden select options 
             const inNameSelectOptions = '<option value="">-- Select Existing Product --</option>' + 
                                   inventoryData.map(item => {
                                       const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
                                       return `<option value="${item.product_code}">${item.product_name}${sizeLabel} - [${item.product_code}]</option>`;
                                   }).join('');
             
-            const currentSelection = document.getElementById('in-name-select').value;
-            document.getElementById('in-name-select').innerHTML = inNameSelectOptions;
-            document.getElementById('in-name-select').value = currentSelection;
+            const inNameSelect = document.getElementById('in-name-select');
+            if(inNameSelect) {
+                const currentSelection = inNameSelect.value;
+                inNameSelect.innerHTML = inNameSelectOptions;
+                inNameSelect.value = currentSelection;
+            }
+            
+            // Render Stock In Custom Options
+            renderStockinOptions();
         }
 
+        // --- INVOICE DROPDOWN LOGIC ---
         function initializeInvoiceProductDropdown() {
             document.addEventListener('click', event => {
                 const dropdown = document.getElementById('invoice-product-dropdown');
@@ -2203,6 +2235,133 @@
                 document.getElementById('inv-product-trigger').focus();
             }
         }
+        
+        // --- STOCK IN DROPDOWN LOGIC ---
+        let stockinHighlightIndex = -1;
+
+        function initializeStockinProductDropdown() {
+            document.addEventListener('click', event => {
+                const dropdown = document.getElementById('stockin-custom-dropdown');
+                if(dropdown && !dropdown.contains(event.target)) closeStockinDropdown();
+            });
+            renderStockinOptions();
+        }
+
+        function toggleStockinDropdown() {
+            const panel = document.getElementById('stockin-panel');
+            const trigger = document.getElementById('stockin-trigger');
+            const isOpen = !panel.classList.contains('hidden');
+            if(isOpen) return closeStockinDropdown();
+            
+            panel.classList.remove('hidden');
+            trigger.setAttribute('aria-expanded', 'true');
+            
+            const currentVal = document.getElementById('in-name-select').value;
+            const products = getFilteredStockinProducts();
+            stockinHighlightIndex = Math.max(0, products.findIndex(item => item.product_code === currentVal));
+            
+            renderStockinOptions();
+            document.getElementById('stockin-search').focus();
+        }
+
+        function closeStockinDropdown() {
+            const panel = document.getElementById('stockin-panel');
+            const trigger = document.getElementById('stockin-trigger');
+            if(!panel || !trigger) return;
+            panel.classList.add('hidden');
+            trigger.setAttribute('aria-expanded', 'false');
+            document.getElementById('stockin-search').value = '';
+            stockinHighlightIndex = -1;
+        }
+
+        function getFilteredStockinProducts() {
+            const query = (document.getElementById('stockin-search')?.value || '').trim().toLowerCase();
+            if(!query) return inventoryData;
+            return inventoryData.filter(item => 
+                `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`.toLowerCase().includes(query)
+            );
+        }
+
+        function filterStockinOptions() {
+            stockinHighlightIndex = 0;
+            renderStockinOptions();
+        }
+
+        function renderStockinOptions() {
+            const container = document.getElementById('stockin-options');
+            if(!container) return;
+            
+            const products = getFilteredStockinProducts();
+            const selectedCode = document.getElementById('in-name-select').value;
+            
+            if(stockinHighlightIndex >= products.length) stockinHighlightIndex = products.length - 1;
+            
+            if(!products.length) {
+                container.innerHTML = '<div class="px-3 py-5 text-center text-sm text-slate-500"><p class="font-semibold text-slate-700">No products found</p><p class="mt-1 text-xs">Try searching by SKU or product name.</p></div>';
+                return;
+            }
+            
+            container.innerHTML = products.slice(0, 250).map((item, index) => {
+                const sizeLabel = item.size ? ` <span class="text-slate-400">(Size: ${escapeHtml(item.size)})</span>` : '';
+                const isSelected = item.product_code === selectedCode;
+                const isHighlighted = index === stockinHighlightIndex;
+                
+                return `<button type="button" role="option" aria-selected="${isSelected}" onclick="selectStockinProduct('${escapeHtml(item.product_code)}')" class="w-full rounded-lg px-3 py-2.5 text-left transition ${isHighlighted ? 'bg-[#FAF8F4]' : 'hover:bg-[#FAF8F4]'} ${isSelected ? 'ring-1 ring-inset ring-[#5E3435] bg-[#FAF8F4]' : ''}">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold tracking-wider text-[#806565]">${escapeHtml(item.product_code)}</span>
+                        <span class="truncate text-sm font-semibold text-[#252525]">${escapeHtml(item.product_name || 'Unnamed product')}${sizeLabel}</span>
+                    </div>
+                </button>`;
+            }).join('');
+            
+            if(products.length > 250) {
+                container.insertAdjacentHTML('beforeend', '<p class="px-3 py-2 text-center text-[11px] text-slate-400">Showing first 250 matches. Refine your search.</p>');
+            }
+        }
+
+        function selectStockinProduct(code) {
+            const product = inventoryData.find(item => item.product_code === code);
+            if(!product) return;
+            
+            const selectEl = document.getElementById('in-name-select');
+            selectEl.value = code;
+            
+            const label = document.getElementById('stockin-label');
+            label.innerText = `${product.product_code} - ${product.product_name}`;
+            label.className = 'truncate font-bold text-[#5E3435]';
+            
+            autoFillExistingProduct();
+            closeStockinDropdown();
+        }
+
+        function handleStockinSearchKeydown(event) {
+            const products = getFilteredStockinProducts();
+            if(event.key === 'ArrowDown') {
+                event.preventDefault();
+                stockinHighlightIndex = Math.min(stockinHighlightIndex + 1, products.length - 1);
+                renderStockinOptions();
+            } else if(event.key === 'ArrowUp') {
+                event.preventDefault();
+                stockinHighlightIndex = Math.max(stockinHighlightIndex - 1, 0);
+                renderStockinOptions();
+            } else if(event.key === 'Enter' && stockinHighlightIndex >= 0 && products[stockinHighlightIndex]) {
+                event.preventDefault();
+                selectStockinProduct(products[stockinHighlightIndex].product_code);
+            } else if(event.key === 'Escape') {
+                event.preventDefault();
+                closeStockinDropdown();
+                document.getElementById('stockin-trigger').focus();
+            }
+        }
+
+        function handleStockinTriggerKeydown(event) {
+            if(event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                toggleStockinDropdown();
+            } else if(event.key === 'Escape') {
+                closeStockinDropdown();
+            }
+        }
 
         function filterStockOutProducts() {
             const search = (document.getElementById('out-product-search')?.value || '').trim().toLowerCase();
@@ -2242,13 +2401,12 @@
         function toggleStockInMode() {
             const isUpdatingOld = document.getElementById('update-old-stock').checked;
             const nameInput = document.getElementById('in-name');
-            const nameSelect = document.getElementById('in-name-select');
+            const dropdownContainer = document.getElementById('stockin-custom-dropdown');
             
             if(isUpdatingOld) {
                 nameInput.classList.add('hidden');
                 nameInput.required = false;
-                nameSelect.classList.remove('hidden');
-                nameSelect.required = true;
+                dropdownContainer.classList.remove('hidden');
                 
                 document.getElementById('stockInForm').reset();
                 document.getElementById('update-old-stock').checked = true; 
@@ -2256,8 +2414,7 @@
                 
                 document.getElementById('in-code').disabled = true; 
             } else {
-                nameSelect.classList.add('hidden');
-                nameSelect.required = false;
+                dropdownContainer.classList.add('hidden');
                 nameInput.classList.remove('hidden');
                 nameInput.required = true;
                 
@@ -2265,6 +2422,13 @@
                 document.getElementById('stock-purchase-date').valueAsDate = new Date();
                 document.getElementById('in-code').disabled = false;
                 document.getElementById('in-code').value = '';
+                
+                document.getElementById('in-name-select').value = '';
+                const label = document.getElementById('stockin-label');
+                if(label) {
+                    label.innerText = '-- Select Existing Product --';
+                    label.className = 'truncate text-slate-500';
+                }
             }
         }
 
@@ -2352,12 +2516,18 @@
             const code = document.getElementById('in-code').value;
             const qty = parseInt(document.getElementById('in-qty').value);
             const weightVal = parseFloat(document.getElementById('in-weight').value);
+            
+            // Check native select value manually since it's hidden now
+            if(isUpdatingOld && !document.getElementById('in-name-select').value) {
+                return alert("Please select an existing product from the dropdown.");
+            }
+
             const productName = isUpdatingOld
                 ? document.getElementById('in-name-select').options[document.getElementById('in-name-select').selectedIndex].text.split(' - ')[0].trim()
                 : document.getElementById('in-name').value.trim();
+                
             const productFiles = Array.from(document.getElementById('in-product-media').files);
 
-            if(isUpdatingOld && !document.getElementById('in-name-select').value) return alert("Please select an existing product.");
             if(!productName) return alert("Please enter or select a product name.");
 
             if(!isUpdatingOld) {
