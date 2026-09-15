@@ -1417,7 +1417,9 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            if(!supaClient) return alert("System not connected to database. Check config.js");
+            if(!supaClient) {
+                return alert("System not connected to database. Please click '⚙️ DB Setup' in the top right to enter your Supabase credentials, or add them to config.js.");
+            }
 
             const userId = document.getElementById('login-user-id').value.toUpperCase();
             const passwordInput = document.getElementById('login-password').value;
@@ -1503,10 +1505,13 @@
 
         async function initializeApplication() {
             setDbStatus(false, "Checking DB...");
-            const configuredUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : localStorage.getItem('supa_url');
-            const configuredKey = typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : localStorage.getItem('supa_key');
+            
+            // Allow config.js or localStorage
+            const configuredUrl = (typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL) ? SUPABASE_URL : localStorage.getItem('supa_url');
+            const configuredKey = (typeof SUPABASE_ANON_KEY !== 'undefined' && SUPABASE_ANON_KEY) ? SUPABASE_ANON_KEY : localStorage.getItem('supa_key');
+            
             if(!configuredUrl || !configuredKey) {
-                setDbStatus(false, "config.js missing or incomplete");
+                setDbStatus(false, "config.js or settings missing");
                 return;
             }
             try {
@@ -1514,10 +1519,11 @@
                 await checkInitialSetup();
             } catch(error) {
                 console.error("Supabase startup failed:", error);
-                setDbStatus(false, "Database connection failed: " + error.message);
+                setDbStatus(false, "DB connection failed");
             }
         }
 
+        // Initialize application securely avoiding duplicate onload handlers
         if(document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeApplication, { once: true });
         } else {
