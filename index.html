@@ -1303,15 +1303,30 @@
             form.classList.toggle('hidden');
         }
 
+        function initSupabase(url, key) {
+            if(!url || !key) throw new Error('Supabase URL and key are required.');
+            if(!window.supabase || typeof window.supabase.createClient !== 'function') {
+                throw new Error('Supabase client library did not load. Check your network connection.');
+            }
+            supaClient = window.supabase.createClient(url.trim(), key.trim());
+            return supaClient;
+        }
+
         function saveDbSetup(e) {
             e.preventDefault();
             const url = document.getElementById('setup-supa-url').value;
             const key = document.getElementById('setup-supa-key').value;
             localStorage.setItem('supa_url', url);
             localStorage.setItem('supa_key', key);
-            initSupabase(url, key);
-            alert("Database credentials saved! Checking system status...");
-            toggleDbSetup();
+            try {
+                initSupabase(url, key);
+                alert("Database credentials saved! Checking system status...");
+                toggleDbSetup();
+                checkInitialSetup();
+            } catch(error) {
+                setDbStatus(false, error.message);
+                alert("Database setup failed: " + error.message);
+            }
         }
 
         async function handleInitialSetup(e) {
@@ -1486,20 +1501,28 @@
             if (supaClient) { fetchInventory(); fetchSales(); }
         }
 
-        window.onload = function() {
+        async function initializeApplication() {
             setDbStatus(false, "Checking DB...");
-            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
-                try {
-                    supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    checkInitialSetup();
-                } catch(e) {
-                    console.error("Supabase client creation failed:", e);
-                    setDbStatus(false, "Config Error");
-                }
-            } else {
-                setDbStatus(false, "config.js missing");
+            const configuredUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : localStorage.getItem('supa_url');
+            const configuredKey = typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : localStorage.getItem('supa_key');
+            if(!configuredUrl || !configuredKey) {
+                setDbStatus(false, "config.js missing or incomplete");
+                return;
             }
-        };
+            try {
+                initSupabase(configuredUrl, configuredKey);
+                await checkInitialSetup();
+            } catch(error) {
+                console.error("Supabase startup failed:", error);
+                setDbStatus(false, "Database connection failed: " + error.message);
+            }
+        }
+
+        if(document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApplication, { once: true });
+        } else {
+            initializeApplication();
+        }
 
         async function checkInitialSetup() {
             try {
