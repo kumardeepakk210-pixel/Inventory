@@ -790,6 +790,7 @@
                             <form onsubmit="handleStockOut(event)" class="mb-6">
                                 <div class="mb-5">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Select Product by Code & Size</label>
+                                    <input type="search" id="out-product-search" oninput="filterStockOutProducts()" placeholder="Search product code or name..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm mb-2">
                                     <select id="out-product" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-shadow" required onchange="checkStockAvailability()">
                                         <option value="">-- Choose Product --</option>
                                     </select>
@@ -863,7 +864,6 @@
                             <p class="text-xs text-rose-600 font-medium mb-4">Note: Items added will be instantly deducted from DB inventory.</p>
                             <div class="mb-4">
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Product Code</label>
-                                <input type="search" id="inv-product-search" oninput="filterInvoiceProducts()" placeholder="Search product code or name..." class="w-full border border-slate-300 rounded-lg p-2 text-sm mb-2">
                                 <select id="inv-product" class="w-full border border-slate-300 rounded-lg p-2 text-sm" onchange="autoFillInvoiceItem()"><option value="">-- Select SKU --</option></select>
                             </div>
                             <div class="mb-4">
@@ -1856,8 +1856,8 @@
                 return `<option value="${escapeHtml(item.product_code)}">${escapeHtml(item.product_code)} - ${escapeHtml(item.product_name)}${sizeLabel}</option>`;
             }).join('');
 
-            document.getElementById('out-product').innerHTML = options;
-            filterInvoiceProducts();
+            filterStockOutProducts();
+            document.getElementById('inv-product').innerHTML = options.replace('-- Choose Product --', '-- Select SKU --');
             
             const inNameSelectOptions = '<option value="">-- Select Existing Product --</option>' + 
                                   inventoryData.map(item => {
@@ -1870,13 +1870,13 @@
             document.getElementById('in-name-select').value = currentSelection;
         }
 
-        function filterInvoiceProducts() {
-            const search = (document.getElementById('inv-product-search')?.value || '').trim().toLowerCase();
-            const select = document.getElementById('inv-product');
+        function filterStockOutProducts() {
+            const search = (document.getElementById('out-product-search')?.value || '').trim().toLowerCase();
+            const select = document.getElementById('out-product');
             if(!select) return;
             const currentValue = select.value;
             const availableProducts = inventoryData.filter(item => item.stock_quantity > 0 && (!search || `${item.product_code} ${item.product_name}`.toLowerCase().includes(search)));
-            select.innerHTML = '<option value="">-- Select SKU --</option>' + availableProducts.map(item => {
+            select.innerHTML = '<option value="">-- Choose Product --</option>' + availableProducts.map(item => {
                 const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
                 return `<option value="${escapeHtml(item.product_code)}">${escapeHtml(item.product_code)} - ${escapeHtml(item.product_name)}${sizeLabel}</option>`;
             }).join('');
