@@ -1215,6 +1215,7 @@
         document.getElementById('dash-date-range').innerText = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         let supaClient = null;
+        let databaseConnectionError = '';
         let currentUser = null;
         let inventoryData = [];
         let invoiceItems = [];
@@ -1397,7 +1398,7 @@
         async function handleLogin(e) {
             e.preventDefault();
             if(!supaClient) {
-                return alert("System not connected to database. Verify Inventory/config.js and reload the application.");
+                return alert(`System not connected to database. ${databaseConnectionError || 'Verify Inventory/config.js and reload the application.'}`);
             }
 
             const userId = document.getElementById('login-user-id').value.toUpperCase();
@@ -1490,17 +1491,21 @@
 
         async function initializeApplication() {
             setDbStatus(false, "Checking DB...");
+            databaseConnectionError = '';
             
-            // Connection details are centrally managed in config.js; no browser-stored
-            // credentials or manual setup can override this configuration.
+            // Connection details are centrally managed in config.js. Support both the
+            // current WISHRITE_CONFIG object and the legacy const-based config format.
             const config = window.WISHRITE_CONFIG || {};
-            const configuredUrl = config.supabaseUrl;
-            const configuredKey = config.supabaseAnonKey;
+            const legacyUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '';
+            const legacyKey = typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '';
+            const configuredUrl = config.supabaseUrl || legacyUrl;
+            const configuredKey = config.supabaseAnonKey || legacyKey;
             
             if(!configuredUrl || !configuredKey) {
                 const message = window.wishriteConfigLoadError
                     ? 'config.js could not be loaded; verify it is beside index.html'
                     : 'Supabase configuration is missing';
+                databaseConnectionError = message;
                 setDbStatus(false, message);
                 console.error(message);
                 return;
@@ -1510,6 +1515,7 @@
                 await checkInitialSetup();
             } catch(error) {
                 console.error("Supabase startup failed:", error);
+                databaseConnectionError = error.message || 'Database startup failed.';
                 setDbStatus(false, "DB connection failed");
             }
         }
