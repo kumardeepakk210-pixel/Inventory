@@ -1512,7 +1512,13 @@
             if (targetId === 'business-setup') renderBusinessConfiguration();
             if (targetId === 'purchase-details') renderPurchaseDetails();
             if (targetId === 'sales-dashboard') renderSalesDashboard();
-            if (supaClient) { fetchInventory(); fetchSales(); }
+            if (supaClient) {
+                // Always reload product data when entering Stock In so its existing-product
+                // picker reflects the database, rather than only an earlier cached fetch.
+                if(targetId === 'stock-in') refreshStockInProducts();
+                else fetchInventory();
+                fetchSales();
+            }
         }
 
         async function initializeApplication() {
@@ -1731,7 +1737,7 @@
         }
 
         async function fetchInventory() {
-            if(!supaClient) return;
+            if(!supaClient) return null;
             const { data, error } = await supaClient.from('inventory').select('*').order('created_at', { ascending: false });
             if(!error) {
                 inventoryData = data || [];
@@ -1740,9 +1746,11 @@
                 if(document.getElementById('inventory').classList.contains('active')) renderFullInventory();
                 if(document.getElementById('purchase-details').classList.contains('active')) renderPurchaseDetails();
                 populateSelects();
+                return inventoryData;
             } else {
                 setDbStatus(false, "Sync Failed");
                 console.error("Fetch error: ", error);
+                return null;
             }
         }
 
@@ -2293,11 +2301,30 @@
             renderStockinOptions();
         }
 
-        function toggleStockinDropdown() {
+        async function refreshStockInProducts() {
+            const trigger = document.getElementById('stockin-trigger');
+            const options = document.getElementById('stockin-options');
+            if(!supaClient) return false;
+
+            if(trigger) trigger.disabled = true;
+            if(options) options.innerHTML = '<div class="px-3 py-5 text-center text-sm text-slate-500">Refreshing products from database…</div>';
+            try {
+                const products = await fetchInventory();
+                return Array.isArray(products);
+            } finally {
+                if(trigger) trigger.disabled = false;
+            }
+        }
+
+        async function toggleStockinDropdown() {
             const panel = document.getElementById('stockin-panel');
             const trigger = document.getElementById('stockin-trigger');
             const isOpen = !panel.classList.contains('hidden');
             if(isOpen) return closeStockinDropdown();
+
+            // A product may have been added or edited in another session after the
+            // Stock In page was opened. Fetch before rendering the choices.
+            await refreshStockInProducts();
             
             panel.classList.remove('hidden');
             trigger.setAttribute('aria-expanded', 'true');
