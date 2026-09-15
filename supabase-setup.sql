@@ -91,6 +91,12 @@ create table if not exists public.sales (
     created_at timestamptz not null default now()
 );
 
+alter table public.sales
+    add column if not exists invoice_total numeric not null default 0,
+    add column if not exists paid_amount numeric not null default 0,
+    add column if not exists due_amount numeric not null default 0,
+    add column if not exists payment_status text not null default 'Pending';
+
 alter table public.sales enable row level security;
 drop policy if exists "Sales are readable" on public.sales;
 create policy "Sales are readable"
