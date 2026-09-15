@@ -893,7 +893,22 @@
                             <p class="text-xs text-rose-600 font-medium mb-4">Note: Items added will be instantly deducted from DB inventory.</p>
                             <div class="mb-4">
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Product Code</label>
-                                <select id="inv-product" class="w-full border border-slate-300 rounded-lg p-2 text-sm" onchange="autoFillInvoiceItem()"><option value="">-- Select SKU --</option></select>
+                                <div id="invoice-product-dropdown" class="relative">
+                                    <input type="hidden" id="inv-product" value="">
+                                    <button type="button" id="inv-product-trigger" onclick="toggleInvoiceProductDropdown()" onkeydown="handleInvoiceProductTriggerKeydown(event)" aria-haspopup="listbox" aria-expanded="false" aria-controls="inv-product-panel" role="combobox" class="w-full flex items-center justify-between gap-3 border border-slate-300 bg-white rounded-lg p-2.5 text-sm text-left transition hover:border-[#5E3435] focus:outline-none focus:ring-2 focus:ring-[#5E3435]/15">
+                                        <span id="inv-product-label" class="truncate text-slate-500">-- Select SKU --</span>
+                                        <svg class="w-4 h-4 shrink-0 text-[#5E3435] transition-transform" id="inv-product-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"></path></svg>
+                                    </button>
+                                    <div id="inv-product-panel" role="listbox" aria-label="Products" class="hidden absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-[#E8DED2] bg-white shadow-xl ring-1 ring-black/5 origin-top transition-all">
+                                        <div class="border-b border-[#E8DED2] bg-[#FAF8F4] p-2">
+                                            <div class="relative">
+                                                <svg class="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#806565]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"></path></svg>
+                                                <input type="search" id="inv-product-search" placeholder="Search SKU or product name..." autocomplete="off" aria-label="Search SKU or product name" oninput="filterInvoiceProductOptions()" onkeydown="handleInvoiceProductKeydown(event)" class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[#5E3435] focus:ring-2 focus:ring-[#5E3435]/15">
+                                            </div>
+                                        </div>
+                                        <div id="inv-product-options" class="max-h-72 overflow-y-auto p-1.5" role="presentation"></div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="mb-4">
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Description</label>
@@ -1027,6 +1042,7 @@
         document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
         ['cust-name', 'cust-phone', 'cust-email', 'cust-pin', 'cust-address', 'cust-city', 'cust-state', 'cust-country'].forEach(id => document.getElementById(id).addEventListener('input', updateInvoiceCustomerDisplay));
         updateInvoiceCustomerDisplay();
+        initializeInvoiceProductDropdown();
         
         function setDailyInvoiceNumber() {
             const now = new Date();
@@ -1046,6 +1062,8 @@
         let salesData = [];
         let importedPurchaseRows = [];
         let importedPurchaseFile = null;
+        let invoiceProductOptions = [];
+        let invoiceProductHighlight = -1;
         const defaultBusinessConfig = {
             business_type: 'Jewelry Retail and Wholesale',
             product_fields: { product_name: true, product_code: true, category: true, size: true, weight: true, description: true, purchase_price: true, selling_price: true, stock_quantity: true },
@@ -1920,13 +1938,9 @@
 
         function populateSelects() {
             const availableOnly = inventoryData.filter(i => i.stock_quantity > 0);
-            const options = '<option value="">-- Choose Product --</option>' + availableOnly.map(item => {
-                const sizeLabel = item.size ? ` (Size: ${item.size})` : '';
-                return `<option value="${escapeHtml(item.product_code)}">${escapeHtml(item.product_code)} - ${escapeHtml(item.product_name)}${sizeLabel}</option>`;
-            }).join('');
-
             filterStockOutProducts();
-            document.getElementById('inv-product').innerHTML = options.replace('-- Choose Product --', '-- Select SKU --');
+            invoiceProductOptions = availableOnly;
+            renderInvoiceProductOptions();
             
             const inNameSelectOptions = '<option value="">-- Select Existing Product --</option>' + 
                                   inventoryData.map(item => {
@@ -1937,6 +1951,109 @@
             const currentSelection = document.getElementById('in-name-select').value;
             document.getElementById('in-name-select').innerHTML = inNameSelectOptions;
             document.getElementById('in-name-select').value = currentSelection;
+        }
+
+        function initializeInvoiceProductDropdown() {
+            document.addEventListener('click', event => {
+                const dropdown = document.getElementById('invoice-product-dropdown');
+                if(dropdown && !dropdown.contains(event.target)) closeInvoiceProductDropdown();
+            });
+            renderInvoiceProductOptions();
+        }
+
+        function toggleInvoiceProductDropdown() {
+            const panel = document.getElementById('inv-product-panel');
+            const trigger = document.getElementById('inv-product-trigger');
+            const isOpen = !panel.classList.contains('hidden');
+            if(isOpen) return closeInvoiceProductDropdown();
+            panel.classList.remove('hidden');
+            trigger.setAttribute('aria-expanded', 'true');
+            invoiceProductHighlight = Math.max(0, invoiceProductOptions.findIndex(item => item.product_code === document.getElementById('inv-product').value));
+            renderInvoiceProductOptions();
+            document.getElementById('inv-product-search').focus();
+        }
+
+        function handleInvoiceProductTriggerKeydown(event) {
+            if(event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                toggleInvoiceProductDropdown();
+            } else if(event.key === 'Escape') {
+                closeInvoiceProductDropdown();
+            }
+        }
+
+        function closeInvoiceProductDropdown() {
+            const panel = document.getElementById('inv-product-panel');
+            const trigger = document.getElementById('inv-product-trigger');
+            if(!panel || !trigger) return;
+            panel.classList.add('hidden');
+            trigger.setAttribute('aria-expanded', 'false');
+            document.getElementById('inv-product-search').value = '';
+            invoiceProductHighlight = -1;
+        }
+
+        function filterInvoiceProductOptions() {
+            invoiceProductHighlight = 0;
+            renderInvoiceProductOptions();
+        }
+
+        function getFilteredInvoiceProducts() {
+            const query = (document.getElementById('inv-product-search')?.value || '').trim().toLowerCase();
+            if(!query) return invoiceProductOptions;
+            return invoiceProductOptions.filter(item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`.toLowerCase().includes(query));
+        }
+
+        function renderInvoiceProductOptions() {
+            const optionsContainer = document.getElementById('inv-product-options');
+            if(!optionsContainer) return;
+            const products = getFilteredInvoiceProducts();
+            const selectedCode = document.getElementById('inv-product')?.value;
+            if(invoiceProductHighlight >= products.length) invoiceProductHighlight = products.length - 1;
+            if(!products.length) {
+                optionsContainer.innerHTML = '<div class="px-3 py-5 text-center text-sm text-slate-500"><p class="font-semibold text-slate-700">No products found</p><p class="mt-1 text-xs">Try searching by SKU or product name.</p></div>';
+                return;
+            }
+            optionsContainer.innerHTML = products.slice(0, 250).map((item, index) => {
+                const sizeLabel = item.size ? ` <span class="text-slate-400">(Size: ${escapeHtml(item.size)})</span>` : '';
+                const isSelected = item.product_code === selectedCode;
+                const isHighlighted = index === invoiceProductHighlight;
+                return `<button type="button" role="option" aria-selected="${isSelected}" data-product-code="${escapeHtml(item.product_code)}" onclick="selectInvoiceProduct('${escapeHtml(item.product_code)}')" class="w-full rounded-lg px-3 py-2.5 text-left transition ${isHighlighted ? 'bg-[#FAF8F4]' : 'hover:bg-[#FAF8F4]'} ${isSelected ? 'ring-1 ring-inset ring-[#B79A68]' : ''}">
+                    <span class="block text-[10px] font-bold tracking-wider text-[#806565]">${escapeHtml(item.product_code)}</span>
+                    <span class="block truncate text-sm font-semibold text-[#252525]">${escapeHtml(item.product_name || 'Unnamed product')}${sizeLabel}</span>
+                </button>`;
+            }).join('');
+            if(products.length > 250) optionsContainer.insertAdjacentHTML('beforeend', '<p class="px-3 py-2 text-center text-[11px] text-slate-400">Showing first 250 matches. Refine your search.</p>');
+        }
+
+        function selectInvoiceProduct(code) {
+            const product = invoiceProductOptions.find(item => item.product_code === code);
+            if(!product) return;
+            document.getElementById('inv-product').value = code;
+            const label = document.getElementById('inv-product-label');
+            label.innerText = product.product_code;
+            label.className = 'truncate font-semibold text-[#5E3435]';
+            autoFillInvoiceItem();
+            closeInvoiceProductDropdown();
+        }
+
+        function handleInvoiceProductKeydown(event) {
+            const products = getFilteredInvoiceProducts();
+            if(event.key === 'ArrowDown') {
+                event.preventDefault();
+                invoiceProductHighlight = Math.min(invoiceProductHighlight + 1, products.length - 1);
+                renderInvoiceProductOptions();
+            } else if(event.key === 'ArrowUp') {
+                event.preventDefault();
+                invoiceProductHighlight = Math.max(invoiceProductHighlight - 1, 0);
+                renderInvoiceProductOptions();
+            } else if(event.key === 'Enter' && invoiceProductHighlight >= 0 && products[invoiceProductHighlight]) {
+                event.preventDefault();
+                selectInvoiceProduct(products[invoiceProductHighlight].product_code);
+            } else if(event.key === 'Escape') {
+                event.preventDefault();
+                closeInvoiceProductDropdown();
+                document.getElementById('inv-product-trigger').focus();
+            }
         }
 
         function filterStockOutProducts() {
@@ -2255,6 +2372,8 @@
                 renderInvoiceTable();
                 
                 document.getElementById('inv-product').value = '';
+                document.getElementById('inv-product-label').innerText = '-- Select SKU --';
+                document.getElementById('inv-product-label').className = 'truncate text-slate-500';
                 document.getElementById('inv-desc').value = '';
                 document.getElementById('inv-price').value = '';
                 document.getElementById('inv-qty').value = '1';
