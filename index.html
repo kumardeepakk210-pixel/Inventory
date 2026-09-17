@@ -101,6 +101,561 @@
                 <input type="password" id="cust-setup-confirm" placeholder="Confirm Password" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#5E3435] outline-none mb-6">
                 <button onclick="finalizeCustomerAccount()" class="w-full bg-[#5E3435] text-white font-bold py-3 rounded-lg hover:bg-[#482728] transition-colors shadow-lg">Create Account</button>
             </div>
+    </div>
+
+    <!-- PRODUCT CREATION / EDIT MODAL -->
+    <div id="product-form-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[80] flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden relative my-auto animate-fadeIn">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-900" id="prod-modal-title">Add New Product</h2>
+                    <p class="text-xs text-slate-500 mt-0.5" id="prod-modal-subtitle">Add comprehensive product information for inventory and customer website.</p>
+                </div>
+                <button type="button" onclick="closeProductFormModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Form Tab Selector -->
+            <div class="px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2 overflow-x-auto scrollbar-hide shrink-0">
+                <button type="button" onclick="setProductFormSection('basic')" id="pform-tab-basic" class="pform-tab px-3 py-1.5 rounded-lg text-xs font-bold bg-[#5E3435] text-white transition-all whitespace-nowrap">1. Basic Info</button>
+                <button type="button" onclick="setProductFormSection('pricing')" id="pform-tab-pricing" class="pform-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-all whitespace-nowrap">2. Pricing & Tax</button>
+                <button type="button" onclick="setProductFormSection('specs')" id="pform-tab-specs" class="pform-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-all whitespace-nowrap">3. Specifications</button>
+                <button type="button" onclick="setProductFormSection('inventory')" id="pform-tab-inventory" class="pform-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-all whitespace-nowrap">4. Stock & Supplier</button>
+                <button type="button" onclick="setProductFormSection('seo')" id="pform-tab-seo" class="pform-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-all whitespace-nowrap">5. SEO & Slug</button>
+                <button type="button" onclick="setProductFormSection('status')" id="pform-tab-status" class="pform-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-all whitespace-nowrap">6. Status</button>
+            </div>
+
+            <!-- Form Body with Scroll -->
+            <form id="product-admin-form" onsubmit="handleProductFormSubmit(event)" class="flex-1 overflow-y-auto p-6 space-y-6">
+                <input type="hidden" id="pf-id" value="">
+                <input type="hidden" id="pf-mode" value="create">
+
+                <!-- Section 1: Basic Information -->
+                <div id="pform-sec-basic" class="pform-sec space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">Basic Product Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- SKU / Product Code -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Product Code / SKU <span class="text-rose-500">*</span></label>
+                            <div class="flex gap-2">
+                                <input type="text" id="pf-code" required placeholder="e.g. WR-SLV-001 or CHN-0001" oninput="validateProductCodeUnique(this.value)" class="flex-1 uppercase font-mono font-bold px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                                <button type="button" onclick="autoGenerateProductCode()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 whitespace-nowrap" title="Auto generate based on Category">Auto SKU</button>
+                            </div>
+                            <p id="pf-code-feedback" class="text-[11px] text-slate-400 mt-1">Must be unique across all products.</p>
+                        </div>
+
+                        <!-- Product Name -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Product Name <span class="text-rose-500">*</span></label>
+                            <input type="text" id="pf-name" required placeholder="e.g. Classic Snake Silver Chain" oninput="autoGenerateSlugFromName()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+
+                        <!-- Category -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-bold text-slate-700">Category <span class="text-rose-500">*</span></label>
+                                <button type="button" onclick="openCategoryManagerModal()" class="text-[11px] text-indigo-600 font-bold hover:underline">+ New Category</button>
+                            </div>
+                            <select id="pf-category" required onchange="onProductCategoryChanged()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none focus:bg-white focus:border-[#5E3435]">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+
+                        <!-- Short Description -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Short Description</label>
+                            <input type="text" id="pf-short-desc" placeholder="One-line tagline for product card displays" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+
+                        <!-- Full Description -->
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Full Description</label>
+                            <textarea id="pf-desc" rows="3" placeholder="Detailed product story, craftsmanship, styling notes..." class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Pricing & Tax -->
+                <div id="pform-sec-pricing" class="pform-sec hidden space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">Pricing & Taxation</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Selling Price -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Selling Price (₹) <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-slate-400 font-bold">₹</span>
+                                <input type="number" step="0.01" min="0" id="pf-selling-price" required placeholder="2499" oninput="calculateMarginPreview()" class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-emerald-600 outline-none focus:bg-white focus:border-[#5E3435]">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Price paid by customers.</p>
+                        </div>
+
+                        <!-- Cost / Purchase Price -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Cost / Purchase Price (₹)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-slate-400 font-bold">₹</span>
+                                <input type="number" step="0.01" min="0" id="pf-cost-price" placeholder="1200" oninput="calculateMarginPreview()" class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none focus:bg-white focus:border-[#5E3435]">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Wholesale cost per piece.</p>
+                        </div>
+
+                        <!-- Compare-at Price / MRP -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Compare-at Price / MRP (₹)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-slate-400 font-bold">₹</span>
+                                <input type="number" step="0.01" min="0" id="pf-compare-price" placeholder="3499" oninput="calculateMarginPreview()" class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none focus:bg-white focus:border-[#5E3435]">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Strikethrough MRP on website.</p>
+                        </div>
+
+                        <!-- GST % -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">GST Rate (%)</label>
+                            <input type="number" step="0.1" min="0" max="28" id="pf-gst" value="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none focus:bg-white focus:border-[#5E3435]">
+                            <p class="text-[11px] text-slate-400 mt-1">Default 3% for silver jewelry.</p>
+                        </div>
+                    </div>
+
+                    <!-- Margin preview bar -->
+                    <div id="pf-margin-card" class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-4">
+                            <div><span class="text-slate-500">Gross Margin:</span> <strong id="pf-margin-amount" class="text-emerald-700 font-bold">₹0</strong></div>
+                            <div><span class="text-slate-500">Margin %:</span> <strong id="pf-margin-pct" class="text-emerald-700 font-bold">0%</strong></div>
+                            <div><span class="text-slate-500">Website Discount:</span> <strong id="pf-discount-pct" class="text-indigo-700 font-bold">0% OFF</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Specifications -->
+                <div id="pform-sec-specs" class="pform-sec hidden space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">Material & Dimensions</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Material -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Material</label>
+                            <input type="text" id="pf-material" value="925 Sterling Silver" placeholder="925 Sterling Silver" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+
+                        <!-- Purity -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Purity</label>
+                            <input type="text" id="pf-purity" value="92.5%" placeholder="92.5%" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+
+                        <!-- Weight in grams -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Weight (in grams)</label>
+                            <input type="number" step="0.01" min="0" id="pf-weight" placeholder="e.g. 3.45" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+
+                        <!-- Size -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Size / Dimension</label>
+                            <input type="text" id="pf-size" placeholder="e.g. 18 inch / Size 7 / Adjustable" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Stock & Supplier -->
+                <div id="pform-sec-inventory" class="pform-sec hidden space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">Stock Inventory & Supplier Information</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Current Stock -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Current Stock Quantity <span class="text-rose-500">*</span></label>
+                            <input type="number" min="0" step="1" id="pf-stock" value="1" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-extrabold outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+
+                        <!-- Low Stock Threshold -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Low-Stock Alert Threshold</label>
+                            <input type="number" min="0" step="1" id="pf-threshold" value="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                            <p class="text-[11px] text-slate-400 mt-1">Triggers 'Low Stock' alert when stock reaches this amount.</p>
+                        </div>
+
+                        <!-- Purchase Date -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Purchase Date</label>
+                            <input type="date" id="pf-purchase-date" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+
+                        <!-- Supplier / Shop Name -->
+                        <div class="sm:col-span-1">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Supplier / Shop Name</label>
+                            <input type="text" id="pf-shop-name" placeholder="Supplier or manufacturer name" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+
+                        <!-- Shop Address -->
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Supplier Address / Origin</label>
+                            <input type="text" id="pf-shop-address" placeholder="e.g. Kolkata, West Bengal" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5: SEO & Slug -->
+                <div id="pform-sec-seo" class="pform-sec hidden space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">Search Engine Optimization (SEO) & URL</h3>
+                    <div class="space-y-3">
+                        <!-- Slug -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Product URL Slug</label>
+                            <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono">
+                                <span class="text-slate-400">wishrite.com/product/</span>
+                                <input type="text" id="pf-slug" placeholder="classic-snake-silver-chain-wr-slv-001" class="flex-1 bg-transparent text-slate-800 font-bold outline-none">
+                            </div>
+                        </div>
+
+                        <!-- SEO Title -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">SEO Meta Title</label>
+                            <input type="text" id="pf-seo-title" placeholder="e.g. Pure 925 Sterling Silver Snake Chain | WishRite" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                        </div>
+
+                        <!-- SEO Description -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">SEO Meta Description</label>
+                            <textarea id="pf-seo-desc" rows="2" placeholder="Brief search preview for Google and social media sharing..." class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 6: Status -->
+                <div id="pform-sec-status" class="pform-sec hidden space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">Catalog Status & Visibility</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                        <label class="flex flex-col p-4 border rounded-xl cursor-pointer transition hover:bg-slate-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/40">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-bold text-sm text-emerald-800">Active</span>
+                                <input type="radio" name="pf-status-radio" value="Active" checked class="accent-emerald-600">
+                            </div>
+                            <span class="text-xs text-slate-500">Live on website and available for customers to order.</span>
+                        </label>
+
+                        <label class="flex flex-col p-4 border rounded-xl cursor-pointer transition hover:bg-slate-50 has-[:checked]:border-slate-500 has-[:checked]:bg-slate-100">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-bold text-sm text-slate-700">Draft</span>
+                                <input type="radio" name="pf-status-radio" value="Draft" class="accent-slate-600">
+                            </div>
+                            <span class="text-xs text-slate-500">Work in progress; hidden from customer view.</span>
+                        </label>
+
+                        <label class="flex flex-col p-4 border rounded-xl cursor-pointer transition hover:bg-slate-50 has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/40">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-bold text-sm text-rose-700">Out of Stock</span>
+                                <input type="radio" name="pf-status-radio" value="Out of Stock" class="accent-rose-600">
+                            </div>
+                            <span class="text-xs text-slate-500">Displays 'Sold Out' badge on customer website.</span>
+                        </label>
+
+                        <label class="flex flex-col p-4 border rounded-xl cursor-pointer transition hover:bg-slate-50 has-[:checked]:border-zinc-500 has-[:checked]:bg-zinc-100">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-bold text-sm text-zinc-700">Archived</span>
+                                <input type="radio" name="pf-status-radio" value="Archived" class="accent-zinc-600">
+                            </div>
+                            <span class="text-xs text-slate-500">Discontinued product hidden from all active sales.</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Footer Buttons -->
+                <div class="pt-4 border-t border-slate-200 flex items-center justify-between shrink-0">
+                    <button type="button" onclick="closeProductFormModal()" class="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-colors">
+                        Cancel
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="pform-btn-images" onclick="openImagesFromForm()" class="hidden px-4 py-2.5 rounded-lg border border-[#5E3435] text-[#5E3435] hover:bg-[#5E3435]/5 text-sm font-bold transition-colors">
+                            🖼️ Manage Images
+                        </button>
+                        <button type="submit" id="pform-btn-submit" class="px-6 py-2.5 rounded-lg bg-[#5E3435] text-white font-bold text-sm hover:bg-[#482728] transition-colors shadow-md shadow-[#5E3435]/20 flex items-center gap-2">
+                            <span id="pform-submit-icon">💾</span>
+                            <span id="pform-submit-text">Save Product</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PRODUCT IMAGE MANAGER MODAL (HIGH PRIORITY) -->
+    <div id="product-image-manager-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[90] flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden relative my-auto animate-fadeIn">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[#5E3435]/10 text-[#5E3435] flex items-center justify-center text-xl font-bold">🖼️</div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-lg font-extrabold text-slate-900" id="img-manager-product-name">Product Name</h2>
+                            <span class="bg-slate-100 text-slate-700 font-mono text-xs font-bold px-2 py-0.5 rounded" id="img-manager-product-sku">SKU</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Upload, reorder, assign image types, and set primary photo for Supabase & Website display.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeProductImageManagerModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Missing Bucket Warning Banner (if setup not yet run in Supabase SQL editor) -->
+            <div id="img-bucket-warning" class="hidden mx-6 mt-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-xs text-amber-800">
+                <span class="text-base">⚠️</span>
+                <div class="flex-1">
+                    <strong class="font-bold block">Supabase Storage Bucket 'product-images' not found</strong>
+                    <span>Images are temporarily saved to local storage & inventory media. To enable Supabase Cloud Storage, copy and run the updated <code class="bg-amber-100 px-1 rounded">supabase-setup.sql</code> in your Supabase SQL Editor.</span>
+                </div>
+                <button type="button" onclick="copySetupSqlSnippet()" class="shrink-0 bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold px-2.5 py-1 rounded text-xs">Copy SQL</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- Dropzone Area -->
+                <div id="img-dropzone" ondragover="handleImageDropzoneOver(event)" ondragleave="handleImageDropzoneLeave(event)" ondrop="handleImageDropzoneDrop(event)" class="border-2 border-dashed border-slate-300 hover:border-[#5E3435] rounded-2xl p-6 text-center bg-slate-50/70 transition-all cursor-pointer">
+                    <input type="file" id="img-file-input" multiple accept="image/jpeg,image/png,image/webp,image/jpg" onchange="handleImageFileInputChange(event)" class="hidden">
+                    <div onclick="document.getElementById('img-file-input').click()" class="space-y-2">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-2xl">
+                            ☁️
+                        </div>
+                        <p class="text-sm font-bold text-slate-800">Drag & Drop product images here, or <span class="text-[#5E3435] underline">Browse Files</span></p>
+                        <p class="text-xs text-slate-400">Supported: JPG, PNG, WEBP · Max 10MB per file · Auto-optimized to WebP</p>
+                    </div>
+                </div>
+
+                <!-- Upload Progress Bar -->
+                <div id="img-upload-progress-container" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-700">
+                        <span id="img-upload-status-text">Uploading images...</span>
+                        <span id="img-upload-percent-text">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                        <div id="img-upload-progress-bar" class="bg-[#5E3435] h-2 rounded-full transition-all duration-200" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Gallery Section -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-extrabold text-slate-900">Product Images Gallery</h3>
+                            <span class="bg-slate-100 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full" id="img-manager-count">0</span>
+                        </div>
+                        <span class="text-xs text-slate-400 font-medium">★ First image is the Primary photo shown on website cards</span>
+                    </div>
+
+                    <!-- Gallery Grid -->
+                    <div id="img-manager-gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <div id="img-manager-empty" class="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                        <p class="text-sm font-medium">No images uploaded for this product yet.</p>
+                        <p class="text-xs text-slate-400 mt-1">Upload images above to make this piece shine on the website!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+                <span class="text-xs text-slate-500" id="img-manager-footer-sync-status">✓ Changes sync automatically with Supabase</span>
+                <button type="button" onclick="closeProductImageManagerModal()" class="px-5 py-2 rounded-lg bg-[#5E3435] text-white font-bold text-xs hover:bg-[#482728] transition-colors">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CATEGORY MANAGEMENT MODAL -->
+    <div id="category-manager-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[85] flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden relative my-auto animate-fadeIn">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">🏷️</span>
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-900">Manage Categories</h2>
+                        <p class="text-xs text-slate-500">Configure product categories and SKU prefix codes.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeCategoryManagerModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- Add Category Form -->
+                <form onsubmit="handleAddNewCategory(event)" class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                    <h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Add New Category</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Category Name</label>
+                            <input type="text" id="new-cat-name" required placeholder="e.g. Silver Jewellery or Toys" class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-[#5E3435]">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">SKU Prefix (3 letters)</label>
+                            <input type="text" id="new-cat-prefix" required maxlength="5" placeholder="e.g. SLV" class="w-full px-3 py-1.5 uppercase font-mono font-bold bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-[#5E3435]">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-[#5E3435] text-white font-bold text-xs py-2 rounded-lg hover:bg-[#482728] transition-colors shadow-sm">
+                        + Add Category
+                    </button>
+                </form>
+
+                <!-- Existing Categories List -->
+                <div>
+                    <h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">Existing Categories (<span id="cat-list-count">0</span>)</h3>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-2.5">Prefix</th>
+                                    <th class="p-2.5">Category Name</th>
+                                    <th class="p-2.5 text-center">Products</th>
+                                    <th class="p-2.5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cat-table-body" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+                <button type="button" onclick="closeCategoryManagerModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-300 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK INVENTORY ADJUSTMENT MODAL -->
+    <div id="quick-stock-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[85] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative animate-fadeIn p-6">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900">Quick Inventory Adjustment</h3>
+                    <p class="text-xs text-slate-500" id="qs-product-name">Product Name</p>
+                </div>
+                <button type="button" onclick="closeQuickStockModal()" class="text-slate-400 hover:text-slate-700 text-sm font-bold">✕</button>
+            </div>
+
+            <form onsubmit="handleQuickStockSubmit(event)" class="space-y-4">
+                <input type="hidden" id="qs-code" value="">
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Current Stock Quantity</label>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="adjustQuickStock(-1)" class="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-lg transition-colors">-</button>
+                        <input type="number" id="qs-qty" min="0" step="1" required class="flex-1 text-center font-extrabold text-xl py-1.5 border border-slate-300 rounded-lg outline-none focus:border-[#5E3435]">
+                        <button type="button" onclick="adjustQuickStock(1)" class="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-lg transition-colors">+</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Selling Price (₹)</label>
+                        <input type="number" step="0.01" min="0" id="qs-selling-price" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-emerald-600 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Cost Price (₹)</label>
+                        <input type="number" step="0.01" min="0" id="qs-purchase-price" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeQuickStockModal()" class="flex-1 py-2 rounded-lg border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="flex-1 py-2 rounded-lg bg-[#5E3435] text-white text-xs font-bold hover:bg-[#482728]">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PRODUCT DETAIL VIEW MODAL -->
+    <div id="product-view-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[85] flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden relative my-auto animate-fadeIn">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-lg font-extrabold text-slate-900" id="pv-name">Product Name</h2>
+                    <span class="bg-indigo-50 text-indigo-700 font-mono text-xs font-bold px-2 py-0.5 rounded" id="pv-code">SKU</span>
+                </div>
+                <button type="button" onclick="closeProductViewModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- Top Summary: Image + Pricing + Badges -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div class="sm:col-span-1">
+                        <div class="aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center">
+                            <img id="pv-img" src="" alt="Product Image" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700" id="pv-category">Category</span>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold" id="pv-status-badge">Status</span>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold" id="pv-stock-badge">Stock</span>
+                            </div>
+                            <div class="text-2xl font-extrabold text-emerald-600" id="pv-price">₹0</div>
+                            <div class="text-xs text-slate-400 mt-0.5" id="pv-mrp-discount">MRP: ₹0 · 0% OFF</div>
+                        </div>
+                        <p class="text-xs text-slate-600 italic bg-slate-50 p-3 rounded-lg border border-slate-100" id="pv-desc">Description</p>
+                        <div class="flex gap-2 pt-2">
+                            <button type="button" id="pv-btn-edit" class="px-3.5 py-1.5 rounded-lg bg-[#5E3435] text-white text-xs font-bold hover:bg-[#482728]">✏️ Edit Product</button>
+                            <button type="button" id="pv-btn-images" class="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50">🖼️ Images</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Specs Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+                    <div>
+                        <span class="text-slate-400 block uppercase font-bold text-[10px]">Material</span>
+                        <strong class="text-slate-800" id="pv-material">925 Sterling Silver</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block uppercase font-bold text-[10px]">Purity</span>
+                        <strong class="text-slate-800" id="pv-purity">92.5%</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block uppercase font-bold text-[10px]">Weight</span>
+                        <strong class="text-slate-800" id="pv-weight">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block uppercase font-bold text-[10px]">Size</span>
+                        <strong class="text-slate-800" id="pv-size">-</strong>
+                    </div>
+                </div>
+
+                <!-- Inventory & SEO Info -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div class="border border-slate-200 rounded-xl p-3.5 space-y-2">
+                        <strong class="text-slate-800 font-bold block border-b border-slate-100 pb-1">Inventory & Procurement</strong>
+                        <div><span class="text-slate-400">Supplier:</span> <span id="pv-supplier">-</span></div>
+                        <div><span class="text-slate-400">Cost Price:</span> <span id="pv-cost">-</span></div>
+                        <div><span class="text-slate-400">Low Stock Threshold:</span> <span id="pv-threshold">-</span></div>
+                        <div><span class="text-slate-400">Purchase Date:</span> <span id="pv-pdate">-</span></div>
+                    </div>
+                    <div class="border border-slate-200 rounded-xl p-3.5 space-y-2">
+                        <strong class="text-slate-800 font-bold block border-b border-slate-100 pb-1">Website URL & SEO</strong>
+                        <div><span class="text-slate-400">URL Slug:</span> <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]" id="pv-slug">-</code></div>
+                        <div><span class="text-slate-400">SEO Title:</span> <span id="pv-seo-title">-</span></div>
+                        <div><span class="text-slate-400">SEO Description:</span> <span id="pv-seo-desc">-</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+                <button type="button" onclick="closeProductViewModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-300 transition-colors">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 
@@ -189,6 +744,9 @@
                 <nav class="p-3 space-y-1 overflow-y-auto h-[calc(100vh-4rem)] scrollbar-hide">
                     <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 bg-primary text-white px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="dashboard">
                         <span class="text-lg">📊</span> <span class="nav-text truncate">Inventory Dashboard</span>
+                    </button>
+                    <button onclick="navigate('products')" id="nav-products" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="products">
+                        <span class="text-lg">✨</span> <span class="nav-text truncate font-semibold">Products</span>
                     </button>
                     <button onclick="navigate('sales-dashboard')" id="nav-sales-dash" class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors" data-target="sales-dashboard">
                         <span class="text-lg">📈</span> <span class="nav-text truncate">Sales Dashboard</span>
@@ -384,6 +942,182 @@
                                 <tr><td colspan="4" class="p-8 text-center text-slate-400">Loading Database...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- PRODUCT MANAGEMENT SYSTEM TAB -->
+                <div id="products" class="page">
+                    <!-- Page Header -->
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl">✨</span>
+                                <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Product Management</h1>
+                                <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Single Source of Truth</span>
+                            </div>
+                            <p class="text-slate-500 mt-1 text-sm">Centralized catalog for WishRite products, pricing, categories, stock, SEO, and images.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <button onclick="openCategoryManagerModal()" class="inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm">
+                                <span>🏷️</span> Categories
+                            </button>
+                            <button onclick="refreshProductsView()" class="inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm" title="Refresh from Supabase">
+                                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span>Refresh</span>
+                            </button>
+                            <button onclick="openProductFormModal('create')" class="inline-flex items-center gap-2 bg-[#5E3435] text-white hover:bg-[#482728] px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-[#5E3435]/20">
+                                <span>➕</span> Add Product
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KPI Metric Counters -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors" onclick="setProductSubTab('all')">
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</span>
+                            <div class="text-2xl font-extrabold text-slate-900 mt-1" id="prod-stat-total">0</div>
+                            <span class="text-[11px] text-slate-400">All products</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-emerald-300 transition-colors" onclick="setProductSubTab('active')">
+                            <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Active</span>
+                            <div class="text-2xl font-extrabold text-emerald-600 mt-1" id="prod-stat-active">0</div>
+                            <span class="text-[11px] text-emerald-500">Live on website</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-amber-300 transition-colors" onclick="setProductSubTab('lowstock')">
+                            <span class="text-xs font-semibold text-amber-600 uppercase tracking-wider">Low Stock</span>
+                            <div class="text-2xl font-extrabold text-amber-600 mt-1" id="prod-stat-lowstock">0</div>
+                            <span class="text-[11px] text-amber-500">Need restocking</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-rose-300 transition-colors" onclick="setProductSubTab('outofstock')">
+                            <span class="text-xs font-semibold text-rose-600 uppercase tracking-wider">Out of Stock</span>
+                            <div class="text-2xl font-extrabold text-rose-600 mt-1" id="prod-stat-outofstock">0</div>
+                            <span class="text-[11px] text-rose-500">0 units left</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-slate-300 transition-colors" onclick="setProductSubTab('draft')">
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Drafts</span>
+                            <div class="text-2xl font-extrabold text-slate-600 mt-1" id="prod-stat-draft">0</div>
+                            <span class="text-[11px] text-slate-400">Unpublished</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-slate-400 transition-colors" onclick="setProductSubTab('archived')">
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Archived</span>
+                            <div class="text-2xl font-extrabold text-slate-500 mt-1" id="prod-stat-archived">0</div>
+                            <span class="text-[11px] text-slate-400">Hidden catalog</span>
+                        </div>
+                    </div>
+
+                    <!-- Sub-tabs Navigation -->
+                    <div class="flex items-center gap-2 border-b border-slate-200 mb-4 overflow-x-auto scrollbar-hide pb-2">
+                        <button onclick="setProductSubTab('all')" id="prod-tab-all" class="prod-subtab px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#5E3435] text-white transition-all whitespace-nowrap">All Products (<span id="prod-tab-count-all">0</span>)</button>
+                        <button onclick="setProductSubTab('active')" id="prod-tab-active" class="prod-subtab px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all whitespace-nowrap">Active (<span id="prod-tab-count-active">0</span>)</button>
+                        <button onclick="setProductSubTab('lowstock')" id="prod-tab-lowstock" class="prod-subtab px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all whitespace-nowrap">Low Stock (<span id="prod-tab-count-lowstock">0</span>)</button>
+                        <button onclick="setProductSubTab('outofstock')" id="prod-tab-outofstock" class="prod-subtab px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all whitespace-nowrap">Out of Stock (<span id="prod-tab-count-outofstock">0</span>)</button>
+                        <button onclick="setProductSubTab('draft')" id="prod-tab-draft" class="prod-subtab px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all whitespace-nowrap">Drafts (<span id="prod-tab-count-draft">0</span>)</button>
+                        <button onclick="setProductSubTab('archived')" id="prod-tab-archived" class="prod-subtab px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all whitespace-nowrap">Archived (<span id="prod-tab-count-archived">0</span>)</button>
+                    </div>
+
+                    <!-- Filter Toolbar -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+                            <!-- Search -->
+                            <div class="lg:col-span-4 relative">
+                                <svg class="w-4 h-4 absolute left-3 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <input type="text" id="prod-search-input" oninput="handleProductFiltersChange()" placeholder="Search by SKU, Name, Material..." class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435] transition-all">
+                                <button onclick="clearProductSearch()" id="prod-search-clear" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs">✕</button>
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div class="lg:col-span-3">
+                                <select id="prod-filter-cat" onchange="handleProductFiltersChange()" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:bg-white focus:border-[#5E3435] transition-all">
+                                    <option value="">All Categories</option>
+                                </select>
+                            </div>
+
+                            <!-- Stock Filter -->
+                            <div class="lg:col-span-2">
+                                <select id="prod-filter-stock" onchange="handleProductFiltersChange()" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:bg-white focus:border-[#5E3435] transition-all">
+                                    <option value="all">All Stock Status</option>
+                                    <option value="in">In Stock (>0)</option>
+                                    <option value="low">Low Stock (≤3)</option>
+                                    <option value="out">Out of Stock (0)</option>
+                                </select>
+                            </div>
+
+                            <!-- Sort Selector -->
+                            <div class="lg:col-span-2">
+                                <select id="prod-sort-by" onchange="handleProductFiltersChange()" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:bg-white focus:border-[#5E3435] transition-all">
+                                    <option value="updated-desc">Latest Updated</option>
+                                    <option value="created-desc">Newest Added</option>
+                                    <option value="name-asc">Name (A to Z)</option>
+                                    <option value="name-desc">Name (Z to A)</option>
+                                    <option value="price-asc">Price (Low to High)</option>
+                                    <option value="price-desc">Price (High to Low)</option>
+                                    <option value="stock-asc">Stock (Low to High)</option>
+                                    <option value="stock-desc">Stock (High to Low)</option>
+                                </select>
+                            </div>
+
+                            <!-- View Mode Toggle -->
+                            <div class="lg:col-span-1 flex justify-end">
+                                <div class="inline-flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                                    <button onclick="setProductViewMode('table')" id="btn-view-table" class="p-1.5 rounded text-slate-700 bg-white shadow-xs" title="Table View">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                                    </button>
+                                    <button onclick="setProductViewMode('grid')" id="btn-view-grid" class="p-1.5 rounded text-slate-500 hover:text-slate-700" title="Grid View">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Table View -->
+                    <div id="products-table-container" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-5">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[900px]">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">
+                                        <th class="py-3.5 px-4 w-16 text-center">Image</th>
+                                        <th class="py-3.5 px-4 w-32">SKU / Code</th>
+                                        <th class="py-3.5 px-4">Product Name</th>
+                                        <th class="py-3.5 px-4 w-28">Category</th>
+                                        <th class="py-3.5 px-4 w-32 text-right">Selling Price</th>
+                                        <th class="py-3.5 px-4 w-28 text-center">Stock</th>
+                                        <th class="py-3.5 px-4 w-28 text-center">Status</th>
+                                        <th class="py-3.5 px-4 w-28 text-center">Updated</th>
+                                        <th class="py-3.5 px-4 w-44 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products-table-body" class="divide-y divide-slate-100 text-sm">
+                                    <tr><td colspan="9" class="p-8 text-center text-slate-400">Loading products catalog...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Products Grid View (Alternative Card Mode) -->
+                    <div id="products-grid-container" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-5">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="text-xs text-slate-500" id="prod-pagination-info">
+                            Showing 0 of 0 products
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-2 text-xs text-slate-500">
+                                <span>Per page:</span>
+                                <select id="prod-per-page" onchange="handleProductPageSizeChange()" class="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs outline-none">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-1" id="prod-pagination-buttons">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1426,7 +2160,7 @@
         }
 
         function applyRolePermissions(role) {
-            const buttons = ['nav-dashboard', 'nav-inventory', 'nav-business-setup', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
+            const buttons = ['nav-dashboard', 'nav-products', 'nav-inventory', 'nav-business-setup', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
             buttons.forEach(id => {
                 if(document.getElementById(id)) document.getElementById(id).style.display = 'flex';
             });
@@ -1466,6 +2200,7 @@
                 document.getElementById('main-sidebar').classList.add('-translate-x-full');
             }
 
+            if (targetId === 'products') renderProductsView();
             if (targetId === 'inventory') renderFullInventory();
             if (targetId === 'business-setup') renderBusinessConfiguration();
             if (targetId === 'purchase-details') renderPurchaseDetails();
@@ -1707,10 +2442,13 @@
             if(!error) {
                 inventoryData = data || [];
                 populateCategoryOptions();
+                populateProductCategoriesDropdown();
                 renderDashboard();
+                if(document.getElementById('products')?.classList.contains('active')) renderProductsView();
                 if(document.getElementById('inventory').classList.contains('active')) renderFullInventory();
                 if(document.getElementById('purchase-details').classList.contains('active')) renderPurchaseDetails();
                 populateSelects();
+                updateProductTabCounts();
                 return inventoryData;
             } else {
                 setDbStatus(false, "Sync Failed");
@@ -1723,6 +2461,8 @@
         function handleGlobalSearch() {
             if(document.getElementById('dashboard').classList.contains('active')) {
                 renderDashboard();
+            } else if (document.getElementById('products')?.classList.contains('active')) {
+                renderProductsView();
             } else if (document.getElementById('inventory').classList.contains('active')) {
                 renderFullInventory();
             }
@@ -3002,6 +3742,1623 @@
                 }
             };
             reader.readAsArrayBuffer(file);
+        // ==============================================================================
+        // WISHRITE PRODUCT MANAGEMENT SYSTEM (CENTRAL ADMINISTRATIVE CONTROLLER)
+        // ==============================================================================
+
+        let currentProductSubTab = 'all'; // 'all', 'active', 'lowstock', 'outofstock', 'draft', 'archived'
+        let productCurrentPage = 1;
+        let productPageSize = 25;
+        let productViewMode = 'table'; // 'table' or 'grid'
+        let activeProductForImages = null;
+        let activeProductImagesList = [];
+        let productImagesCache = new Map(); // productId -> array of image records
+
+        // Initialize product category dropdowns
+        function populateProductCategoriesDropdown() {
+            const selectEl = document.getElementById('pf-category');
+            const filterEl = document.getElementById('prod-filter-cat');
+            if(!selectEl && !filterEl) return;
+
+            const categories = businessConfig.categories || [];
+            
+            if(selectEl) {
+                const currentVal = selectEl.value;
+                selectEl.innerHTML = categories.map(c => `<option value="${escapeHtml(c.name)}" data-prefix="${escapeHtml(c.prefix)}">${escapeHtml(c.name)} (${escapeHtml(c.prefix)})</option>`).join('');
+                if(currentVal && categories.some(c => c.name === currentVal)) selectEl.value = currentVal;
+            }
+
+            if(filterEl) {
+                const currentVal = filterEl.value;
+                filterEl.innerHTML = '<option value="">All Categories</option>' + 
+                    categories.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+                if(currentVal) filterEl.value = currentVal;
+            }
+        }
+
+        // Format currency helper
+        function formatInr(val) {
+            const num = Number(val) || 0;
+            return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+        }
+
+        // Generate Luxury Placeholder SVG for products without images
+        function generateProductVectorPlaceholder(name, sku, category) {
+            const cat = (category || '').toLowerCase();
+            let iconSvg = '';
+            if (cat.includes('earring') || cat.includes('bali')) {
+                iconSvg = `<circle cx="100" cy="85" r="22" fill="none" stroke="#D4AF37" stroke-width="2.5"/><path d="M100 107 L100 135 M93 135 L107 135" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"/><circle cx="100" cy="148" r="5" fill="#5E3435"/>`;
+            } else if (cat.includes('ring')) {
+                iconSvg = `<circle cx="100" cy="115" r="32" fill="none" stroke="#A8A8A8" stroke-width="3.5"/><polygon points="100,75 110,88 90,88" fill="#D4AF37"/>`;
+            } else if (cat.includes('necklace') || cat.includes('chain') || cat.includes('pendant')) {
+                iconSvg = `<path d="M60 75 Q100 150 140 75" fill="none" stroke="#B0B0B0" stroke-width="3" stroke-dasharray="4,3"/><circle cx="100" cy="148" r="7" fill="#5E3435"/>`;
+            } else if (cat.includes('bracelet') || cat.includes('anklet')) {
+                iconSvg = `<ellipse cx="100" cy="115" rx="42" ry="28" fill="none" stroke="#A8A8A8" stroke-width="3"/><circle cx="125" cy="98" r="5" fill="#D4AF37"/>`;
+            } else {
+                iconSvg = `<polygon points="100,85 125,105 115,138 85,138 75,105" fill="none" stroke="#A8A8A8" stroke-width="2.5"/><circle cx="100" cy="115" r="7" fill="#5E3435"/>`;
+            }
+
+            const cleanSku = escapeHtml(sku || '');
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" width="100%" height="100%">
+                <defs>
+                    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#FCFAF8"/>
+                        <stop offset="100%" stop-color="#F1ECE6"/>
+                    </linearGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#g)"/>
+                <rect x="8" y="8" width="184" height="224" fill="none" stroke="#E6DFD9" stroke-width="1"/>
+                <g opacity="0.9">${iconSvg}</g>
+                <text x="100" y="182" font-family="Georgia, serif" font-size="10" fill="#5E3435" text-anchor="middle" letter-spacing="1">WISHRITE</text>
+                <text x="100" y="196" font-family="sans-serif" font-size="7.5" fill="#8E8E93" text-anchor="middle" letter-spacing="1.2">925 SILVER</text>
+                ${cleanSku ? `<text x="100" y="210" font-family="monospace" font-size="7" fill="#B0A69F" text-anchor="middle">${cleanSku}</text>` : ''}
+            </svg>`;
+
+            return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+        }
+
+        // Get primary thumbnail URL for any product
+        function getProductPrimaryImageUrl(product) {
+            if(!product) return '';
+            
+            // Check direct image_url property
+            if(product.image_url) return product.image_url;
+
+            // Check product_media_urls array
+            if(Array.isArray(product.product_media_urls) && product.product_media_urls.length > 0) {
+                return product.product_media_urls[0];
+            }
+
+            // Check cached images from product_images table
+            const cached = productImagesCache.get(product.id);
+            if(cached && cached.length > 0) {
+                const primary = cached.find(img => img.is_primary) || cached[0];
+                if(primary?.image_url) return primary.image_url;
+            }
+
+            // Check localStorage registry (shared with Website)
+            try {
+                const rawRegistry = localStorage.getItem('wishrite_custom_product_images');
+                if(rawRegistry) {
+                    const reg = JSON.parse(rawRegistry);
+                    const sku = product.product_code;
+                    if(sku && reg[sku] && reg[sku].length > 0) {
+                        return reg[sku][0].url;
+                    }
+                    if(product.id && reg[product.id] && reg[product.id].length > 0) {
+                        return reg[product.id][0].url;
+                    }
+                }
+            } catch(e) {}
+
+            // Return SVG luxury placeholder
+            return generateProductVectorPlaceholder(product.product_name, product.product_code, product.category);
+        }
+
+        // Determine effective product status
+        function getProductStatus(product) {
+            if(product.status) return product.status;
+            if(product.stock_quantity <= 0) return 'Out of Stock';
+            return 'Active';
+        }
+
+        // Update counts on sub-tabs and KPI counters
+        function updateProductTabCounts() {
+            if(!inventoryData) return;
+
+            const total = inventoryData.length;
+            let active = 0, lowstock = 0, outofstock = 0, draft = 0, archived = 0;
+
+            inventoryData.forEach(p => {
+                const status = getProductStatus(p);
+                const threshold = p.low_stock_threshold !== undefined ? Number(p.low_stock_threshold) : 3;
+                const stock = Number(p.stock_quantity) || 0;
+
+                if(status === 'Archived') archived++;
+                else if(status === 'Draft') draft++;
+                else if(status === 'Out of Stock' || stock === 0) outofstock++;
+                else {
+                    active++;
+                    if(stock > 0 && stock <= threshold) lowstock++;
+                }
+            });
+
+            // Update KPI cards
+            const elTotal = document.getElementById('prod-stat-total');
+            const elActive = document.getElementById('prod-stat-active');
+            const elLow = document.getElementById('prod-stat-lowstock');
+            const elOut = document.getElementById('prod-stat-outofstock');
+            const elDraft = document.getElementById('prod-stat-draft');
+            const elArchived = document.getElementById('prod-stat-archived');
+
+            if(elTotal) elTotal.innerText = total;
+            if(elActive) elActive.innerText = active;
+            if(elLow) elLow.innerText = lowstock;
+            if(elOut) elOut.innerText = outofstock;
+            if(elDraft) elDraft.innerText = draft;
+            if(elArchived) elArchived.innerText = archived;
+
+            // Update sub-tab count badges
+            const tabAll = document.getElementById('prod-tab-count-all');
+            const tabActive = document.getElementById('prod-tab-count-active');
+            const tabLow = document.getElementById('prod-tab-count-lowstock');
+            const tabOut = document.getElementById('prod-tab-count-outofstock');
+            const tabDraft = document.getElementById('prod-tab-count-draft');
+            const tabArchived = document.getElementById('prod-tab-count-archived');
+
+            if(tabAll) tabAll.innerText = total;
+            if(tabActive) tabActive.innerText = active;
+            if(tabLow) tabLow.innerText = lowstock;
+            if(tabOut) tabOut.innerText = outofstock;
+            if(tabDraft) tabDraft.innerText = draft;
+            if(tabArchived) tabArchived.innerText = archived;
+        }
+
+        // Sub-tab selection handler
+        function setProductSubTab(tab) {
+            currentProductSubTab = tab;
+            productCurrentPage = 1;
+
+            // Update tab styles
+            document.querySelectorAll('.prod-subtab').forEach(btn => {
+                btn.classList.remove('bg-[#5E3435]', 'text-white', 'font-bold');
+                btn.classList.add('text-slate-600', 'font-semibold', 'hover:bg-slate-100');
+            });
+
+            const activeBtn = document.getElementById(`prod-tab-${tab}`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-[#5E3435]', 'text-white', 'font-bold');
+                activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+            }
+
+            renderProductsView();
+        }
+
+        function handleProductFiltersChange() {
+            productCurrentPage = 1;
+            const clearBtn = document.getElementById('prod-search-clear');
+            const searchVal = document.getElementById('prod-search-input')?.value || '';
+            if(clearBtn) clearBtn.classList.toggle('hidden', !searchVal);
+            renderProductsView();
+        }
+
+        function clearProductSearch() {
+            const input = document.getElementById('prod-search-input');
+            if(input) input.value = '';
+            handleProductFiltersChange();
+        }
+
+        function handleProductPageSizeChange() {
+            const select = document.getElementById('prod-per-page');
+            if(select) productPageSize = parseInt(select.value) || 25;
+            productCurrentPage = 1;
+            renderProductsView();
+        }
+
+        function goToProductPage(page) {
+            productCurrentPage = page;
+            renderProductsView();
+            // Scroll table into view smoothly
+            document.getElementById('products-table-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function setProductViewMode(mode) {
+            productViewMode = mode;
+            const btnTable = document.getElementById('btn-view-table');
+            const btnGrid = document.getElementById('btn-view-grid');
+            const tableContainer = document.getElementById('products-table-container');
+            const gridContainer = document.getElementById('products-grid-container');
+
+            if(mode === 'table') {
+                btnTable?.classList.add('bg-white', 'text-slate-700', 'shadow-xs');
+                btnTable?.classList.remove('text-slate-500');
+                btnGrid?.classList.remove('bg-white', 'text-slate-700', 'shadow-xs');
+                btnGrid?.classList.add('text-slate-500');
+                tableContainer?.classList.remove('hidden');
+                gridContainer?.classList.add('hidden');
+            } else {
+                btnGrid?.classList.add('bg-white', 'text-slate-700', 'shadow-xs');
+                btnGrid?.classList.remove('text-slate-500');
+                btnTable?.classList.remove('bg-white', 'text-slate-700', 'shadow-xs');
+                btnTable?.classList.add('text-slate-500');
+                tableContainer?.classList.add('hidden');
+                gridContainer?.classList.remove('hidden');
+            }
+        }
+
+        // Core Render Function for Products Management View
+        function renderProductsView() {
+            populateProductCategoriesDropdown();
+            updateProductTabCounts();
+
+            const query = (document.getElementById('prod-search-input')?.value || '').trim().toLowerCase();
+            const catFilter = document.getElementById('prod-filter-cat')?.value || '';
+            const stockFilter = document.getElementById('prod-filter-stock')?.value || 'all';
+            const sortBy = document.getElementById('prod-sort-by')?.value || 'updated-desc';
+
+            // Filter data
+            let filtered = (inventoryData || []).filter(item => {
+                const status = getProductStatus(item);
+                const stock = Number(item.stock_quantity) || 0;
+                const threshold = item.low_stock_threshold !== undefined ? Number(item.low_stock_threshold) : 3;
+
+                // Sub-tab filter
+                if(currentProductSubTab === 'active' && (status !== 'Active' || stock <= 0)) return false;
+                if(currentProductSubTab === 'lowstock' && (status === 'Archived' || status === 'Draft' || stock <= 0 || stock > threshold)) return false;
+                if(currentProductSubTab === 'outofstock' && (status !== 'Out of Stock' && stock > 0)) return false;
+                if(currentProductSubTab === 'draft' && status !== 'Draft') return false;
+                if(currentProductSubTab === 'archived' && status !== 'Archived') return false;
+
+                // Category filter
+                if(catFilter && item.category !== catFilter) return false;
+
+                // Stock filter dropdown
+                if(stockFilter === 'in' && stock <= 0) return false;
+                if(stockFilter === 'low' && (stock <= 0 || stock > threshold)) return false;
+                if(stockFilter === 'out' && stock > 0) return false;
+
+                // Query search
+                if(query) {
+                    const matchSku = item.product_code?.toLowerCase().includes(query);
+                    const matchName = item.product_name?.toLowerCase().includes(query);
+                    const matchCat = item.category?.toLowerCase().includes(query);
+                    const matchDesc = item.product_description?.toLowerCase().includes(query);
+                    const matchMat = item.material?.toLowerCase().includes(query);
+                    const matchShop = item.shop_name?.toLowerCase().includes(query);
+                    if(!matchSku && !matchName && !matchCat && !matchDesc && !matchMat && !matchShop) return false;
+                }
+
+                return true;
+            });
+
+            // Sort data
+            filtered.sort((a, b) => {
+                switch(sortBy) {
+                    case 'updated-desc': return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
+                    case 'created-desc': return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                    case 'name-asc': return (a.product_name || '').localeCompare(b.product_name || '');
+                    case 'name-desc': return (b.product_name || '').localeCompare(a.product_name || '');
+                    case 'price-asc': return (Number(a.selling_price) || 0) - (Number(b.selling_price) || 0);
+                    case 'price-desc': return (Number(b.selling_price) || 0) - (Number(a.selling_price) || 0);
+                    case 'stock-asc': return (Number(a.stock_quantity) || 0) - (Number(b.stock_quantity) || 0);
+                    case 'stock-desc': return (Number(b.stock_quantity) || 0) - (Number(a.stock_quantity) || 0);
+                    default: return 0;
+                }
+            });
+
+            // Pagination calculations
+            const totalItems = filtered.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / productPageSize));
+            if(productCurrentPage > totalPages) productCurrentPage = totalPages;
+            const startIndex = (productCurrentPage - 1) * productPageSize;
+            const endIndex = Math.min(startIndex + productPageSize, totalItems);
+            const pageItems = filtered.slice(startIndex, endIndex);
+
+            // Update pagination text
+            const infoEl = document.getElementById('prod-pagination-info');
+            if(infoEl) {
+                infoEl.innerHTML = totalItems === 0 
+                    ? 'No products matching filters' 
+                    : `Showing <strong class="font-bold text-slate-800">${startIndex + 1}</strong> to <strong class="font-bold text-slate-800">${endIndex}</strong> of <strong class="font-bold text-slate-800">${totalItems}</strong> products`;
+            }
+
+            // Render pagination buttons
+            renderPaginationButtons(totalPages);
+
+            // Render Table Body
+            const tbody = document.getElementById('products-table-body');
+            const gridContainer = document.getElementById('products-grid-container');
+
+            if(totalItems === 0) {
+                if(tbody) tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-slate-400">
+                    <span class="text-3xl block mb-2">🔍</span>
+                    <p class="font-bold text-slate-600">No products found</p>
+                    <p class="text-xs text-slate-400 mt-1">Try clearing filters or search query, or click "Add Product".</p>
+                </td></tr>`;
+                if(gridContainer) gridContainer.innerHTML = `<div class="col-span-full p-12 text-center text-slate-400">No products found.</div>`;
+                return;
+            }
+
+            if(tbody) {
+                tbody.innerHTML = pageItems.map(item => {
+                    const imgUrl = getProductPrimaryImageUrl(item);
+                    const stock = Number(item.stock_quantity) || 0;
+                    const threshold = item.low_stock_threshold !== undefined ? Number(item.low_stock_threshold) : 3;
+                    const status = getProductStatus(item);
+
+                    // Stock status badge
+                    let stockBadge = '';
+                    if(stock === 0) {
+                        stockBadge = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Out of Stock</span>`;
+                    } else if(stock <= threshold) {
+                        stockBadge = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>${stock} (Low)</span>`;
+                    } else {
+                        stockBadge = `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>${stock}</span>`;
+                    }
+
+                    // Status badge
+                    let statusBadge = '';
+                    if(status === 'Active') {
+                        statusBadge = `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800">Active</span>`;
+                    } else if(status === 'Draft') {
+                        statusBadge = `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">Draft</span>`;
+                    } else if(status === 'Out of Stock') {
+                        statusBadge = `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-100 text-rose-800">Out of Stock</span>`;
+                    } else {
+                        statusBadge = `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-zinc-200 text-zinc-700">Archived</span>`;
+                    }
+
+                    // Price display with compare-at price strikethrough if present
+                    const sellingPrice = Number(item.selling_price) || 0;
+                    const comparePrice = Number(item.compare_at_price) || 0;
+                    let priceHtml = `<span class="font-extrabold text-emerald-600">${formatInr(sellingPrice)}</span>`;
+                    if(comparePrice > sellingPrice) {
+                        priceHtml += `<span class="block text-[11px] text-slate-400 line-through">${formatInr(comparePrice)}</span>`;
+                    }
+
+                    // Date formatted
+                    const dateStr = item.updated_at 
+                        ? new Date(item.updated_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) 
+                        : (item.created_at ? new Date(item.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : '-');
+
+                    // Size / Weight tags
+                    const tags = [];
+                    if(item.weight) tags.push(`${item.weight}g`);
+                    if(item.size) tags.push(`Size: ${item.size}`);
+                    const tagsHtml = tags.length ? `<span class="text-[11px] text-slate-400 block">${tags.join(' · ')}</span>` : '';
+
+                    const isArchived = status === 'Archived';
+
+                    return `
+                        <tr class="hover:bg-slate-50/80 transition-colors">
+                            <td class="py-3 px-4 text-center">
+                                <div class="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden mx-auto cursor-pointer hover:ring-2 hover:ring-[#5E3435]/30 transition-all" onclick="openProductImageManager('${escapeHtml(item.product_code)}')">
+                                    <img src="${imgUrl}" alt="${escapeHtml(item.product_name)}" class="w-full h-full object-cover" loading="lazy">
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="inline-flex rounded-md bg-indigo-50 px-2 py-1 text-xs font-mono font-extrabold text-indigo-700 border border-indigo-100">
+                                    ${escapeHtml(item.product_code)}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="font-bold text-slate-900 hover:text-[#5E3435] cursor-pointer" onclick="openProductViewModal('${escapeHtml(item.product_code)}')">
+                                    ${escapeHtml(item.product_name)}
+                                </div>
+                                ${tagsHtml}
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                                    ${escapeHtml(item.category || 'Other')}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-right">
+                                ${priceHtml}
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                ${stockBadge}
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                ${statusBadge}
+                            </td>
+                            <td class="py-3 px-4 text-center text-xs text-slate-500 whitespace-nowrap">
+                                ${dateStr}
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <button type="button" onclick="openProductViewModal('${escapeHtml(item.product_code)}')" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="View Details">
+                                        👁️
+                                    </button>
+                                    <button type="button" onclick="openProductFormModal('edit', '${escapeHtml(item.product_code)}')" class="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors" title="Edit Product">
+                                        ✏️
+                                    </button>
+                                    <button type="button" onclick="openProductImageManager('${escapeHtml(item.product_code)}')" class="p-1.5 text-slate-500 hover:text-[#5E3435] hover:bg-[#5E3435]/10 rounded-md transition-colors" title="Manage Images">
+                                        🖼️
+                                    </button>
+                                    <button type="button" onclick="openQuickStockModal('${escapeHtml(item.product_code)}')" class="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors" title="Quick Stock Adjustment">
+                                        📦
+                                    </button>
+                                    <button type="button" onclick="toggleProductArchive('${escapeHtml(item.product_code)}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors" title="${isArchived ? 'Restore Product' : 'Archive Product'}">
+                                        ${isArchived ? '↩️' : '🗄️'}
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Render Card Grid View
+            if(gridContainer) {
+                gridContainer.innerHTML = pageItems.map(item => {
+                    const imgUrl = getProductPrimaryImageUrl(item);
+                    const stock = Number(item.stock_quantity) || 0;
+                    const sellingPrice = Number(item.selling_price) || 0;
+                    return `
+                        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
+                            <div class="aspect-square bg-slate-100 relative group overflow-hidden cursor-pointer" onclick="openProductImageManager('${escapeHtml(item.product_code)}')">
+                                <img src="${imgUrl}" alt="${escapeHtml(item.product_name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <span class="absolute top-2 left-2 bg-black/60 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">${escapeHtml(item.product_code)}</span>
+                                <span class="absolute bottom-2 right-2 bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded shadow">${formatInr(sellingPrice)}</span>
+                            </div>
+                            <div class="p-4 flex-1 flex flex-col justify-between">
+                                <div>
+                                    <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">${escapeHtml(item.category || '')}</span>
+                                    <h4 class="font-bold text-sm text-slate-900 line-clamp-1 mt-0.5 hover:text-[#5E3435] cursor-pointer" onclick="openProductViewModal('${escapeHtml(item.product_code)}')">${escapeHtml(item.product_name)}</h4>
+                                    <p class="text-xs text-slate-500 mt-1">Stock: <strong>${stock}</strong> units</p>
+                                </div>
+                                <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
+                                    <button type="button" onclick="openProductFormModal('edit', '${escapeHtml(item.product_code)}')" class="text-xs font-bold text-[#5E3435] hover:underline">Edit</button>
+                                    <button type="button" onclick="openProductImageManager('${escapeHtml(item.product_code)}')" class="text-xs font-bold text-slate-600 hover:text-slate-900">🖼️ Images</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function renderPaginationButtons(totalPages) {
+            const container = document.getElementById('prod-pagination-buttons');
+            if(!container) return;
+
+            let html = '';
+            // Prev button
+            html += `<button type="button" onclick="goToProductPage(${Math.max(1, productCurrentPage - 1)})" ${productCurrentPage === 1 ? 'disabled' : ''} class="px-2.5 py-1 rounded border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed">‹ Prev</button>`;
+
+            // Page numbers
+            const maxVisible = 5;
+            let startPage = Math.max(1, productCurrentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            if(endPage - startPage + 1 < maxVisible) startPage = Math.max(1, endPage - maxVisible + 1);
+
+            for(let p = startPage; p <= endPage; p++) {
+                const isActive = p === productCurrentPage;
+                html += `<button type="button" onclick="goToProductPage(${p})" class="px-2.5 py-1 rounded text-xs font-bold transition ${isActive ? 'bg-[#5E3435] text-white' : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}">${p}</button>`;
+            }
+
+            // Next button
+            html += `<button type="button" onclick="goToProductPage(${Math.min(totalPages, productCurrentPage + 1)})" ${productCurrentPage === totalPages ? 'disabled' : ''} class="px-2.5 py-1 rounded border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed">Next ›</button>`;
+
+            container.innerHTML = html;
+        }
+
+        async function refreshProductsView() {
+            if(!supaClient) return alert("Please ensure Supabase is configured in config.js");
+            const btn = event?.currentTarget;
+            if(btn) btn.classList.add('animate-spin');
+            await fetchInventory();
+            if(btn) btn.classList.remove('animate-spin');
+        }
+
+        // ==============================================================================
+        // PRODUCT CRUD MODAL & OPERATIONS
+        // ==============================================================================
+
+        function setProductFormSection(sec) {
+            document.querySelectorAll('.pform-tab').forEach(t => {
+                t.classList.remove('bg-[#5E3435]', 'text-white', 'font-bold');
+                t.classList.add('text-slate-600', 'font-semibold', 'hover:bg-slate-200');
+            });
+            const activeTab = document.getElementById(`pform-tab-${sec}`);
+            if(activeTab) {
+                activeTab.classList.add('bg-[#5E3435]', 'text-white', 'font-bold');
+                activeTab.classList.remove('text-slate-600', 'hover:bg-slate-200');
+            }
+
+            document.querySelectorAll('.pform-sec').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`pform-sec-${sec}`)?.classList.remove('hidden');
+        }
+
+        function openProductFormModal(mode, productCode = null) {
+            populateProductCategoriesDropdown();
+            const modal = document.getElementById('product-form-modal');
+            const form = document.getElementById('product-admin-form');
+            form.reset();
+
+            document.getElementById('pf-mode').value = mode;
+            setProductFormSection('basic');
+
+            if(mode === 'create') {
+                document.getElementById('prod-modal-title').innerText = 'Add New Product';
+                document.getElementById('prod-modal-subtitle').innerText = 'Enter full product information. This will sync with WishRite customer website.';
+                document.getElementById('pf-id').value = '';
+                document.getElementById('pf-code').readOnly = false;
+                document.getElementById('pf-code-feedback').innerText = 'Must be unique across all products.';
+                document.getElementById('pf-code-feedback').className = 'text-[11px] text-slate-400 mt-1';
+                document.getElementById('pform-btn-images').classList.add('hidden');
+                document.getElementById('pf-stock').value = '1';
+                document.getElementById('pf-threshold').value = '3';
+                document.getElementById('pf-material').value = '925 Sterling Silver';
+                document.getElementById('pf-purity').value = '92.5%';
+                document.getElementById('pf-gst').value = '3';
+                document.getElementById('pf-purchase-date').valueAsDate = new Date();
+                
+                // Auto-suggest next code
+                autoGenerateProductCode();
+            } else {
+                const product = inventoryData.find(p => p.product_code === productCode);
+                if(!product) return alert("Product not found in local dataset.");
+
+                document.getElementById('prod-modal-title').innerText = `Edit: ${product.product_name}`;
+                document.getElementById('prod-modal-subtitle').innerText = `Editing SKU: ${product.product_code}`;
+                document.getElementById('pf-id').value = product.id || '';
+                document.getElementById('pf-code').value = product.product_code || '';
+                document.getElementById('pf-code').readOnly = true;
+                document.getElementById('pf-code-feedback').innerText = 'SKU is locked in edit mode to preserve relational integrity.';
+                document.getElementById('pf-code-feedback').className = 'text-[11px] text-slate-400 mt-1';
+                
+                document.getElementById('pf-name').value = product.product_name || '';
+                document.getElementById('pf-category').value = product.category || '';
+                document.getElementById('pf-short-desc').value = product.short_description || '';
+                document.getElementById('pf-desc').value = product.product_description || '';
+                document.getElementById('pf-selling-price').value = product.selling_price || 0;
+                document.getElementById('pf-cost-price').value = product.cost_price || product.purchase_price || 0;
+                document.getElementById('pf-compare-price').value = product.compare_at_price || 0;
+                document.getElementById('pf-gst').value = product.gst !== undefined ? product.gst : 3;
+                document.getElementById('pf-material').value = product.material || '925 Sterling Silver';
+                document.getElementById('pf-purity').value = product.purity || '92.5%';
+                document.getElementById('pf-weight').value = product.weight || '';
+                document.getElementById('pf-size').value = product.size || '';
+                document.getElementById('pf-stock').value = product.stock_quantity !== undefined ? product.stock_quantity : 0;
+                document.getElementById('pf-threshold').value = product.low_stock_threshold !== undefined ? product.low_stock_threshold : 3;
+                document.getElementById('pf-purchase-date').value = product.purchase_date ? normalizePurchaseDate(product.purchase_date) : '';
+                document.getElementById('pf-shop-name').value = product.shop_name || '';
+                document.getElementById('pf-shop-address').value = product.shop_address || '';
+                document.getElementById('pf-slug').value = product.slug || '';
+                document.getElementById('pf-seo-title').value = product.seo_title || '';
+                document.getElementById('pf-seo-desc').value = product.seo_description || '';
+
+                // Status radio
+                const status = product.status || (product.stock_quantity > 0 ? 'Active' : 'Out of Stock');
+                const radio = document.querySelector(`input[name="pf-status-radio"][value="${status}"]`);
+                if(radio) radio.checked = true;
+
+                // Show Images button in modal header/footer
+                document.getElementById('pform-btn-images').classList.remove('hidden');
+                calculateMarginPreview();
+            }
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProductFormModal() {
+            document.getElementById('product-form-modal')?.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function openImagesFromForm() {
+            const code = document.getElementById('pf-code')?.value;
+            if(code) {
+                closeProductFormModal();
+                openProductImageManager(code);
+            }
+        }
+
+        function onProductCategoryChanged() {
+            if(document.getElementById('pf-mode').value === 'create') {
+                autoGenerateProductCode();
+            }
+            autoGenerateSlugFromName();
+        }
+
+        function autoGenerateProductCode() {
+            const catSelect = document.getElementById('pf-category');
+            if(!catSelect) return;
+            const selectedOpt = catSelect.options[catSelect.selectedIndex];
+            const prefix = selectedOpt?.dataset?.prefix || categoryPrefixes[catSelect.value] || 'MISC';
+
+            // Find maximum existing sequence for this prefix
+            const pattern = new RegExp(`^${prefix}-(\\d+)$`, 'i');
+            let maxSeq = 0;
+            inventoryData.forEach(p => {
+                const match = (p.product_code || '').match(pattern);
+                if(match) {
+                    const num = parseInt(match[1], 10);
+                    if(!isNaN(num) && num > maxSeq) maxSeq = num;
+                }
+            });
+
+            const nextCode = `${prefix}-${String(maxSeq + 1).padStart(4, '0')}`;
+            const input = document.getElementById('pf-code');
+            if(input) {
+                input.value = nextCode;
+                validateProductCodeUnique(nextCode);
+            }
+            autoGenerateSlugFromName();
+        }
+
+        function validateProductCodeUnique(code) {
+            const clean = String(code || '').trim().toUpperCase();
+            const feedback = document.getElementById('pf-code-feedback');
+            const mode = document.getElementById('pf-mode').value;
+            if(!feedback) return;
+
+            if(!clean) {
+                feedback.innerText = 'Product Code / SKU is required.';
+                feedback.className = 'text-[11px] text-rose-500 mt-1';
+                return false;
+            }
+
+            if(mode === 'create') {
+                const existing = inventoryData.find(p => (p.product_code || '').toUpperCase() === clean);
+                if(existing) {
+                    feedback.innerText = `⚠️ SKU '${clean}' already exists in inventory! Please choose another.`;
+                    feedback.className = 'text-[11px] text-rose-600 font-bold mt-1';
+                    return false;
+                } else {
+                    feedback.innerText = `✓ SKU '${clean}' is unique and available.`;
+                    feedback.className = 'text-[11px] text-emerald-600 font-bold mt-1';
+                    return true;
+                }
+            }
+            return true;
+        }
+
+        function autoGenerateSlugFromName() {
+            const name = document.getElementById('pf-name')?.value || '';
+            const code = document.getElementById('pf-code')?.value || '';
+            const slugInput = document.getElementById('pf-slug');
+            if(slugInput && (!slugInput.value || document.getElementById('pf-mode').value === 'create')) {
+                const combined = `${name} ${code}`.toLowerCase().trim()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, '');
+                slugInput.value = combined;
+            }
+        }
+
+        function calculateMarginPreview() {
+            const sell = parseFloat(document.getElementById('pf-selling-price')?.value) || 0;
+            const cost = parseFloat(document.getElementById('pf-cost-price')?.value) || 0;
+            const mrp = parseFloat(document.getElementById('pf-compare-price')?.value) || 0;
+
+            const marginAmt = sell - cost;
+            const marginPct = sell > 0 ? Math.round((marginAmt / sell) * 100) : 0;
+            const discountPct = mrp > sell ? Math.round(((mrp - sell) / mrp) * 100) : 0;
+
+            const elAmt = document.getElementById('pf-margin-amount');
+            const elPct = document.getElementById('pf-margin-pct');
+            const elDisc = document.getElementById('pf-discount-pct');
+
+            if(elAmt) elAmt.innerText = formatInr(marginAmt);
+            if(elPct) elPct.innerText = `${marginPct}%`;
+            if(elDisc) elDisc.innerText = `${discountPct}% OFF`;
+        }
+
+        async function handleProductFormSubmit(e) {
+            e.preventDefault();
+            if(!supaClient) return alert("Database not connected. Check config.js.");
+
+            const mode = document.getElementById('pf-mode').value;
+            const code = document.getElementById('pf-code').value.trim().toUpperCase();
+            const name = document.getElementById('pf-name').value.trim();
+            const category = document.getElementById('pf-category').value;
+            const sellingPrice = parseFloat(document.getElementById('pf-selling-price').value);
+
+            if(!code) return alert("Product Code / SKU is required.");
+            if(!name) return alert("Product Name is required.");
+            if(!category) return alert("Please select a category.");
+            if(isNaN(sellingPrice) || sellingPrice < 0) return alert("Please enter a valid selling price.");
+
+            // Verify SKU uniqueness on create
+            if(mode === 'create') {
+                const existing = inventoryData.find(p => (p.product_code || '').toUpperCase() === code);
+                if(existing) return alert(`Product Code '${code}' already exists. Please choose a unique SKU.`);
+            }
+
+            const btn = document.getElementById('pform-btn-submit');
+            const icon = document.getElementById('pform-submit-icon');
+            const text = document.getElementById('pform-submit-text');
+            if(btn) btn.disabled = true;
+            if(icon) icon.innerText = '⏳';
+            if(text) text.innerText = 'Saving to Supabase...';
+
+            const weightVal = parseFloat(document.getElementById('pf-weight').value);
+            const stockVal = parseInt(document.getElementById('pf-stock').value);
+            const costVal = parseFloat(document.getElementById('pf-cost-price').value);
+            const compareVal = parseFloat(document.getElementById('pf-compare-price').value);
+            const gstVal = parseFloat(document.getElementById('pf-gst').value);
+            const thresholdVal = parseInt(document.getElementById('pf-threshold').value);
+
+            const statusRadio = document.querySelector('input[name="pf-status-radio"]:checked');
+            const statusVal = statusRadio ? statusRadio.value : (stockVal > 0 ? 'Active' : 'Out of Stock');
+
+            // Comprehensive payload with all metadata
+            const fullPayload = {
+                product_code: code,
+                product_name: name,
+                category: category,
+                product_description: document.getElementById('pf-desc').value.trim() || null,
+                short_description: document.getElementById('pf-short-desc').value.trim() || null,
+                selling_price: sellingPrice,
+                purchase_price: isNaN(costVal) ? 0 : costVal,
+                cost_price: isNaN(costVal) ? 0 : costVal,
+                compare_at_price: isNaN(compareVal) ? 0 : compareVal,
+                stock_quantity: isNaN(stockVal) ? 0 : stockVal,
+                weight: isNaN(weightVal) ? null : weightVal,
+                size: document.getElementById('pf-size').value.trim() || null,
+                material: document.getElementById('pf-material').value.trim() || '925 Sterling Silver',
+                purity: document.getElementById('pf-purity').value.trim() || '92.5%',
+                gst: isNaN(gstVal) ? 3 : gstVal,
+                low_stock_threshold: isNaN(thresholdVal) ? 3 : thresholdVal,
+                status: statusVal,
+                slug: document.getElementById('pf-slug').value.trim() || `${name}-${code}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                seo_title: document.getElementById('pf-seo-title').value.trim() || null,
+                seo_description: document.getElementById('pf-seo-desc').value.trim() || null,
+                shop_name: document.getElementById('pf-shop-name').value.trim() || 'WishRite',
+                shop_address: document.getElementById('pf-shop-address').value.trim() || null,
+                purchase_date: document.getElementById('pf-purchase-date').value || null,
+                updated_at: new Date().toISOString()
+            };
+
+            try {
+                let dbError = null;
+
+                if(mode === 'create') {
+                    const { error } = await supaClient.from('inventory').insert([fullPayload]);
+                    dbError = error;
+                } else {
+                    const prodId = document.getElementById('pf-id').value;
+                    const query = prodId 
+                        ? supaClient.from('inventory').update(fullPayload).eq('id', prodId)
+                        : supaClient.from('inventory').update(fullPayload).eq('product_code', code);
+                    const { error } = await query;
+                    dbError = error;
+                }
+
+                // If error is caused by columns not added yet, retry with basic core columns
+                if(dbError && dbError.message && dbError.message.includes('does not exist')) {
+                    console.warn("Some new columns do not exist in inventory table yet. Retrying with core schema columns:", dbError.message);
+                    const corePayload = {
+                        product_code: fullPayload.product_code,
+                        product_name: fullPayload.product_name,
+                        category: fullPayload.category,
+                        product_description: fullPayload.product_description,
+                        selling_price: fullPayload.selling_price,
+                        purchase_price: fullPayload.purchase_price,
+                        stock_quantity: fullPayload.stock_quantity,
+                        weight: fullPayload.weight,
+                        size: fullPayload.size,
+                        shop_name: fullPayload.shop_name,
+                        shop_address: fullPayload.shop_address,
+                        purchase_date: fullPayload.purchase_date,
+                        updated_at: fullPayload.updated_at
+                    };
+
+                    const retryRes = mode === 'create'
+                        ? await supaClient.from('inventory').insert([corePayload])
+                        : await supaClient.from('inventory').update(corePayload).eq('product_code', code);
+
+                    dbError = retryRes.error;
+                    if(!dbError) {
+                        alert("⚠️ Product saved with core fields! Note: Run supabase-setup.sql in Supabase SQL editor to enable new metadata fields (SEO, Material, Status, Compare-at Price).");
+                    }
+                }
+
+                if(dbError) {
+                    alert(`Supabase Error: ${dbError.message}`);
+                    return;
+                }
+
+                alert(`✓ Product '${name}' (${code}) successfully saved!`);
+                closeProductFormModal();
+                await fetchInventory();
+
+            } catch(err) {
+                alert(`Unexpected error saving product: ${err.message}`);
+            } finally {
+                if(btn) btn.disabled = false;
+                if(icon) icon.innerText = '💾';
+                if(text) text.innerText = 'Save Product';
+            }
+        }
+
+        async function toggleProductArchive(productCode) {
+            const product = inventoryData.find(p => p.product_code === productCode);
+            if(!product) return;
+
+            const isCurrentlyArchived = getProductStatus(product) === 'Archived';
+            const action = isCurrentlyArchived ? 'restore' : 'archive';
+            if(!confirm(`Are you sure you want to ${action} product '${product.product_name}' (${product.product_code})?`)) return;
+
+            const newStatus = isCurrentlyArchived ? 'Active' : 'Archived';
+
+            try {
+                const { error } = await supaClient.from('inventory').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('product_code', productCode);
+                if(error) {
+                    // Update locally if column pending
+                    product.status = newStatus;
+                }
+                alert(`Product ${isCurrentlyArchived ? 'restored' : 'archived'} successfully.`);
+                await fetchInventory();
+            } catch(e) {
+                alert("Archive error: " + e.message);
+            }
+        }
+
+        function openProductViewModal(productCode) {
+            const product = inventoryData.find(p => p.product_code === productCode);
+            if(!product) return;
+
+            document.getElementById('pv-name').innerText = product.product_name || 'Unnamed Product';
+            document.getElementById('pv-code').innerText = product.product_code;
+            document.getElementById('pv-category').innerText = product.category || 'Other';
+            document.getElementById('pv-img').src = getProductPrimaryImageUrl(product);
+
+            const sellPrice = Number(product.selling_price) || 0;
+            const mrpPrice = Number(product.compare_at_price) || 0;
+            const costPrice = Number(product.cost_price || product.purchase_price) || 0;
+            const stock = Number(product.stock_quantity) || 0;
+            const threshold = product.low_stock_threshold !== undefined ? Number(product.low_stock_threshold) : 3;
+            const status = getProductStatus(product);
+
+            document.getElementById('pv-price').innerText = formatInr(sellPrice);
+            if(mrpPrice > sellPrice) {
+                const disc = Math.round(((mrpPrice - sellPrice) / mrpPrice) * 100);
+                document.getElementById('pv-mrp-discount').innerText = `MRP: ${formatInr(mrpPrice)} · ${disc}% OFF`;
+            } else {
+                document.getElementById('pv-mrp-discount').innerText = `Standard Retail Price`;
+            }
+
+            document.getElementById('pv-desc').innerText = product.product_description || 'No description provided.';
+            
+            // Badges
+            const statusBadge = document.getElementById('pv-status-badge');
+            statusBadge.innerText = status;
+            statusBadge.className = `px-2.5 py-1 rounded-full text-xs font-bold ${status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`;
+
+            const stockBadge = document.getElementById('pv-stock-badge');
+            stockBadge.innerText = stock === 0 ? 'Out of Stock' : `${stock} in stock`;
+            stockBadge.className = `px-2.5 py-1 rounded-full text-xs font-bold ${stock === 0 ? 'bg-rose-100 text-rose-800' : (stock <= threshold ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')}`;
+
+            // Specs
+            document.getElementById('pv-material').innerText = product.material || '925 Sterling Silver';
+            document.getElementById('pv-purity').innerText = product.purity || '92.5%';
+            document.getElementById('pv-weight').innerText = product.weight ? `${product.weight}g` : '-';
+            document.getElementById('pv-size').innerText = product.size || '-';
+
+            // Inventory & Procurement
+            document.getElementById('pv-supplier').innerText = product.shop_name || '-';
+            document.getElementById('pv-cost').innerText = formatInr(costPrice);
+            document.getElementById('pv-threshold').innerText = `${threshold} units`;
+            document.getElementById('pv-pdate').innerText = product.purchase_date || '-';
+
+            // SEO
+            const slug = product.slug || `${product.product_name}-${product.product_code}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            document.getElementById('pv-slug').innerText = slug;
+            document.getElementById('pv-seo-title').innerText = product.seo_title || product.product_name;
+            document.getElementById('pv-seo-desc').innerText = product.seo_description || product.product_description || '-';
+
+            // Action buttons
+            document.getElementById('pv-btn-edit').onclick = () => { closeProductViewModal(); openProductFormModal('edit', product.product_code); };
+            document.getElementById('pv-btn-images').onclick = () => { closeProductViewModal(); openProductImageManager(product.product_code); };
+
+            document.getElementById('product-view-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProductViewModal() {
+            document.getElementById('product-view-modal')?.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // ==============================================================================
+        // PRODUCT IMAGE MANAGEMENT SYSTEM (HIGH PRIORITY - UPLOAD / STORAGE / DB)
+        // ==============================================================================
+
+        async function openProductImageManager(productCode) {
+            const product = inventoryData.find(p => p.product_code === productCode);
+            if(!product) return alert("Product not found in inventory.");
+
+            activeProductForImages = product;
+            document.getElementById('img-manager-product-name').innerText = product.product_name;
+            document.getElementById('img-manager-product-sku').innerText = product.product_code;
+
+            // Open modal
+            document.getElementById('product-image-manager-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            // Check bucket existence and load images
+            await loadImagesForActiveProduct();
+        }
+
+        function closeProductImageManagerModal() {
+            document.getElementById('product-image-manager-modal')?.classList.add('hidden');
+            document.body.style.overflow = '';
+            activeProductForImages = null;
+            activeProductImagesList = [];
+            // Re-render product view to update thumbnails
+            renderProductsView();
+        }
+
+        // Load images for current active product from Supabase table, Storage, or local cache
+        async function loadImagesForActiveProduct() {
+            if(!activeProductForImages) return;
+            const p = activeProductForImages;
+            activeProductImagesList = [];
+
+            // 1. Try querying product_images table in Supabase
+            let fetchedFromTable = false;
+            if(supaClient) {
+                try {
+                    const { data, error } = await supaClient
+                        .from('product_images')
+                        .select('*')
+                        .eq('product_id', p.id)
+                        .order('sort_order', { ascending: true });
+
+                    if(!error && Array.isArray(data) && data.length > 0) {
+                        activeProductImagesList = data;
+                        fetchedFromTable = true;
+                        productImagesCache.set(p.id, data);
+                    }
+                } catch(e) {
+                    console.warn("product_images table query skipped:", e.message);
+                }
+            }
+
+            // 2. If no records from product_images table, check product_media_urls & image_url
+            if(!fetchedFromTable) {
+                const list = [];
+                if(p.image_url) {
+                    list.push({
+                        image_url: p.image_url,
+                        image_type: 'Main',
+                        sort_order: 0,
+                        alt_text: `${p.product_name} Primary Image`,
+                        is_primary: true
+                    });
+                }
+                if(Array.isArray(p.product_media_urls)) {
+                    p.product_media_urls.forEach((url, i) => {
+                        if(url !== p.image_url) {
+                            list.push({
+                                image_url: url,
+                                image_type: 'Gallery',
+                                sort_order: list.length,
+                                alt_text: `${p.product_name} photo ${list.length + 1}`,
+                                is_primary: list.length === 0
+                            });
+                        }
+                    });
+                }
+
+                // Also check localStorage registry
+                try {
+                    const rawReg = localStorage.getItem('wishrite_custom_product_images');
+                    if(rawReg) {
+                        const reg = JSON.parse(rawReg);
+                        const skuImages = reg[p.product_code] || reg[p.id] || [];
+                        skuImages.forEach(img => {
+                            if(!list.some(item => item.image_url === img.url)) {
+                                list.push({
+                                    image_url: img.url,
+                                    image_type: img.type || 'Gallery',
+                                    sort_order: list.length,
+                                    alt_text: img.alt || p.product_name,
+                                    is_primary: list.length === 0
+                                });
+                            }
+                        });
+                    }
+                } catch(e) {}
+
+                activeProductImagesList = list;
+            }
+
+            renderImageManagerGallery();
+            checkSupabaseStorageBucketAvailable();
+        }
+
+        // Check if product-images bucket exists on Supabase
+        async function checkSupabaseStorageBucketAvailable() {
+            const warningEl = document.getElementById('img-bucket-warning');
+            if(!warningEl || !supaClient) return;
+
+            try {
+                const config = window.WISHRITE_CONFIG || {};
+                const url = config.supabaseUrl;
+                const key = config.supabaseAnonKey;
+                if(!url || !key) return;
+
+                const res = await fetch(`${url}/storage/v1/bucket/product-images`, {
+                    headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
+                });
+
+                if(!res.ok) {
+                    warningEl.classList.remove('hidden');
+                } else {
+                    warningEl.classList.add('hidden');
+                }
+            } catch(e) {
+                warningEl.classList.remove('hidden');
+            }
+        }
+
+        function copySetupSqlSnippet() {
+            const sql = `-- Run in Supabase SQL Editor:
+insert into storage.buckets (id, name, public) values ('product-images', 'product-images', true) on conflict (id) do update set public = true;
+create policy "Product images are publicly readable" on storage.objects for select to anon, authenticated using (bucket_id = 'product-images');
+create policy "Product images can be uploaded" on storage.objects for insert to anon, authenticated with check (bucket_id = 'product-images');
+create policy "Product images can be updated" on storage.objects for update to anon, authenticated using (bucket_id = 'product-images');
+create policy "Product images can be deleted" on storage.objects for delete to anon, authenticated using (bucket_id = 'product-images');`;
+            navigator.clipboard.writeText(sql);
+            alert("SQL snippet copied to clipboard! Paste and run it in Supabase SQL Editor.");
+        }
+
+        // Render gallery cards inside the Image Manager modal
+        function renderImageManagerGallery() {
+            const countEl = document.getElementById('img-manager-count');
+            const gridEl = document.getElementById('img-manager-gallery-grid');
+            const emptyEl = document.getElementById('img-manager-empty');
+
+            const count = activeProductImagesList.length;
+            if(countEl) countEl.innerText = count;
+
+            if(count === 0) {
+                if(gridEl) gridEl.innerHTML = '';
+                if(emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            if(emptyEl) emptyEl.classList.add('hidden');
+
+            const imageTypes = ['Main', 'Gallery', 'Thumbnail', 'Lifestyle', 'Model', 'Zoom'];
+
+            if(gridEl) {
+                gridEl.innerHTML = activeProductImagesList.map((img, idx) => {
+                    const isPrimary = idx === 0 || img.is_primary;
+                    const typeOptions = imageTypes.map(t => 
+                        `<option value="${t}" ${img.image_type === t ? 'selected' : ''}>${t}</option>`
+                    ).join('');
+
+                    return `
+                        <div class="bg-white rounded-xl border ${isPrimary ? 'border-[#5E3435] ring-2 ring-[#5E3435]/20 shadow-md' : 'border-slate-200 shadow-sm'} overflow-hidden flex flex-col group">
+                            <!-- Image Wrap with Badges -->
+                            <div class="aspect-square bg-slate-100 relative overflow-hidden flex items-center justify-center">
+                                <img src="${img.image_url}" alt="${escapeHtml(img.alt_text || 'Product image')}" class="w-full h-full object-cover">
+                                
+                                <div class="absolute top-2 left-2 flex items-center gap-1.5">
+                                    ${isPrimary ? '<span class="bg-[#5E3435] text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow">★ Primary</span>' : ''}
+                                    <span class="bg-black/60 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">#${idx + 1}</span>
+                                </div>
+
+                                <button type="button" onclick="deleteProductImage(${idx})" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity" title="Delete image">
+                                    ✕
+                                </button>
+                            </div>
+
+                            <!-- Settings Block -->
+                            <div class="p-3 bg-white space-y-2 text-xs flex-1 flex flex-col justify-between">
+                                <div class="space-y-1.5">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Image Type</label>
+                                        <select onchange="changeProductImageType(${idx}, this.value)" class="w-full py-1 px-2 bg-slate-50 border border-slate-200 rounded text-xs outline-none focus:border-[#5E3435]">
+                                            ${typeOptions}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Alt Text (SEO)</label>
+                                        <input type="text" value="${escapeHtml(img.alt_text || '')}" placeholder="Alt text..." onchange="updateProductImageAltText(${idx}, this.value)" class="w-full py-1 px-2 bg-slate-50 border border-slate-200 rounded text-xs outline-none focus:border-[#5E3435]">
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-1">
+                                    ${!isPrimary ? `
+                                        <button type="button" onclick="setProductPrimaryImage(${idx})" class="text-[11px] font-bold text-[#5E3435] hover:underline flex items-center gap-1">
+                                            ★ Set as Main
+                                        </button>
+                                    ` : '<span class="text-[11px] text-slate-400 font-medium">Primary Image</span>'}
+
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="moveProductImage(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold" title="Move left">←</button>
+                                        <button type="button" onclick="moveProductImage(${idx}, 1)" ${idx === activeProductImagesList.length - 1 ? 'disabled' : ''} class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold" title="Move right">→</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Drag & Drop event handlers
+        function handleImageDropzoneOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('border-[#5E3435]', 'bg-[#5E3435]/5');
+        }
+
+        function handleImageDropzoneLeave(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('border-[#5E3435]', 'bg-[#5E3435]/5');
+        }
+
+        async function handleImageDropzoneDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('border-[#5E3435]', 'bg-[#5E3435]/5');
+            const files = Array.from(e.dataTransfer.files || []);
+            if(files.length > 0) await processAndUploadFiles(files);
+        }
+
+        async function handleImageFileInputChange(e) {
+            const files = Array.from(e.target.files || []);
+            if(files.length > 0) await processAndUploadFiles(files);
+            e.target.value = '';
+        }
+
+        // Client-side HTML5 Canvas WebP conversion and optimization
+        function optimizeImageToWebP(file, maxDimension = 1600, quality = 0.88) {
+            return new Promise((resolve, reject) => {
+                if(!file.type.startsWith('image/')) {
+                    return reject(new Error(`File '${file.name}' is not a valid image format. Please upload JPG, PNG, or WebP.`));
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let { width, height } = img;
+                        if(width > maxDimension || height > maxDimension) {
+                            if(width > height) {
+                                height = Math.round((height * maxDimension) / width);
+                                width = maxDimension;
+                            } else {
+                                width = Math.round((width * maxDimension) / height);
+                                height = maxDimension;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        canvas.toBlob((blob) => {
+                            if(!blob) return reject(new Error("Image compression failed."));
+                            const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                                type: "image/webp"
+                            });
+                            resolve({
+                                file: optimizedFile,
+                                dataUrl: canvas.toDataURL("image/webp", quality),
+                                width,
+                                height,
+                                size: blob.size
+                            });
+                        }, "image/webp", quality);
+                    };
+                    img.onerror = () => reject(new Error(`Failed to decode image file '${file.name}'.`));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error(`Failed to read file '${file.name}'.`));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Upload and process files
+        async function processAndUploadFiles(files) {
+            if(!activeProductForImages) return;
+            const p = activeProductForImages;
+            const cleanSku = (p.product_code || 'SKU').replace(/[^a-zA-Z0-9_-]/g, '');
+
+            const progressContainer = document.getElementById('img-upload-progress-container');
+            const progressBar = document.getElementById('img-upload-progress-bar');
+            const statusText = document.getElementById('img-upload-status-text');
+            const percentText = document.getElementById('img-upload-percent-text');
+
+            if(progressContainer) progressContainer.classList.remove('hidden');
+
+            const validExtensions = /\.(jpe?g|png|webp)$/i;
+            const newImagesToAdd = [];
+
+            for(let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const pct = Math.round(((i + 1) / files.length) * 100);
+                if(statusText) statusText.innerText = `Processing file ${i + 1} of ${files.length}: ${file.name}`;
+                if(progressBar) progressBar.style.width = `${pct}%`;
+                if(percentText) percentText.innerText = `${pct}%`;
+
+                // Validation: File format
+                if(!validExtensions.test(file.name) && !file.type.startsWith('image/')) {
+                    alert(`Invalid format: '${file.name}'. Only JPG, JPEG, PNG, and WEBP images are supported.`);
+                    continue;
+                }
+
+                // Validation: Max file size (10 MB)
+                if(file.size > 10 * 1024 * 1024) {
+                    alert(`File '${file.name}' exceeds the 10 MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please choose a smaller file.`);
+                    continue;
+                }
+
+                try {
+                    // Optimize via Canvas
+                    const opt = await optimizeImageToWebP(file);
+                    let uploadedUrl = null;
+                    let storagePath = null;
+
+                    // Upload to Supabase Storage if supaClient is connected
+                    if(supaClient) {
+                        const safeFileName = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`;
+                        storagePath = `${cleanSku}/${safeFileName}`;
+
+                        try {
+                            const { data: uploadData, error: uploadErr } = await supaClient.storage
+                                .from('product-images')
+                                .upload(storagePath, opt.file, { contentType: 'image/webp', upsert: true });
+
+                            if(!uploadErr && uploadData) {
+                                const { data: urlData } = supaClient.storage.from('product-images').getPublicUrl(storagePath);
+                                uploadedUrl = urlData.publicUrl;
+                            } else {
+                                console.warn("Supabase Storage bucket upload error:", uploadErr?.message);
+                            }
+                        } catch(storageEx) {
+                            console.warn("Storage upload exception:", storageEx.message);
+                        }
+                    }
+
+                    // Fallback to WebP data URL if bucket is not yet active
+                    if(!uploadedUrl) {
+                        uploadedUrl = opt.dataUrl;
+                    }
+
+                    const isFirstImage = activeProductImagesList.length === 0 && newImagesToAdd.length === 0;
+                    const imageRecord = {
+                        product_id: p.id,
+                        image_url: uploadedUrl,
+                        storage_path: storagePath,
+                        image_type: isFirstImage ? 'Main' : 'Gallery',
+                        sort_order: activeProductImagesList.length + newImagesToAdd.length,
+                        alt_text: `${p.product_name} — WishRite 925 Silver Jewellery`,
+                        is_primary: isFirstImage
+                    };
+
+                    newImagesToAdd.push(imageRecord);
+
+                } catch(err) {
+                    alert(`Error processing '${file.name}': ${err.message}`);
+                }
+            }
+
+            if(progressContainer) progressContainer.classList.add('hidden');
+
+            if(newImagesToAdd.length > 0) {
+                activeProductImagesList = [...activeProductImagesList, ...newImagesToAdd];
+                await syncProductImagesToSupabase();
+                renderImageManagerGallery();
+            }
+        }
+
+        // Set an image as primary (swaps to index 0 and sets is_primary)
+        async function setProductPrimaryImage(idx) {
+            if(idx <= 0 || idx >= activeProductImagesList.length) return;
+            const item = activeProductImagesList.splice(idx, 1)[0];
+            item.is_primary = true;
+            item.image_type = 'Main';
+            
+            // Mark others as not primary
+            activeProductImagesList.forEach(img => { img.is_primary = false; });
+            activeProductImagesList.unshift(item);
+
+            await syncProductImagesToSupabase();
+            renderImageManagerGallery();
+        }
+
+        function changeProductImageType(idx, newType) {
+            if(activeProductImagesList[idx]) {
+                activeProductImagesList[idx].image_type = newType;
+                syncProductImagesToSupabase();
+            }
+        }
+
+        function updateProductImageAltText(idx, newAlt) {
+            if(activeProductImagesList[idx]) {
+                activeProductImagesList[idx].alt_text = newAlt;
+                syncProductImagesToSupabase();
+            }
+        }
+
+        async function moveProductImage(idx, direction) {
+            const targetIdx = idx + direction;
+            if(targetIdx < 0 || targetIdx >= activeProductImagesList.length) return;
+
+            const temp = activeProductImagesList[idx];
+            activeProductImagesList[idx] = activeProductImagesList[targetIdx];
+            activeProductImagesList[targetIdx] = temp;
+
+            // Update sort order and primary status
+            activeProductImagesList.forEach((img, i) => {
+                img.sort_order = i;
+                img.is_primary = (i === 0);
+                if(i === 0) img.image_type = 'Main';
+            });
+
+            await syncProductImagesToSupabase();
+            renderImageManagerGallery();
+        }
+
+        async function deleteProductImage(idx) {
+            if(!confirm("Are you sure you want to delete this image?")) return;
+            const removed = activeProductImagesList.splice(idx, 1)[0];
+
+            // Re-assign primary if first was deleted
+            if(activeProductImagesList.length > 0) {
+                activeProductImagesList[0].is_primary = true;
+                activeProductImagesList[0].image_type = 'Main';
+            }
+
+            // Attempt deleting from Supabase Storage & DB if storage_path exists
+            if(supaClient && removed.storage_path) {
+                try {
+                    await supaClient.storage.from('product-images').remove([removed.storage_path]);
+                } catch(e) {}
+            }
+            if(supaClient && removed.id) {
+                try {
+                    await supaClient.from('product_images').delete().eq('id', removed.id);
+                } catch(e) {}
+            }
+
+            await syncProductImagesToSupabase();
+            renderImageManagerGallery();
+        }
+
+        // Sync all images to Supabase database (product_images table & inventory columns)
+        async function syncProductImagesToSupabase() {
+            if(!activeProductForImages) return;
+            const p = activeProductForImages;
+            const syncStatus = document.getElementById('img-manager-footer-sync-status');
+            if(syncStatus) syncStatus.innerText = 'Syncing changes to Supabase...';
+
+            // Ensure sort order is sequence
+            activeProductImagesList.forEach((img, i) => {
+                img.sort_order = i;
+                img.is_primary = (i === 0);
+            });
+
+            const primaryUrl = activeProductImagesList.length > 0 ? activeProductImagesList[0].image_url : null;
+            const allUrls = activeProductImagesList.map(img => img.image_url);
+
+            // 1. Update productImagesCache & local storage registry (for immediate website parity)
+            productImagesCache.set(p.id, [...activeProductImagesList]);
+            try {
+                let reg = {};
+                const raw = localStorage.getItem('wishrite_custom_product_images');
+                if(raw) reg = JSON.parse(raw);
+                reg[p.product_code] = activeProductImagesList.map(img => ({
+                    url: img.image_url,
+                    alt: img.alt_text,
+                    type: img.image_type
+                }));
+                localStorage.setItem('wishrite_custom_product_images', JSON.stringify(reg));
+            } catch(e) {}
+
+            // 2. Update inventory table (image_url & product_media_urls)
+            p.image_url = primaryUrl;
+            p.product_media_urls = allUrls;
+
+            if(supaClient) {
+                try {
+                    // Update inventory row
+                    await supaClient.from('inventory').update({
+                        image_url: primaryUrl,
+                        product_media_urls: allUrls,
+                        updated_at: new Date().toISOString()
+                    }).eq('product_code', p.product_code);
+
+                    // Update product_images table if exists
+                    try {
+                        // Delete old records for this product and re-insert
+                        await supaClient.from('product_images').delete().eq('product_id', p.id);
+                        if(activeProductImagesList.length > 0) {
+                            const dbRows = activeProductImagesList.map((img, i) => ({
+                                product_id: p.id,
+                                image_url: img.image_url,
+                                storage_path: img.storage_path || null,
+                                image_type: img.image_type || (i === 0 ? 'Main' : 'Gallery'),
+                                sort_order: i,
+                                alt_text: img.alt_text || null,
+                                is_primary: i === 0
+                            }));
+                            await supaClient.from('product_images').insert(dbRows);
+                        }
+                    } catch(tableEx) {
+                        console.warn("product_images table sync skipped:", tableEx.message);
+                    }
+
+                } catch(err) {
+                    console.error("Supabase sync error:", err);
+                }
+            }
+
+            if(syncStatus) syncStatus.innerText = '✓ All changes synced with Supabase!';
+        }
+
+        // ==============================================================================
+        // QUICK INVENTORY ADJUSTMENT MODAL
+        // ==============================================================================
+
+        function openQuickStockModal(productCode) {
+            const product = inventoryData.find(p => p.product_code === productCode);
+            if(!product) return;
+
+            document.getElementById('qs-code').value = product.product_code;
+            document.getElementById('qs-product-name').innerText = `${product.product_name} (${product.product_code})`;
+            document.getElementById('qs-qty').value = product.stock_quantity || 0;
+            document.getElementById('qs-selling-price').value = product.selling_price || 0;
+            document.getElementById('qs-purchase-price').value = product.cost_price || product.purchase_price || 0;
+
+            document.getElementById('quick-stock-modal').classList.remove('hidden');
+        }
+
+        function closeQuickStockModal() {
+            document.getElementById('quick-stock-modal')?.classList.add('hidden');
+        }
+
+        function adjustQuickStock(delta) {
+            const input = document.getElementById('qs-qty');
+            if(input) {
+                const current = parseInt(input.value) || 0;
+                input.value = Math.max(0, current + delta);
+            }
+        }
+
+        async function handleQuickStockSubmit(e) {
+            e.preventDefault();
+            const code = document.getElementById('qs-code').value;
+            const qty = parseInt(document.getElementById('qs-qty').value);
+            const sellPrice = parseFloat(document.getElementById('qs-selling-price').value);
+            const costPrice = parseFloat(document.getElementById('qs-purchase-price').value);
+
+            if(isNaN(qty) || qty < 0) return alert("Please enter a valid stock quantity.");
+
+            try {
+                const { error } = await supaClient.from('inventory').update({
+                    stock_quantity: qty,
+                    selling_price: sellPrice,
+                    purchase_price: costPrice,
+                    updated_at: new Date().toISOString()
+                }).eq('product_code', code);
+
+                if(error) return alert("Database update failed: " + error.message);
+
+                alert(`✓ Stock updated for ${code} to ${qty} units.`);
+                closeQuickStockModal();
+                await fetchInventory();
+            } catch(err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        // ==============================================================================
+        // CATEGORY MANAGEMENT MODAL & CONTROLLER
+        // ==============================================================================
+
+        function openCategoryManagerModal() {
+            renderCategoryList();
+            document.getElementById('category-manager-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCategoryManagerModal() {
+            document.getElementById('category-manager-modal')?.classList.add('hidden');
+            document.body.style.overflow = '';
+            populateProductCategoriesDropdown();
+        }
+
+        function renderCategoryList() {
+            const countEl = document.getElementById('cat-list-count');
+            const tbody = document.getElementById('cat-table-body');
+            const categories = businessConfig.categories || [];
+
+            if(countEl) countEl.innerText = categories.length;
+
+            if(!tbody) return;
+
+            tbody.innerHTML = categories.map(cat => {
+                const productCount = (inventoryData || []).filter(p => p.category === cat.name).length;
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-2.5 font-mono font-bold text-indigo-700">${escapeHtml(cat.prefix)}</td>
+                        <td class="p-2.5 font-semibold text-slate-800">${escapeHtml(cat.name)}</td>
+                        <td class="p-2.5 text-center font-bold text-slate-600">${productCount}</td>
+                        <td class="p-2.5 text-right">
+                            <button type="button" onclick="deleteCategory('${escapeHtml(cat.name)}')" class="text-rose-600 hover:text-rose-800 font-bold text-xs p-1" title="Delete Category">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function handleAddNewCategory(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('new-cat-name');
+            const prefixInput = document.getElementById('new-cat-prefix');
+
+            const name = nameInput.value.trim();
+            const prefix = prefixInput.value.trim().toUpperCase();
+
+            if(!name || !prefix) return alert("Please enter both category name and prefix.");
+
+            if((businessConfig.categories || []).some(c => c.name.toLowerCase() === name.toLowerCase())) {
+                return alert(`Category '${name}' already exists.`);
+            }
+
+            businessConfig.categories.push({ name, prefix });
+            categoryPrefixes[name] = prefix;
+
+            // Persist to business_config in Supabase
+            if(supaClient) {
+                try {
+                    await supaClient.from('business_config').upsert({
+                        id: 1,
+                        categories: businessConfig.categories,
+                        updated_at: new Date().toISOString()
+                    });
+                } catch(ex) {
+                    console.warn("business_config save skipped:", ex.message);
+                }
+            }
+
+            nameInput.value = '';
+            prefixInput.value = '';
+            renderCategoryList();
+            populateCategoryOptions();
+            populateProductCategoriesDropdown();
+            alert(`✓ Category '${name}' (${prefix}) added!`);
+        }
+
+        async function deleteCategory(catName) {
+            const count = (inventoryData || []).filter(p => p.category === catName).length;
+            if(count > 0) {
+                if(!confirm(`Category '${catName}' currently has ${count} associated products. Are you sure you want to remove it from the categories list?`)) return;
+            } else {
+                if(!confirm(`Delete category '${catName}'?`)) return;
+            }
+
+            businessConfig.categories = businessConfig.categories.filter(c => c.name !== catName);
+            delete categoryPrefixes[catName];
+
+            if(supaClient) {
+                try {
+                    await supaClient.from('business_config').upsert({
+                        id: 1,
+                        categories: businessConfig.categories,
+                        updated_at: new Date().toISOString()
+                    });
+                } catch(ex) {}
+            }
+
+            renderCategoryList();
+            populateCategoryOptions();
+            populateProductCategoriesDropdown();
         }
     </script>
 </body>
