@@ -230,3 +230,141 @@ on public.sales for update
 to anon, authenticated
 using (true)
 with check (true);
+
+
+-- 8. CUSTOMERS TABLE & RLS
+create table if not exists public.customers (
+    id uuid primary key default gen_random_uuid(),
+    customer_name text not null,
+    customer_phone text,
+    customer_email text,
+    customer_address text,
+    customer_city text,
+    customer_state text,
+    customer_country text,
+    customer_pin text,
+    created_at timestamptz not null default now()
+);
+
+alter table public.customers enable row level security;
+
+drop policy if exists "Customers are readable" on public.customers;
+create policy "Customers are readable"
+on public.customers for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Customers can be inserted" on public.customers;
+create policy "Customers can be inserted"
+on public.customers for insert
+to anon, authenticated
+with check (true);
+
+drop policy if exists "Customers can be updated" on public.customers;
+create policy "Customers can be updated"
+on public.customers for update
+to anon, authenticated
+using (true)
+with check (true);
+
+
+-- 9. INVENTORY TABLE RLS POLICIES
+alter table public.inventory enable row level security;
+
+drop policy if exists "Inventory is readable by all" on public.inventory;
+create policy "Inventory is readable by all"
+on public.inventory for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Inventory can be inserted" on public.inventory;
+create policy "Inventory can be inserted"
+on public.inventory for insert
+to anon, authenticated
+with check (true);
+
+drop policy if exists "Inventory can be updated" on public.inventory;
+create policy "Inventory can be updated"
+on public.inventory for update
+to anon, authenticated
+using (true)
+with check (true);
+
+drop policy if exists "Inventory can be deleted" on public.inventory;
+create policy "Inventory can be deleted"
+on public.inventory for delete
+to anon, authenticated
+using (true);
+
+
+-- 10. EMPLOYEES TABLE RLS POLICIES
+alter table public.employees enable row level security;
+
+drop policy if exists "Employees are readable" on public.employees;
+create policy "Employees are readable"
+on public.employees for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Employees can be created" on public.employees;
+create policy "Employees can be created"
+on public.employees for insert
+to anon, authenticated
+with check (true);
+
+drop policy if exists "Employees can be updated" on public.employees;
+create policy "Employees can be updated"
+on public.employees for update
+to anon, authenticated
+using (true)
+with check (true);
+
+
+-- 11. CONVENIENCE VIEWS FOR COMPATIBILITY (PRODUCTS & CATEGORIES)
+create or replace view public.products as
+select 
+    id,
+    product_code,
+    product_name,
+    short_description,
+    product_description,
+    category,
+    stock_quantity,
+    purchase_price,
+    cost_price,
+    selling_price,
+    compare_at_price,
+    weight,
+    size,
+    material,
+    purity,
+    gst,
+    status,
+    slug,
+    seo_title,
+    seo_description,
+    low_stock_threshold,
+    image_url,
+    product_media_urls,
+    created_at,
+    updated_at
+from public.inventory;
+
+create or replace view public.categories as
+select distinct
+    category as name,
+    split_part(product_code, '-', 1) as prefix,
+    count(*)::integer as product_count
+from public.inventory
+where category is not null and category != ''
+group by category, split_part(product_code, '-', 1);
+
+
+-- 12. PERMISSIONS GRANTS & SCHEMA CACHE RELOAD
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all routines in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+
+-- Signal PostgREST to immediately refresh its schema cache
+notify pgrst, 'reload schema';
