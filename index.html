@@ -405,10 +405,10 @@
             <div id="img-bucket-warning" class="hidden mx-6 mt-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-xs text-amber-800">
                 <span class="text-base">⚠️</span>
                 <div class="flex-1">
-                    <strong class="font-bold block">Supabase Storage Bucket 'product-images' not found</strong>
-                    <span>Images are temporarily saved to local storage & inventory media. To enable Supabase Cloud Storage, copy and run the updated <code class="bg-amber-100 px-1 rounded">supabase-setup.sql</code> in your Supabase SQL Editor.</span>
+                    <strong id="img-bucket-warning-title" class="font-bold block">Supabase Storage Warning</strong>
+                    <span id="img-bucket-warning-msg">Storage bucket 'product-images' issue detected.</span>
                 </div>
-                <button type="button" onclick="copySetupSqlSnippet()" class="shrink-0 bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold px-2.5 py-1 rounded text-xs">Copy SQL</button>
+                <button type="button" id="img-bucket-warning-btn" onclick="copySetupSqlSnippet()" class="shrink-0 bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold px-2.5 py-1 rounded text-xs">Copy SQL</button>
             </div>
 
             <div class="flex-1 overflow-y-auto p-6 space-y-6">
@@ -2225,6 +2225,7 @@
                 document.getElementById('main-sidebar').classList.add('-translate-x-full');
             }
 
+            if (targetId === 'dashboard') renderDashboard();
             if (targetId === 'products') renderProductsView();
             if (targetId === 'inventory') renderFullInventory();
             if (targetId === 'business-setup') renderBusinessConfiguration();
@@ -2484,35 +2485,82 @@
             });
         }
 
+        let isInventoryLoading = false;
+        let inventoryFetchError = null;
+        let salesFetchError = null;
+
+        function renderAllInventoryViewsError(errorMessage) {
+            const safeMsg = escapeHtml(errorMessage || "Database sync failed.");
+            const dashBody = document.getElementById('dashboard-table-body');
+            if(dashBody) dashBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-rose-500 font-medium">${safeMsg}</td></tr>`;
+            
+            const prodBody = document.getElementById('products-table-body');
+            if(prodBody) prodBody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-rose-500 font-medium">${safeMsg}</td></tr>`;
+            
+            const fullBody = document.getElementById('full-inventory-body');
+            if(fullBody) fullBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-rose-500 font-medium">${safeMsg}</td></tr>`;
+            
+            const purchBody = document.getElementById('purchase-details-body');
+            if(purchBody) purchBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-medium">${safeMsg}</td></tr>`;
+        }
+
         async function fetchSales() {
             if(!supaClient) return;
-            const { data, error } = await supaClient.from('sales').select('*').order('created_at', { ascending: false });
-            if(!error) {
-                salesData = data || [];
-                if(document.getElementById('sales-dashboard').classList.contains('active')) renderSalesDashboard();
-            } else {
-                console.error("Sales fetch error: ", error);
+            try {
+                const { data, error } = await supaClient.from('sales').select('*').order('created_at', { ascending: false });
+                if(!error) {
+                    salesData = data || [];
+                    salesFetchError = null;
+                    if(document.getElementById('sales-dashboard')?.classList.contains('active')) renderSalesDashboard();
+                } else {
+                    salesFetchError = error;
+                    console.error("Sales fetch error: ", error);
+                    const tbody = document.getElementById('sales-table-body');
+                    if(tbody && salesData.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-rose-500 font-medium">Unable to load sales data: ${escapeHtml(error.message || 'Database error')}</td></tr>`;
+                    }
+                }
+            } catch(ex) {
+                salesFetchError = ex;
+                console.error("Sales fetch exception: ", ex);
+                const tbody = document.getElementById('sales-table-body');
+                if(tbody && salesData.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-rose-500 font-medium">Unable to load sales data.</td></tr>`;
+                }
             }
         }
 
         async function fetchInventory() {
-            if(!supaClient) return null;
-            const { data, error } = await supaClient.from('inventory').select('*').order('created_at', { ascending: false });
-            if(!error) {
+            if(!supaClient) {
+                renderAllInventoryViewsError("Database not connected. Please check settings.");
+                return null;
+            }
+            isInventoryLoading = true;
+            try {
+                const { data, error } = await supaClient.from('inventory').select('*').order('created_at', { ascending: false });
+                if(error) {
+                    throw error;
+                }
                 inventoryData = data || [];
+                inventoryFetchError = null;
+                setDbStatus(true, "DB Connected");
                 populateCategoryOptions();
                 populateProductCategoriesDropdown();
                 renderDashboard();
                 if(document.getElementById('products')?.classList.contains('active')) renderProductsView();
-                if(document.getElementById('inventory').classList.contains('active')) renderFullInventory();
-                if(document.getElementById('purchase-details').classList.contains('active')) renderPurchaseDetails();
+                if(document.getElementById('inventory')?.classList.contains('active')) renderFullInventory();
+                if(document.getElementById('purchase-details')?.classList.contains('active')) renderPurchaseDetails();
                 populateSelects();
                 updateProductTabCounts();
                 return inventoryData;
-            } else {
+            } catch(err) {
+                inventoryFetchError = err;
                 setDbStatus(false, "Sync Failed");
-                console.error("Fetch error: ", error);
+                console.error("Fetch inventory error: ", err);
+                renderAllInventoryViewsError("Unable to load products: " + (err.message || "Database query failed"));
                 return null;
+            } finally {
+                isInventoryLoading = false;
             }
         }
 
@@ -2567,12 +2615,25 @@
         }
 
         function renderFullInventory() {
-            const stockStatus = document.getElementById('filter-stock').value;
-            const minPrice = parseFloat(document.getElementById('filter-min').value) || 0;
-            const maxPrice = parseFloat(document.getElementById('filter-max').value) || Infinity;
-            const category = document.getElementById('filter-cat').value.toLowerCase();
-            const globalSearch = document.getElementById('global-search').value.toLowerCase();
-            const filteredData = inventoryData.filter(item => {
+            const tbody = document.getElementById('full-inventory-body');
+            if(!tbody) return;
+
+            if(isInventoryLoading && (!inventoryData || inventoryData.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">Loading Database...</td></tr>`;
+                return;
+            }
+
+            if(inventoryFetchError && (!inventoryData || inventoryData.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-rose-500 font-medium">Unable to load inventory: ${escapeHtml(inventoryFetchError.message || '')}</td></tr>`;
+                return;
+            }
+
+            const stockStatus = document.getElementById('filter-stock')?.value || 'all';
+            const minPrice = parseFloat(document.getElementById('filter-min')?.value) || 0;
+            const maxPrice = parseFloat(document.getElementById('filter-max')?.value) || Infinity;
+            const category = (document.getElementById('filter-cat')?.value || '').toLowerCase();
+            const globalSearch = (document.getElementById('global-search')?.value || '').toLowerCase();
+            const filteredData = (inventoryData || []).filter(item => {
                 const price = item.selling_price;
                 const matchesStock = stockStatus === 'all' || (stockStatus === 'in' && item.stock_quantity > 0) || (stockStatus === 'out' && item.stock_quantity === 0);
                 const matchesPrice = price >= minPrice && price <= maxPrice;
@@ -2583,8 +2644,6 @@
                     (item.category && item.category.toLowerCase().includes(globalSearch));
                 return matchesStock && matchesPrice && matchesCat && matchesSearch;
             });
-
-            const tbody = document.getElementById('full-inventory-body');
             
             if(filteredData.length === 0) {
                 return tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No products found matching filters.</td></tr>`;
@@ -2607,9 +2666,20 @@
         function renderPurchaseDetails() {
             const tbody = document.getElementById('purchase-details-body');
             const count = document.getElementById('purchase-record-count');
-            count.innerText = `${inventoryData.length} ${inventoryData.length === 1 ? 'record' : 'records'}`;
+            if(count) count.innerText = `${(inventoryData || []).length} ${(inventoryData || []).length === 1 ? 'record' : 'records'}`;
+            if(!tbody) return;
 
-            if(inventoryData.length === 0) {
+            if(isInventoryLoading && (!inventoryData || inventoryData.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">Loading Database...</td></tr>`;
+                return;
+            }
+
+            if(inventoryFetchError && (!inventoryData || inventoryData.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-medium">Unable to load purchase details: ${escapeHtml(inventoryFetchError.message || '')}</td></tr>`;
+                return;
+            }
+
+            if(!inventoryData || inventoryData.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-400">No purchase details found.</td></tr>';
                 return;
             }
@@ -3568,9 +3638,21 @@
 
         function renderDashboard() {
             const tbody = document.getElementById('dashboard-table-body');
-            const searchStr = document.getElementById('global-search').value.toLowerCase();
+            if(!tbody) return;
+
+            if(isInventoryLoading && (!inventoryData || inventoryData.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">Loading Database...</td></tr>`;
+                return;
+            }
+
+            if(inventoryFetchError && (!inventoryData || inventoryData.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-rose-500 font-medium">Unable to load inventory data: ${escapeHtml(inventoryFetchError.message || '')}</td></tr>`;
+                return;
+            }
+
+            const searchStr = (document.getElementById('global-search')?.value || '').toLowerCase();
             
-            const availableInventory = inventoryData.filter(item => {
+            const availableInventory = (inventoryData || []).filter(item => {
                 if(item.stock_quantity <= 0) return false;
                 if(!searchStr) return true;
                 
@@ -4129,6 +4211,18 @@
             // Render Table Body
             const tbody = document.getElementById('products-table-body');
             const gridContainer = document.getElementById('products-grid-container');
+
+            if(isInventoryLoading && (!inventoryData || inventoryData.length === 0)) {
+                if(tbody) tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400">Loading products catalog...</td></tr>`;
+                if(gridContainer) gridContainer.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400">Loading products catalog...</div>`;
+                return;
+            }
+
+            if(inventoryFetchError && (!inventoryData || inventoryData.length === 0)) {
+                if(tbody) tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-rose-500 font-medium">Unable to load products: ${escapeHtml(inventoryFetchError.message || 'Database query failed')}</td></tr>`;
+                if(gridContainer) gridContainer.innerHTML = `<div class="col-span-full p-12 text-center text-rose-500">Unable to load products.</div>`;
+                return;
+            }
 
             if(totalItems === 0) {
                 if(tbody) tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-slate-400">
@@ -4832,27 +4926,57 @@
             checkSupabaseStorageBucketAvailable();
         }
 
-        // Check if product-images bucket exists on Supabase
+        // Check if product-images bucket is directly accessible on Supabase Storage
         async function checkSupabaseStorageBucketAvailable() {
             const warningEl = document.getElementById('img-bucket-warning');
-            if(!warningEl || !supaClient) return;
+            const titleEl = document.getElementById('img-bucket-warning-title');
+            const msgEl = document.getElementById('img-bucket-warning-msg');
+            const btnEl = document.getElementById('img-bucket-warning-btn');
+            if(!warningEl) return;
+
+            if(!supaClient) {
+                if(titleEl) titleEl.innerText = "Supabase Storage Not Connected";
+                if(msgEl) msgEl.innerText = "Database & Storage client not initialized. Please verify configuration.";
+                if(btnEl) btnEl.style.display = 'none';
+                warningEl.classList.remove('hidden');
+                return;
+            }
 
             try {
-                const config = window.WISHRITE_CONFIG || {};
-                const url = config.supabaseUrl;
-                const key = config.supabaseAnonKey;
-                if(!url || !key) return;
+                // Directly check object accessibility in 'product-images' bucket using the anon client
+                const { error } = await supaClient.storage.from('product-images').list('', { limit: 1 });
 
-                const res = await fetch(`${url}/storage/v1/bucket/product-images`, {
-                    headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-                });
+                if(error) {
+                    // Differentiate specific storage errors per Step 7
+                    const errStr = (error.message || '').toLowerCase();
+                    const status = error.status || error.statusCode;
 
-                if(!res.ok) {
+                    if(status === 403 || /policy|permission|authorized|security|denied/i.test(errStr)) {
+                        if(titleEl) titleEl.innerText = "Storage Permission Denied (403)";
+                        if(msgEl) msgEl.innerText = "Supabase Storage rejected access. Check RLS policies on 'product-images' bucket.";
+                        if(btnEl) btnEl.style.display = 'block';
+                    } else if(status === 404 || /nosuchbucket|not found/i.test(errStr)) {
+                        if(titleEl) titleEl.innerText = "Storage Bucket 'product-images' Not Found (404)";
+                        if(msgEl) msgEl.innerText = "Bucket 'product-images' does not exist in your Supabase project.";
+                        if(btnEl) btnEl.style.display = 'block';
+                    } else if(status === 401 || /unauthorized|jwt|auth/i.test(errStr)) {
+                        if(titleEl) titleEl.innerText = "Storage Authentication Error (401)";
+                        if(msgEl) msgEl.innerText = "Supabase API authentication failed for Storage.";
+                        if(btnEl) btnEl.style.display = 'none';
+                    } else {
+                        if(titleEl) titleEl.innerText = "Storage Service Unavailable";
+                        if(msgEl) msgEl.innerText = error.message || "Failed to communicate with Supabase Storage.";
+                        if(btnEl) btnEl.style.display = 'none';
+                    }
                     warningEl.classList.remove('hidden');
                 } else {
+                    // Bucket is verified and accessible! Keep warning hidden.
                     warningEl.classList.add('hidden');
                 }
             } catch(e) {
+                if(titleEl) titleEl.innerText = "Storage Request Failed";
+                if(msgEl) msgEl.innerText = e.message || "Could not reach Supabase Storage.";
+                if(btnEl) btnEl.style.display = 'none';
                 warningEl.classList.remove('hidden');
             }
         }
@@ -5050,42 +5174,60 @@ create policy "Product images can be deleted" on storage.objects for delete to a
                     continue;
                 }
 
-                // Validation: Max file size (10 MB)
-                if(file.size > 10 * 1024 * 1024) {
-                    alert(`File '${file.name}' exceeds the 10 MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please choose a smaller file.`);
+                // Validation: Max file size (5 MB bucket limit)
+                if(file.size > 5 * 1024 * 1024) {
+                    alert(`File '${file.name}' exceeds the 5 MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please choose a file under 5 MB.`);
+                    continue;
+                }
+
+                if(!supaClient) {
+                    alert("Supabase client is not connected. Cannot upload to Supabase Storage.");
                     continue;
                 }
 
                 try {
-                    // Optimize via Canvas
+                    // Optimize via Canvas to WebP
                     const opt = await optimizeImageToWebP(file);
                     let uploadedUrl = null;
                     let storagePath = null;
 
-                    // Upload to Supabase Storage if supaClient is connected
-                    if(supaClient) {
-                        const safeFileName = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`;
-                        storagePath = `${cleanSku}/${safeFileName}`;
+                    const safeFileName = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.webp`;
+                    storagePath = `${cleanSku}/${safeFileName}`;
 
-                        try {
-                            const { data: uploadData, error: uploadErr } = await supaClient.storage
-                                .from('product-images')
-                                .upload(storagePath, opt.file, { contentType: 'image/webp', upsert: true });
+                    // Upload directly to Supabase Storage 'product-images' bucket
+                    const { data: uploadData, error: uploadErr } = await supaClient.storage
+                        .from('product-images')
+                        .upload(storagePath, opt.file, { contentType: 'image/webp', upsert: false });
 
-                            if(!uploadErr && uploadData) {
-                                const { data: urlData } = supaClient.storage.from('product-images').getPublicUrl(storagePath);
-                                uploadedUrl = urlData.publicUrl;
-                            } else {
-                                console.warn("Supabase Storage bucket upload error:", uploadErr?.message);
-                            }
-                        } catch(storageEx) {
-                            console.warn("Storage upload exception:", storageEx.message);
+                    if(uploadErr) {
+                        const errStr = (uploadErr.message || '').toLowerCase();
+                        const status = uploadErr.status || uploadErr.statusCode;
+                        let errorMsg = `Upload failed for '${file.name}': `;
+
+                        if(status === 403 || /policy|permission|authorized|security|denied/i.test(errStr)) {
+                            errorMsg += "Upload permission denied. Check Supabase Storage RLS insert policy.";
+                        } else if(status === 404 || /nosuchbucket|not found/i.test(errStr)) {
+                            errorMsg += "Storage bucket 'product-images' not found.";
+                        } else if(status === 413 || /too large/i.test(errStr)) {
+                            errorMsg += "File exceeds the 5 MB limit.";
+                        } else if(status === 401 || /jwt|unauthorized/i.test(errStr)) {
+                            errorMsg += "Authentication error with Supabase.";
+                        } else {
+                            errorMsg += (uploadErr.message || "Storage upload error.");
                         }
+
+                        alert(errorMsg);
+                        // Per Step 5: Do NOT use local storage fallback!
+                        continue;
                     }
 
-                    // Fallback to WebP data URL if bucket is not yet active
+                    // Get public URL from Supabase Storage
+                    const { data: urlData } = supaClient.storage.from('product-images').getPublicUrl(storagePath);
+                    uploadedUrl = urlData?.publicUrl;
+
                     if(!uploadedUrl) {
-                        uploadedUrl = opt.dataUrl;
+                        alert(`Could not get public URL for '${file.name}'.`);
+                        continue;
                     }
 
                     const isFirstImage = activeProductImagesList.length === 0 && newImagesToAdd.length === 0;
@@ -5225,12 +5367,19 @@ create policy "Product images can be deleted" on storage.objects for delete to a
 
             if(supaClient) {
                 try {
-                    // Update inventory row
-                    await supaClient.from('inventory').update({
+                    // Update inventory row (with fallback if image columns are not on inventory table)
+                    const { error: invErr } = await supaClient.from('inventory').update({
                         image_url: primaryUrl,
                         product_media_urls: allUrls,
                         updated_at: new Date().toISOString()
                     }).eq('product_code', p.product_code);
+
+                    if(invErr && invErr.code === 'PGRST204') {
+                        // Columns image_url / product_media_urls not present on inventory table schema
+                        await supaClient.from('inventory').update({
+                            updated_at: new Date().toISOString()
+                        }).eq('product_code', p.product_code);
+                    }
 
                     // Update product_images table if exists
                     try {
