@@ -1905,10 +1905,16 @@
 
         let todayInvoiceSeq = 1;
 
-        document.getElementById('purchase-date').valueAsDate = new Date();
-        document.getElementById('stock-purchase-date').valueAsDate = new Date();
-        document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
-        ['cust-name', 'cust-phone', 'cust-email', 'cust-pin', 'cust-address', 'cust-city', 'cust-state', 'cust-country'].forEach(id => document.getElementById(id).addEventListener('input', updateInvoiceCustomerDisplay));
+        const purchaseDateEl = document.getElementById('purchase-date');
+        if(purchaseDateEl) purchaseDateEl.valueAsDate = new Date();
+        const stockPurchaseDateEl = document.getElementById('stock-purchase-date');
+        if(stockPurchaseDateEl) stockPurchaseDateEl.valueAsDate = new Date();
+        const invDateEl = document.getElementById('inv-date');
+        if(invDateEl) invDateEl.innerText = new Date().toLocaleDateString('en-IN');
+        ['cust-name', 'cust-phone', 'cust-email', 'cust-pin', 'cust-address', 'cust-city', 'cust-state', 'cust-country'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.addEventListener('input', updateInvoiceCustomerDisplay);
+        });
         updateInvoiceCustomerDisplay();
         
         function setDailyInvoiceNumber() {
@@ -1916,11 +1922,13 @@
             const dateStr = now.getFullYear().toString() +
                             String(now.getMonth() + 1).padStart(2, '0') +
                             String(now.getDate()).padStart(2, '0');
-            document.getElementById('inv-number').innerText = dateStr + String(todayInvoiceSeq).padStart(4, '0');
+            const invNumEl = document.getElementById('inv-number');
+            if(invNumEl) invNumEl.innerText = dateStr + String(todayInvoiceSeq).padStart(4, '0');
         }
         setDailyInvoiceNumber();
 
-        document.getElementById('dash-date-range').innerText = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const dashDateRangeEl = document.getElementById('dash-date-range');
+        if(dashDateRangeEl) dashDateRangeEl.innerText = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         let supaClient = null;
         let databaseConnectionError = '';
@@ -2088,27 +2096,43 @@
         }
 
         function setupUserUI() {
-            const fullName = `${currentUser.first_name} ${currentUser.last_name || ''}`.trim();
+            if(!currentUser) return;
+            const firstName = currentUser.first_name || 'Admin';
+            const lastName = currentUser.last_name || '';
+            const fullName = `${firstName} ${lastName}`.trim();
+            const role = currentUser.role || 'Admin';
+            const userId = currentUser.user_id || 'DEWR00001';
             
-            document.getElementById('dash-welcome').innerText = `Welcome back, ${currentUser.first_name}! 👋`;
-            document.getElementById('top-ui-name').innerText = fullName;
-            document.getElementById('top-ui-role').innerText = currentUser.role;
+            const dashWelcome = document.getElementById('dash-welcome');
+            if(dashWelcome) dashWelcome.innerText = `Welcome back, ${firstName}! 👋`;
+            const topUiName = document.getElementById('top-ui-name');
+            if(topUiName) topUiName.innerText = fullName;
+            const topUiRole = document.getElementById('top-ui-role');
+            if(topUiRole) topUiRole.innerText = role;
             
-            const avatarTxt = currentUser.first_name.substring(0,2).toUpperCase();
-            document.getElementById('top-ui-avatar').innerText = avatarTxt;
+            const avatarTxt = firstName.substring(0, 2).toUpperCase();
+            const topUiAvatar = document.getElementById('top-ui-avatar');
+            if(topUiAvatar) topUiAvatar.innerText = avatarTxt;
             
             // Profile Page Populating
-            document.getElementById('profile-avatar').innerText = avatarTxt;
-            document.getElementById('profile-name').innerText = fullName;
-            document.getElementById('profile-role').innerText = currentUser.role;
-            document.getElementById('profile-id').innerText = currentUser.user_id;
-            document.getElementById('profile-phone').innerText = currentUser.phone_number || '-';
-            document.getElementById('profile-email').innerText = currentUser.email_id || '-';
+            const profileAvatar = document.getElementById('profile-avatar');
+            if(profileAvatar) profileAvatar.innerText = avatarTxt;
+            const profileName = document.getElementById('profile-name');
+            if(profileName) profileName.innerText = fullName;
+            const profileRole = document.getElementById('profile-role');
+            if(profileRole) profileRole.innerText = role;
+            const profileId = document.getElementById('profile-id');
+            if(profileId) profileId.innerText = userId;
+            const profilePhone = document.getElementById('profile-phone');
+            if(profilePhone) profilePhone.innerText = currentUser.phone_number || '-';
+            const profileEmail = document.getElementById('profile-email');
+            if(profileEmail) profileEmail.innerText = currentUser.email_id || '-';
             
             const addressParts = [currentUser.address, currentUser.city, currentUser.state, currentUser.pin, currentUser.country].filter(Boolean);
-            document.getElementById('profile-address').innerText = addressParts.length > 0 ? addressParts.join(', ') : '-';
+            const profileAddress = document.getElementById('profile-address');
+            if(profileAddress) profileAddress.innerText = addressParts.length > 0 ? addressParts.join(', ') : '-';
             
-            applyRolePermissions(currentUser.role);
+            applyRolePermissions(role);
             applyWorkflowVisibility();
             applyProductFieldVisibility();
         }
@@ -2218,23 +2242,14 @@
             setDbStatus(false, "Checking DB...");
             databaseConnectionError = '';
             
-            // Connection details are centrally managed in config.js. Support both the
-            // current WISHRITE_CONFIG object and the legacy const-based config format.
             const config = window.WISHRITE_CONFIG || {};
+            const defaultUrl = "https://ptpuepejciqiktmcpuon.supabase.co";
+            const defaultKey = "sb_publishable_ZHwzEtRBkW9u4T2d_0R2Ag_BX1EeJRX";
             const legacyUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '';
             const legacyKey = typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '';
-            const configuredUrl = config.supabaseUrl || legacyUrl;
-            const configuredKey = config.supabaseAnonKey || legacyKey;
+            const configuredUrl = config.supabaseUrl || legacyUrl || defaultUrl;
+            const configuredKey = config.supabaseAnonKey || legacyKey || defaultKey;
             
-            if(!configuredUrl || !configuredKey) {
-                const message = window.wishriteConfigLoadError
-                    ? 'config.js could not be loaded; verify it is beside index.html'
-                    : 'Supabase configuration is missing';
-                databaseConnectionError = message;
-                setDbStatus(false, message);
-                console.error(message);
-                return;
-            }
             try {
                 await initSupabase(configuredUrl, configuredKey);
                 await checkInitialSetup();
@@ -2242,6 +2257,12 @@
                 console.error("Supabase startup failed:", error);
                 databaseConnectionError = error.message || 'Database startup failed.';
                 setDbStatus(false, "DB connection failed");
+                const authWrap = document.getElementById('auth-wrapper');
+                if(authWrap) authWrap.style.display = 'flex';
+                const loginForm = document.getElementById('login-form');
+                if(loginForm) loginForm.style.display = 'block';
+                const initialSetup = document.getElementById('initial-setup-form');
+                if(initialSetup) initialSetup.style.display = 'none';
             }
         }
 
@@ -2261,24 +2282,44 @@
                 setDbStatus(true, "DB Connected");
 
                 if(count === 0) {
-                    document.getElementById('login-form').style.display = 'none';
-                    document.getElementById('initial-setup-form').style.display = 'block';
-                    document.getElementById('login-title').innerText = "SYSTEM SETUP";
-                    document.getElementById('login-subtitle').innerText = "Initialize Master Admin Account";
+                    const loginForm = document.getElementById('login-form');
+                    if(loginForm) loginForm.style.display = 'none';
+                    const initForm = document.getElementById('initial-setup-form');
+                    if(initForm) initForm.style.display = 'block';
+                    const loginTitle = document.getElementById('login-title');
+                    if(loginTitle) loginTitle.innerText = "SYSTEM SETUP";
+                    const loginSubtitle = document.getElementById('login-subtitle');
+                    if(loginSubtitle) loginSubtitle.innerText = "Initialize Master Admin Account";
                 } else {
                     // Check local storage for persistent login
-                    const storedUser = localStorage.getItem('wishrite_user');
-                    if (storedUser) {
-                        currentUser = JSON.parse(storedUser);
-                        document.getElementById('auth-wrapper').style.display = 'none';
-                        document.getElementById('app-container').style.display = 'flex';
-                        setupUserUI();
-                        navigate('dashboard');
-                    } else {
-                        document.getElementById('login-form').style.display = 'block';
-                        document.getElementById('initial-setup-form').style.display = 'none';
-                        document.getElementById('login-title').innerText = "WISHRITE";
-                        document.getElementById('login-subtitle').innerText = "Enterprise Resource Planning OS";
+                    let restored = false;
+                    try {
+                        const storedUser = localStorage.getItem('wishrite_user');
+                        if (storedUser) {
+                            currentUser = JSON.parse(storedUser);
+                            if (currentUser && currentUser.user_id) {
+                                document.getElementById('auth-wrapper').style.display = 'none';
+                                document.getElementById('app-container').style.display = 'flex';
+                                setupUserUI();
+                                navigate('dashboard');
+                                restored = true;
+                            }
+                        }
+                    } catch(ex) {
+                        console.warn("Could not restore user session:", ex);
+                        localStorage.removeItem('wishrite_user');
+                        currentUser = null;
+                    }
+
+                    if (!restored) {
+                        const loginForm = document.getElementById('login-form');
+                        if(loginForm) loginForm.style.display = 'block';
+                        const initForm = document.getElementById('initial-setup-form');
+                        if(initForm) initForm.style.display = 'none';
+                        const loginTitle = document.getElementById('login-title');
+                        if(loginTitle) loginTitle.innerText = "WISHRITE";
+                        const loginSubtitle = document.getElementById('login-subtitle');
+                        if(loginSubtitle) loginSubtitle.innerText = "Enterprise Resource Planning OS";
                     }
                 }
 
@@ -2294,8 +2335,12 @@
                     }).subscribe();
 
             } catch (err) {
-                console.error("Database connection failed:", err.message);
+                console.error("Database connection check failed:", err.message);
                 setDbStatus(false, "DB Disconnected");
+                const loginForm = document.getElementById('login-form');
+                if(loginForm) loginForm.style.display = 'block';
+                const initForm = document.getElementById('initial-setup-form');
+                if(initForm) initForm.style.display = 'none';
             }
         }
 
