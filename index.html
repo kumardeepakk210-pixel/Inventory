@@ -2320,28 +2320,34 @@
 
         async function loadBusinessConfiguration() {
             businessConfig = JSON.parse(JSON.stringify(defaultBusinessConfig));
-            if(!supaClient) return;
-            const { data, error } = await supaClient.from('business_config').select('*').eq('id', 1).maybeSingle();
-            if(error) {
-                console.warn('Business configuration table is unavailable; using defaults.', error.message);
+            if(!supaClient) {
+                renderBusinessConfiguration();
+                populateCategoryOptions();
                 return;
             }
-            if(data) {
-                businessConfig = {
-                    ...businessConfig,
-                    ...data,
-                    product_fields: { ...businessConfig.product_fields, ...(data.product_fields || {}) },
-                    categories: Array.isArray(data.categories) && data.categories.length ? data.categories : businessConfig.categories,
-                    workflows: { ...businessConfig.workflows, ...(data.workflows || {}) }
-                };
+            try {
+                const { data, error } = await supaClient.from('business_config').select('*').eq('id', 1).maybeSingle();
+                if(error) {
+                    console.warn('Business configuration table is unavailable; using defaults.', error.message);
+                } else if(data) {
+                    businessConfig = {
+                        ...businessConfig,
+                        ...data,
+                        product_fields: { ...businessConfig.product_fields, ...(data.product_fields || {}) },
+                        categories: Array.isArray(data.categories) && data.categories.length ? data.categories : businessConfig.categories,
+                        workflows: { ...businessConfig.workflows, ...(data.workflows || {}) }
+                    };
+                }
+            } catch(ex) {
+                console.warn('Error loading business configuration:', ex.message);
             }
-            categoryPrefixes = Object.fromEntries(businessConfig.categories.map(category => [category.name, category.prefix]));
+            categoryPrefixes = Object.fromEntries((businessConfig.categories || []).map(category => [category.name, category.prefix]));
             renderBusinessConfiguration();
             populateCategoryOptions();
         }
 
         function mergeInventoryCategories() {
-            const configured = new Map(businessConfig.categories.map(category => [category.name.toLowerCase(), category]));
+            const configured = new Map((businessConfig.categories || []).filter(c => c && c.name).map(category => [category.name.toLowerCase(), category]));
             inventoryData.forEach(item => {
                 const name = String(item.category || 'Other').trim();
                 if(!configured.has(name.toLowerCase())) {
@@ -2355,16 +2361,23 @@
 
         function populateCategoryOptions() {
             mergeInventoryCategories();
-            const options = businessConfig.categories.map(category => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join('');
+            const options = (businessConfig.categories || []).map(category => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join('');
             const filter = document.getElementById('filter-cat');
-            const currentFilter = filter.value;
-            filter.innerHTML = '<option value="">All Categories</option>' + options;
-            filter.value = currentFilter;
+            if(filter) {
+                const currentFilter = filter.value;
+                filter.innerHTML = '<option value="">All Categories</option>' + options;
+                filter.value = currentFilter;
+            }
             const categorySelect = document.getElementById('in-cat');
-            const currentCategory = categorySelect.value;
-            categorySelect.innerHTML = '<option value="">-- Select --</option>' + options;
-            categorySelect.value = currentCategory;
+            if(categorySelect) {
+                const currentCategory = categorySelect.value;
+                categorySelect.innerHTML = '<option value="">-- Select --</option>' + options;
+                categorySelect.value = currentCategory;
+            }
             refreshSearchableDropdowns();
+            if(typeof populateProductCategoriesDropdown === 'function') {
+                populateProductCategoriesDropdown();
+            }
         }
 
         function renderBusinessConfiguration() {
@@ -3742,6 +3755,8 @@
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+
         // ==============================================================================
         // WISHRITE PRODUCT MANAGEMENT SYSTEM (CENTRAL ADMINISTRATIVE CONTROLLER)
         // ==============================================================================
