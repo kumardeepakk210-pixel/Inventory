@@ -128,5 +128,3 @@ export async function handleDeleteOffer(req, res) {
         });
     }
 }
-
-export { default } from './index.js';

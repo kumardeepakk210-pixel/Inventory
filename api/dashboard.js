@@ -201,5 +201,3 @@ export async function handleGetDashboardCategories(req, res) {
         });
     }
 }
-
-export { default } from './index.js';

@@ -137,13 +137,27 @@ const backendAuthOptions = {
     }
 };
 
-export const publicClient = (SUPABASE_URL && publishableKey)
-    ? createClient(SUPABASE_URL, publishableKey, backendAuthOptions)
-    : null;
+export const publicClient = (() => {
+    try {
+        return (SUPABASE_URL && publishableKey)
+            ? createClient(SUPABASE_URL, publishableKey, backendAuthOptions)
+            : null;
+    } catch (e) {
+        console.warn('[Supabase Client] Failed to create public client at startup:', e.message);
+        return null;
+    }
+})();
 
-export const adminClient = (SUPABASE_URL && adminKey)
-    ? createClient(SUPABASE_URL, adminKey, backendAuthOptions)
-    : null;
+export const adminClient = (() => {
+    try {
+        return (SUPABASE_URL && adminKey)
+            ? createClient(SUPABASE_URL, adminKey, backendAuthOptions)
+            : null;
+    } catch (e) {
+        console.warn('[Supabase Client] Failed to create admin client at startup:', e.message);
+        return null;
+    }
+})();
 
 export const supabasePublicClient = publicClient;
 export const supabaseAdminClient = adminClient;
@@ -552,7 +566,5 @@ export function getStoragePublicUrl(bucket, path) {
     const cleanPath = path.replace(/^\/+/, '');
     return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${cleanPath}`;
 }
-
-export { default } from './index.js';
 
 

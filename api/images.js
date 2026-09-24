@@ -167,5 +167,3 @@ export async function handleDeleteProductImage(req, res) {
         });
     }
 }
-
-export { default } from './index.js';

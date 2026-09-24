@@ -484,5 +484,3 @@ export async function handleDeleteProduct(req, res) {
         });
     }
 }
-
-export { default } from './index.js';

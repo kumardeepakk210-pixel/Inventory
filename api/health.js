@@ -7,13 +7,13 @@ import { dbQuery } from './supabase-client.js';
 
 /**
  * GET /api/health
+ * Step 5: Minimal standalone health endpoint (MUST NOT call Supabase)
  */
 export function handleHealthCheck(req, res) {
-    return res.json({
-        success: true,
-        service: "WishRite Inventory API",
-        status: "healthy",
-        timestamp: new Date().toISOString()
+    return res.status(200).json({
+        ok: true,
+        service: "inventory-api",
+        runtime: "vercel"
     });
 }
 
@@ -48,4 +48,7 @@ export async function handleDatabaseHealthCheck(req, res) {
     }
 }
 
-export { default } from './index.js';
+// Standalone Vercel Serverless Function entry point
+export default function handler(req, res) {
+    return handleHealthCheck(req, res);
+}

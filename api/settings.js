@@ -372,5 +372,3 @@ export async function handleUpdateOccasionSettings(req, res) {
         });
     }
 }
-
-export { default } from './index.js';

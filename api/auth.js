@@ -207,6 +207,3 @@ export async function handleCreateEmployee(req, res) {
         return res.status(500).json({ success: false, error: { message: err.message } });
     }
 }
-
-export { default } from './index.js';
-
