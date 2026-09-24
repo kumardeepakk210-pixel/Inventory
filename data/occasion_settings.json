@@ -1,8 +1,8 @@
 {
-  "selected_occasion_slug": "diwali",
-  "selected_occasion_name": "Diwali",
-  "active_occasion_slug": "diwali",
-  "active_occasion_name": "Diwali",
-  "festive_mode_enabled": true,
-  "updated_at": "2026-09-24T12:23:08.687Z"
+  "selected_occasion_slug": "durga-puja",
+  "selected_occasion_name": "Durga Puja",
+  "active_occasion_slug": null,
+  "active_occasion_name": null,
+  "festive_mode_enabled": false,
+  "updated_at": "2026-09-24T19:00:00.000Z"
 }

@@ -6902,9 +6902,15 @@
                 const res = await window.WishRiteAPI.getOccasionSettings();
                 const settings = (res && res.settings) ? res.settings : ((res && res.data) ? res.data : res);
                 if (settings) {
-                    currentFestiveState.isLive = Boolean(settings.festive_mode_enabled);
-                    currentFestiveState.selectedOccasion = settings.selected_occasion_slug || currentFestiveState.selectedOccasion || 'durga-puja';
-                    currentFestiveState.activeOccasion = settings.active_occasion_slug || null;
+                    const isLive = Boolean(settings.isLive !== undefined ? settings.isLive : settings.festive_mode_enabled);
+                    const selectedOccasion = settings.selectedOccasion || settings.selected_occasion_slug || currentFestiveState.selectedOccasion || 'durga-puja';
+                    const activeOccasion = isLive
+                        ? (settings.activeOccasion || settings.active_occasion_slug || selectedOccasion)
+                        : null;
+
+                    currentFestiveState.isLive = isLive;
+                    currentFestiveState.selectedOccasion = selectedOccasion;
+                    currentFestiveState.activeOccasion = activeOccasion;
                 }
             } catch (err) {
                 console.warn('[WishRite] Failed to load festive state from API:', err.message);
@@ -6914,26 +6920,30 @@
         }
 
         /**
-         * Synchronous accessor for currentFestiveState (Issue 15)
-         * Rendering functions use currentFestiveState directly without triggering async GET calls.
+         * Authoritative accessor for currentFestiveState
+         * Conforms to Task 4 response contract:
+         * When Festive Mode is OFF: isLive=false, activeOccasion=null, selectedOccasion=<selected slug>
+         * When Festive Mode is ON: isLive=true, activeOccasion=<selected slug>, selectedOccasion=<selected slug>
          */
         function getFestiveSettings() {
             return {
-                isLive: currentFestiveState.isLive,
-                selectedOccasion: currentFestiveState.selectedOccasion,
-                activeOccasion: currentFestiveState.selectedOccasion // backward compatibility for product filtering
+                isLive: Boolean(currentFestiveState.isLive),
+                selectedOccasion: currentFestiveState.selectedOccasion || 'durga-puja',
+                activeOccasion: currentFestiveState.isLive
+                    ? (currentFestiveState.activeOccasion || currentFestiveState.selectedOccasion || 'durga-puja')
+                    : null
             };
         }
 
         /**
-         * Central single-source-of-truth renderer for all Festive Mode UI indicators (Issue 16):
+         * Central single-source-of-truth renderer for all Festive Mode UI indicators:
          * - Header badge (dash-occ-badge)
          * - Occasion page status pill (occ-live-status-pill)
          * - Festive mode toggle switch (btn-toggle-festive-mode & knob)
          * - Customer website broadcast status subtext (occ-mode-subtext)
          * - Active occasion select dropdown (occ-active-select)
          *
-         * OFF: toggle gray, badge OFF, active occasion = none, selected occasion = selectedOccasion
+         * OFF: toggle gray, badge OFF, active occasion = null, selected occasion = selectedOccasion
          * ON: toggle ON, badge LIVE, active occasion = selectedOccasion
          */
         function renderFestiveState(state = currentFestiveState) {
@@ -7001,7 +7011,7 @@
         }
 
         /**
-         * Toggle Festive Mode ON / OFF (Issue 17)
+         * Toggle Festive Mode ON / OFF
          * Target is always currentFestiveState.selectedOccasion
          */
         async function toggleFestiveMode() {
@@ -7015,12 +7025,22 @@
             try {
                 const result = await window.WishRiteAPI.updateOccasionSettings({
                     festive_mode_enabled: nextLive,
+                    isLive: nextLive,
                     active_occasion_slug: targetSlug,
                     selected_occasion_slug: targetSlug
                 });
 
                 if (!result || !result.success) {
                     throw new Error(result?.message || result?.error?.message || (typeof result?.error === 'string' ? result.error : null) || 'Failed to update Festive Mode');
+                }
+
+                // If backend returned authoritative settings, sync directly
+                if (result.settings) {
+                    currentFestiveState.isLive = Boolean(result.settings.isLive !== undefined ? result.settings.isLive : result.settings.festive_mode_enabled);
+                    currentFestiveState.selectedOccasion = result.settings.selectedOccasion || result.settings.selected_occasion_slug || targetSlug;
+                    currentFestiveState.activeOccasion = currentFestiveState.isLive
+                        ? (result.settings.activeOccasion || result.settings.active_occasion_slug || targetSlug)
+                        : null;
                 }
 
                 const verified = await loadFestiveState();
@@ -7057,7 +7077,7 @@
         }
 
         /**
-         * Switch active occasion dropdown (Issue 18)
+         * Switch active occasion dropdown
          * Persists selected occasion to database even when OFF!
          */
         async function handleActiveOccasionChanged(slug) {
@@ -7072,12 +7092,21 @@
                 // 1. Save selected occasion to database (persists even when OFF)
                 const result = await window.WishRiteAPI.updateOccasionSettings({
                     festive_mode_enabled: previousState.isLive,
+                    isLive: previousState.isLive,
                     active_occasion_slug: slug,
                     selected_occasion_slug: slug
                 });
 
                 if (!result || !result.success) {
                     throw new Error(result?.message || result?.error?.message || (typeof result?.error === 'string' ? result.error : null) || 'Database update failed');
+                }
+
+                if (result.settings) {
+                    currentFestiveState.isLive = Boolean(result.settings.isLive !== undefined ? result.settings.isLive : result.settings.festive_mode_enabled);
+                    currentFestiveState.selectedOccasion = result.settings.selectedOccasion || result.settings.selected_occasion_slug || slug;
+                    currentFestiveState.activeOccasion = currentFestiveState.isLive
+                        ? (result.settings.activeOccasion || result.settings.active_occasion_slug || slug)
+                        : null;
                 }
 
                 // 2. Read back & verify
@@ -7134,15 +7163,15 @@
             const festiveSettings = getFestiveSettings();
             updateFestiveModeControls(festiveSettings);
 
-            const activeSlug = festiveSettings.activeOccasion;
-            const occasionTitle = formatOccasionTitle(activeSlug);
+            const selectedSlug = festiveSettings.selectedOccasion || currentFestiveState.selectedOccasion || 'durga-puja';
+            const occasionTitle = formatOccasionTitle(selectedSlug);
             const activeTitleEl = document.getElementById('occ-count-active-name');
             if (activeTitleEl) activeTitleEl.innerText = occasionTitle;
 
             const allItems = inventoryData || [];
             const occasionItems = allItems.filter(p => {
-                if (p.occasion_slug === activeSlug) return true;
-                if (p.matching_tags && p.matching_tags.toLowerCase().includes(activeSlug)) return true;
+                if (p.occasion_slug === selectedSlug) return true;
+                if (p.matching_tags && p.matching_tags.toLowerCase().includes(selectedSlug)) return true;
                 return false;
             });
 
@@ -7174,7 +7203,7 @@
             if (!tbody) return;
 
             const festiveSettings = getFestiveSettings();
-            const activeSlug = festiveSettings.activeOccasion;
+            const selectedSlug = festiveSettings.selectedOccasion || currentFestiveState.selectedOccasion || 'durga-puja';
 
             const search = (document.getElementById('occ-filter-search')?.value || '').toLowerCase().trim();
             const typeFilter = document.getElementById('occ-filter-type')?.value || 'all';
@@ -7183,8 +7212,8 @@
 
             const allItems = inventoryData || [];
             let items = allItems.filter(p => {
-                const matchesOccasion = (p.occasion_slug === activeSlug) ||
-                    (p.matching_tags && p.matching_tags.toLowerCase().includes(activeSlug));
+                const matchesOccasion = (p.occasion_slug === selectedSlug) ||
+                    (p.matching_tags && p.matching_tags.toLowerCase().includes(selectedSlug));
                 if (!matchesOccasion) return false;
 
                 if (typeFilter !== 'all') {
@@ -7217,10 +7246,10 @@
                         <td colspan="8" class="p-12 text-center text-slate-400">
                             <span class="text-3xl block mb-2">🎁</span>
                             <p class="font-bold text-slate-700 text-sm">No occasion products match the current filters</p>
-                            <p class="text-xs text-slate-400 mt-1">Assign products to ${formatOccasionTitle(activeSlug)} or click below to add a new occasion item.</p>
+                            <p class="text-xs text-slate-400 mt-1">Assign products to ${formatOccasionTitle(selectedSlug)} or click below to add a new occasion item.</p>
                             <div class="mt-4 flex items-center justify-center gap-2">
                                 <button onclick="openOccasionProductModalDirect()" class="inline-flex items-center gap-1.5 bg-[#5E3435] text-white text-xs font-bold px-3.5 py-2 rounded-xl">
-                                    <span>➕</span> Add Product to ${formatOccasionTitle(activeSlug)}
+                                    <span>➕</span> Add Product to ${formatOccasionTitle(selectedSlug)}
                                 </button>
                                 <button onclick="navigate('products')" class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl">
                                     Assign from Catalog →
@@ -7349,9 +7378,10 @@
 
         function openOccasionProductModalDirect() {
             const festiveSettings = getFestiveSettings();
+            const selectedSlug = festiveSettings.selectedOccasion || currentFestiveState.selectedOccasion || 'durga-puja';
             openProductFormModal('create');
             const occSlugSelect = document.getElementById('pf-occasion-slug');
-            if (occSlugSelect) occSlugSelect.value = festiveSettings.activeOccasion || 'durga-puja';
+            if (occSlugSelect) occSlugSelect.value = selectedSlug;
             const featCheck = document.getElementById('pf-occasion-featured');
             if (featCheck) featCheck.checked = true;
             setProductFormSection('occasion');
@@ -7359,15 +7389,15 @@
 
         function loadOccasionExperience() {
             const festiveSettings = getFestiveSettings();
-            const activeSlug = festiveSettings.activeOccasion || 'durga-puja';
+            const selectedSlug = festiveSettings.selectedOccasion || currentFestiveState.selectedOccasion || 'durga-puja';
 
             let exp = null;
             try {
-                const raw = localStorage.getItem(`wishrite_occasion_exp_${activeSlug}`);
+                const raw = localStorage.getItem(`wishrite_occasion_exp_${selectedSlug}`);
                 if (raw) exp = JSON.parse(raw);
             } catch (e) { }
 
-            const defaultTitle = formatOccasionTitle(activeSlug);
+            const defaultTitle = formatOccasionTitle(selectedSlug);
             if (document.getElementById('occ-hero-heading')) {
                 document.getElementById('occ-hero-heading').value = exp?.hero_heading || `${defaultTitle} Celebration Collection`;
             }
@@ -7397,11 +7427,11 @@
         async function saveOccasionExperience(e) {
             e.preventDefault();
             const festiveSettings = getFestiveSettings();
-            const activeSlug = festiveSettings.activeOccasion || 'durga-puja';
+            const selectedSlug = festiveSettings.selectedOccasion || currentFestiveState.selectedOccasion || 'durga-puja';
 
             const payload = {
-                slug: activeSlug,
-                name: formatOccasionTitle(activeSlug),
+                slug: selectedSlug,
+                name: formatOccasionTitle(selectedSlug),
                 hero_heading: document.getElementById('occ-hero-heading')?.value.trim() || '',
                 hero_subheading: document.getElementById('occ-hero-subheading')?.value.trim() || '',
                 cta_text: document.getElementById('occ-hero-cta')?.value.trim() || '',
@@ -7413,7 +7443,7 @@
                 updated_at: new Date().toISOString()
             };
 
-            localStorage.setItem(`wishrite_occasion_exp_${activeSlug}`, JSON.stringify(payload));
+            localStorage.setItem(`wishrite_occasion_exp_${selectedSlug}`, JSON.stringify(payload));
 
             try {
                 await window.WishRiteAPI.saveOccasionExperience(payload);
@@ -7421,7 +7451,7 @@
                 console.warn("Could not save to API (saved locally):", err.message);
             }
 
-            alert(`✓ Occasion experience settings for '${formatOccasionTitle(activeSlug)}' saved successfully!`);
+            alert(`✓ Occasion experience settings for '${formatOccasionTitle(selectedSlug)}' saved successfully!`);
         }
 
         function getOccasionOffers() {
@@ -7442,9 +7472,9 @@
             if (!tbody) return;
 
             const festiveSettings = getFestiveSettings();
-            const activeSlug = festiveSettings.activeOccasion || 'durga-puja';
+            const selectedSlug = festiveSettings.selectedOccasion || currentFestiveState.selectedOccasion || 'durga-puja';
             const allOffers = getOccasionOffers();
-            const offers = allOffers.filter(o => !o.occasion_slug || o.occasion_slug === activeSlug);
+            const offers = allOffers.filter(o => !o.occasion_slug || o.occasion_slug === selectedSlug);
 
             if (offers.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">No active offers configured for this occasion. Click "+ Create Offer" to create a campaign offer.</td></tr>`;
@@ -7460,7 +7490,7 @@
                 return `
                     <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
                         <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(offer.name)}</td>
-                        <td class="py-3 px-4 text-slate-500">${escapeHtml(formatOccasionTitle(offer.occasion_slug || activeSlug))}</td>
+                        <td class="py-3 px-4 text-slate-500">${escapeHtml(formatOccasionTitle(offer.occasion_slug || selectedSlug))}</td>
                         <td class="py-3 px-4 font-extrabold text-emerald-600">${discText}</td>
                         <td class="py-3 px-4 text-slate-500">${escapeHtml(validity)}</td>
                         <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Active</span></td>
@@ -7483,11 +7513,11 @@
         async function handleOccasionOfferSubmit(e) {
             e.preventDefault();
             const festiveSettings = getFestiveSettings();
-            const activeSlug = festiveSettings.activeOccasion || 'durga-puja';
+            const selectedSlug = festiveSettings.selectedOccasion || currentFestiveState.selectedOccasion || 'durga-puja';
 
             const newOffer = {
                 id: 'OFF-' + Date.now(),
-                occasion_slug: activeSlug,
+                occasion_slug: selectedSlug,
                 name: document.getElementById('offer-name')?.value.trim(),
                 discount_type: document.getElementById('offer-type')?.value || 'percentage',
                 discount_value: parseFloat(document.getElementById('offer-value')?.value) || 0,

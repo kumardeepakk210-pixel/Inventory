@@ -8,7 +8,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { dbQuery, dbUpdate, verifyTableColumn } from './supabase-client.js';
+import { dbQuery, dbUpdate, dbInsert, verifyTableColumn } from './supabase-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -121,72 +121,52 @@ export async function verifyAdminAuth(req) {
 
 /**
  * GET /api/settings/occasion
- * Reads state using public.occasion_settings in Supabase via existing dbQuery.
- * 
- * When OFF:
- * {
- *   festive_mode_enabled: false,
- *   selected_occasion_slug: "diwali",
- *   selected_occasion_name: "Diwali",
- *   active_occasion_slug: null,
- *   active_occasion_name: null
- * }
- * 
- * When ON:
- * {
- *   festive_mode_enabled: true,
- *   selected_occasion_slug: "diwali",
- *   selected_occasion_name: "Diwali",
- *   active_occasion_slug: "diwali",
- *   active_occasion_name: "Diwali"
- * }
+ * Single Source of Truth: public.occasion_settings in Supabase queried via server admin client.
  */
 export async function handleGetOccasionSettings(req, res) {
     try {
-        const queryFn = dbQuery;
-        const hasSelectedCol = await verifyTableColumn('occasion_settings', 'is_selected');
+        let rows = await dbQuery('occasion_settings', 'select=id,occasion_slug,occasion_name,is_selected,is_active,updated_at', { useAdmin: true }).catch(() => []);
+        if (!Array.isArray(rows)) rows = [];
 
-        const localStore = loadLocalOccasionSettings();
-        let selectedSlug = localStore.selected_occasion_slug || 'durga-puja';
-        let selectedName = localStore.selected_occasion_name || formatOccasionTitle(selectedSlug);
-        let activeRow = null;
-
-        if (hasSelectedCol) {
-            const [selectedRows, activeRows] = await Promise.all([
-                queryFn('occasion_settings', 'is_selected=eq.true&limit=1').catch(() => []),
-                queryFn('occasion_settings', 'is_active=eq.true&limit=1').catch(() => [])
-            ]);
-
-            const selRow = Array.isArray(selectedRows) && selectedRows.length > 0 ? selectedRows[0] : null;
-            activeRow = Array.isArray(activeRows) && activeRows.length > 0 ? activeRows[0] : null;
-
-            if (selRow) {
-                selectedSlug = selRow.occasion_slug;
-                selectedName = selRow.occasion_name || formatOccasionTitle(selectedSlug);
-            } else if (activeRow) {
-                selectedSlug = activeRow.occasion_slug;
-                selectedName = activeRow.occasion_name || formatOccasionTitle(selectedSlug);
+        // If table is completely empty, initialize baseline: Durga Puja selected, Festive Mode OFF
+        if (rows.length === 0) {
+            const now = new Date().toISOString();
+            for (const m of MASTER_OCCASIONS) {
+                const isDurga = (m.occasion_slug === 'durga-puja');
+                try {
+                    await dbInsert('occasion_settings', {
+                        occasion_slug: m.occasion_slug,
+                        occasion_name: m.occasion_name,
+                        is_selected: isDurga,
+                        is_active: false,
+                        created_at: now,
+                        updated_at: now
+                    }, { useAdmin: true });
+                } catch (e) {}
             }
-        } else {
-            const activeRows = await queryFn('occasion_settings', 'is_active=eq.true&limit=1').catch(() => []);
-            activeRow = Array.isArray(activeRows) && activeRows.length > 0 ? activeRows[0] : null;
-            if (activeRow) {
-                selectedSlug = activeRow.occasion_slug;
-                selectedName = activeRow.occasion_name || formatOccasionTitle(selectedSlug);
-            }
+            rows = await dbQuery('occasion_settings', 'select=id,occasion_slug,occasion_name,is_selected,is_active,updated_at', { useAdmin: true }).catch(() => []);
+            if (!Array.isArray(rows)) rows = [];
         }
 
-        const isLive = activeRow ? Boolean(activeRow.is_active === true) : Boolean(localStore.festive_mode_enabled);
-        const activeSlug = isLive ? (activeRow?.occasion_slug || localStore.active_occasion_slug || selectedSlug) : null;
-        const activeName = isLive ? (activeRow?.occasion_name || formatOccasionTitle(activeSlug)) : null;
+        const selectedRow = rows.find(r => r.is_selected === true);
+        const activeRow = rows.find(r => r.is_active === true);
+
+        const selectedSlug = selectedRow?.occasion_slug || 'durga-puja';
+        const selectedName = selectedRow?.occasion_name || formatOccasionTitle(selectedSlug);
+        const isLive = Boolean(activeRow && activeRow.is_active === true);
+        const activeSlug = isLive ? (activeRow.occasion_slug || selectedSlug) : null;
+        const activeName = isLive ? (activeRow.occasion_name || formatOccasionTitle(activeSlug)) : null;
 
         const settings = {
+            isLive,
+            activeOccasion: activeSlug,
+            selectedOccasion: selectedSlug,
             festive_mode_enabled: isLive,
             selected_occasion_slug: selectedSlug,
             selected_occasion_name: selectedName,
             active_occasion_slug: activeSlug,
             active_occasion_name: activeName,
-            updated_at: (activeRow && activeRow.updated_at) || localStore.updated_at || new Date().toISOString()
+            updated_at: (activeRow && activeRow.updated_at) || (selectedRow && selectedRow.updated_at) || new Date().toISOString()
         };
 
         return res.json({
@@ -206,11 +186,10 @@ export async function handleGetOccasionSettings(req, res) {
 
 /**
  * PATCH /api/settings/occasion
- * Protected by Admin authentication check.
- * Uses existing working Supabase database helper dbUpdate & dbQuery.
+ * Atomically updates occasion selection and active/live state in public.occasion_settings.
+ * Verifies post-update database consistency deterministically.
  */
 export async function handleUpdateOccasionSettings(req, res) {
-    // Security check: Must be authenticated Admin user
     const auth = await verifyAdminAuth(req);
     if (!auth.isAuthorized) {
         return res.status(403).json({
@@ -224,153 +203,129 @@ export async function handleUpdateOccasionSettings(req, res) {
     const turnOn = Boolean(festive_mode_enabled);
     const now = new Date().toISOString();
 
-    const localStore = loadLocalOccasionSettings();
+    let allRows = await dbQuery('occasion_settings', 'select=id,occasion_slug,occasion_name,is_selected,is_active', { useAdmin: true }).catch(() => []);
+    if (!Array.isArray(allRows)) allRows = [];
 
+    // Initialize baseline if table is empty
+    if (allRows.length === 0) {
+        for (const m of MASTER_OCCASIONS) {
+            try {
+                await dbInsert('occasion_settings', {
+                    occasion_slug: m.occasion_slug,
+                    occasion_name: m.occasion_name,
+                    is_selected: m.occasion_slug === 'durga-puja',
+                    is_active: false,
+                    created_at: now,
+                    updated_at: now
+                }, { useAdmin: true });
+            } catch (e) {}
+        }
+        allRows = await dbQuery('occasion_settings', 'select=id,occasion_slug,occasion_name,is_selected,is_active', { useAdmin: true }).catch(() => []);
+        if (!Array.isArray(allRows)) allRows = [];
+    }
+
+    // Determine target occasion slug
     const rawSlug = selected_occasion_slug || active_occasion_slug || active_occasion_id;
-    const targetSlug = rawSlug ? String(rawSlug).trim().toLowerCase() : (localStore.selected_occasion_slug || 'durga-puja');
-
-    console.log('[Occasion Settings]');
-    console.log('Request URL: /api/settings/occasion');
-    console.log('Method: PATCH');
-    console.log(`festive_mode_enabled: ${turnOn}`);
-    console.log(`target_slug: ${targetSlug}`);
+    let targetSlug = rawSlug ? String(rawSlug).trim().toLowerCase() : null;
+    if (!targetSlug) {
+        const currentlySelected = allRows.find(r => r.is_selected === true);
+        targetSlug = currentlySelected?.occasion_slug || 'durga-puja';
+    }
 
     const master = MASTER_OCCASIONS.find(m => m.occasion_slug === targetSlug);
-    if (!master) {
-        return res.status(404).json({
+    const occasionName = master ? master.occasion_name : formatOccasionTitle(targetSlug);
+
+    // Update each row that differs from desired state
+    for (const row of allRows) {
+        const isTarget = (row.occasion_slug === targetSlug);
+        const shouldBeSelected = isTarget;
+        const shouldBeActive = isTarget ? turnOn : false;
+
+        if (row.is_selected !== shouldBeSelected || row.is_active !== shouldBeActive) {
+            await dbUpdate('occasion_settings', 'occasion_slug', row.occasion_slug, {
+                is_selected: shouldBeSelected,
+                is_active: shouldBeActive,
+                updated_at: now
+            }, { useAdmin: true });
+        }
+    }
+
+    // If targetSlug row was not in allRows, insert or update it
+    if (!allRows.some(r => r.occasion_slug === targetSlug)) {
+        await dbUpdate('occasion_settings', 'occasion_slug', targetSlug, {
+            is_selected: true,
+            is_active: turnOn,
+            updated_at: now
+        }, { useAdmin: true });
+    }
+
+    // Post-update verification
+    const verifyRows = await dbQuery('occasion_settings', 'select=occasion_slug,occasion_name,is_selected,is_active', { useAdmin: true });
+    const selectedRows = (verifyRows || []).filter(r => r.is_selected === true);
+    const activeRows = (verifyRows || []).filter(r => r.is_active === true);
+
+    const selectedCount = selectedRows.length;
+    const activeCount = activeRows.length;
+    const actualSelectedSlug = selectedRows[0]?.occasion_slug || null;
+    const actualActiveSlug = activeRows[0]?.occasion_slug || null;
+
+    console.log('[Occasion Settings Verification]', {
+        requestedLive: turnOn,
+        targetSlug,
+        selectedCount,
+        activeCount,
+        actualSelectedSlug,
+        actualActiveSlug
+    });
+
+    if (selectedCount !== 1 || actualSelectedSlug !== targetSlug) {
+        return res.status(500).json({
             success: false,
-            error: 'OCCASION_NOT_FOUND',
-            message: `Occasion '${targetSlug}' not found in master records.`
+            error: 'DATABASE_VERIFICATION_FAILED',
+            message: `Database verification failed: Expected 1 selected occasion '${targetSlug}', but found ${selectedCount} (${actualSelectedSlug || 'none'}).`
         });
     }
 
-    try {
-        const hasSelectedCol = await verifyTableColumn('occasion_settings', 'is_selected');
-
-        // 1. Manage selection: Set all other is_selected = false, target is_selected = true
-        if (hasSelectedCol) {
-            const currentSelected = await dbQuery('occasion_settings', 'is_selected=eq.true').catch(() => []);
-            for (const row of (currentSelected || [])) {
-                if (row.occasion_slug !== targetSlug) {
-                    await dbUpdate('occasion_settings', 'occasion_slug', row.occasion_slug, {
-                        is_selected: false,
-                        updated_at: now
-                    });
-                }
-            }
-            await dbUpdate('occasion_settings', 'occasion_slug', targetSlug, {
-                is_selected: true,
-                updated_at: now
+    if (turnOn) {
+        if (activeCount !== 1 || actualActiveSlug !== targetSlug) {
+            return res.status(500).json({
+                success: false,
+                error: 'DATABASE_VERIFICATION_FAILED',
+                message: `Database verification failed: Expected 1 active occasion '${targetSlug}', but found ${activeCount} (${actualActiveSlug || 'none'}).`
             });
         }
-
-        // 2. Manage active (LIVE) state
-        if (turnOn) {
-            // Turning ON:
-            // Deactivate all other active occasions
-            const activeOthers = await dbQuery('occasion_settings', 'is_active=eq.true').catch(() => []);
-            for (const row of (activeOthers || [])) {
-                if (row.occasion_slug !== targetSlug) {
-                    await dbUpdate('occasion_settings', 'occasion_slug', row.occasion_slug, {
-                        is_active: false,
-                        updated_at: now
-                    });
-                }
-            }
-
-            // Activate target occasion
-            await dbUpdate('occasion_settings', 'occasion_slug', targetSlug, {
-                is_active: true,
-                updated_at: now
+    } else {
+        if (activeCount !== 0) {
+            return res.status(500).json({
+                success: false,
+                error: 'DATABASE_VERIFICATION_FAILED',
+                message: `Database verification failed: Expected 0 active occasions, but found ${activeCount} (${actualActiveSlug}).`
             });
-        } else {
-            // Turning OFF:
-            // Set ALL is_active = false. Do NOT clear is_selected.
-            const activeRows = await dbQuery('occasion_settings', 'is_active=eq.true').catch(() => []);
-            for (const row of (activeRows || [])) {
-                await dbUpdate('occasion_settings', 'occasion_slug', row.occasion_slug, {
-                    is_active: false,
-                    updated_at: now
-                });
-            }
         }
-
-        // Update local persistent store
-        const newLocalState = {
-            selected_occasion_slug: targetSlug,
-            selected_occasion_name: master.occasion_name,
-            active_occasion_slug: turnOn ? targetSlug : null,
-            active_occasion_name: turnOn ? master.occasion_name : null,
-            festive_mode_enabled: turnOn,
-            updated_at: now
-        };
-        saveLocalOccasionSettings(newLocalState);
-
-        // 3. READ THE DATABASE AGAIN
-        const [readSelected, readActive] = await Promise.all([
-            dbQuery('occasion_settings', 'is_selected=eq.true').catch(() => []),
-            dbQuery('occasion_settings', 'is_active=eq.true').catch(() => [])
-        ]);
-
-        // If the database has rows, verify with database read-back
-        if (Array.isArray(readSelected) && readSelected.length > 0) {
-            const dbSelectedSlug = readSelected[0].occasion_slug;
-            if (dbSelectedSlug !== targetSlug) {
-                return res.status(500).json({
-                    success: false,
-                    error: 'DATABASE_VERIFICATION_FAILED',
-                    message: `Database verification failed: Expected selected occasion '${targetSlug}', but database has '${dbSelectedSlug}'.`
-                });
-            }
-        }
-
-        if (turnOn) {
-            if (Array.isArray(readActive) && readActive.length > 0) {
-                const dbActiveSlug = readActive[0].occasion_slug;
-                if (dbActiveSlug !== targetSlug || readActive.length !== 1) {
-                    return res.status(500).json({
-                        success: false,
-                        error: 'DATABASE_VERIFICATION_FAILED',
-                        message: `Database verification failed: Expected active occasion '${targetSlug}', but found ${readActive.length} active row(s).`
-                    });
-                }
-            }
-        } else {
-            if (Array.isArray(readActive) && readActive.length > 0) {
-                return res.status(500).json({
-                    success: false,
-                    error: 'DATABASE_VERIFICATION_FAILED',
-                    message: 'Database verification failed: Occasions remain active in database after turning OFF.'
-                });
-            }
-        }
-
-        const occasionName = master.occasion_name || formatOccasionTitle(targetSlug);
-        const settings = {
-            festive_mode_enabled: turnOn,
-            selected_occasion_slug: targetSlug,
-            selected_occasion_name: occasionName,
-            active_occasion_slug: turnOn ? targetSlug : null,
-            active_occasion_name: turnOn ? occasionName : null,
-            updated_at: now
-        };
-
-        return res.json({
-            success: true,
-            message: turnOn
-                ? `Festive settings updated successfully. Mode: LIVE (${occasionName})`
-                : `Festive settings updated successfully. Mode: OFF (Selected: ${occasionName})`,
-            settings,
-            data: settings
-        });
-    } catch (err) {
-        console.error('[Settings API Update Error]:', err.message);
-        return res.status(err.status || 500).json({
-            success: false,
-            error: err.code || 'SETTINGS_UPDATE_FAILED',
-            message: err.message || 'Failed to update festive settings in database'
-        });
     }
+
+    const settings = {
+        isLive: turnOn,
+        activeOccasion: turnOn ? targetSlug : null,
+        selectedOccasion: targetSlug,
+        festive_mode_enabled: turnOn,
+        active_occasion_slug: turnOn ? targetSlug : null,
+        active_occasion_name: turnOn ? occasionName : null,
+        selected_occasion_slug: targetSlug,
+        selected_occasion_name: occasionName,
+        updated_at: now
+    };
+
+    saveLocalOccasionSettings(settings);
+
+    return res.json({
+        success: true,
+        message: turnOn
+            ? `Festive Mode is now LIVE (${occasionName})`
+            : `Festive Mode is now OFF (Selected: ${occasionName})`,
+        settings,
+        data: settings
+    });
 }
 
 // Vercel Serverless Function entry point (dynamic import prevents circular ESM dependencies)
