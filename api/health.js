@@ -14,7 +14,10 @@ export function handleHealthCheck(req, res) {
         ok: true,
         success: true,
         service: "inventory-api",
-        runtime: "vercel"
+        runtime: "vercel",
+        deployment_env: process.env.VERCEL_ENV || 'local',
+        deployment_url: process.env.VERCEL_URL || null,
+        git_commit: process.env.VERCEL_GIT_COMMIT_SHA ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7) : null
     });
 }
 

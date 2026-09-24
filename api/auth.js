@@ -27,7 +27,12 @@ export async function handleLogin(req, res) {
         try {
             employees = await dbQuery('employees', `user_id=eq.${encodeURIComponent(cleanUserId)}&limit=1`);
         } catch (dbErr) {
-            console.error('[Auth API] Database unavailable during login:', dbErr.message);
+            console.error('[AUTH] Inventory user lookup failed', {
+                message: dbErr?.message,
+                code: dbErr?.code,
+                details: dbErr?.details,
+                hint: dbErr?.hint
+            });
             return res.status(503).json({
                 success: false,
                 error: {
@@ -108,7 +113,12 @@ export async function handleCheckSetup(req, res) {
             }
         });
     } catch (err) {
-        console.error('[Auth API] Setup status check failed:', err.message);
+        console.error('[AUTH] Inventory user setup check failed', {
+            message: err?.message,
+            code: err?.code,
+            details: err?.details,
+            hint: err?.hint
+        });
         return res.status(503).json({
             success: false,
             error: {

@@ -125,13 +125,33 @@ app.get(['/api', '/api/'], (req, res) => {
 app.get('/api/health', handleHealthCheck);
 app.get('/api/health/database', handleDatabaseHealthCheck);
 
-// Internal Diagnostic for Supabase Credentials (Step 11 — Safe booleans & key type only)
+// Safe Read-Only Database Diagnostic (Section 7)
+app.get('/api/diagnostic/db-read', async (req, res) => {
+    try {
+        await dbQuery('employees', 'select=employee_id&limit=1');
+        return res.status(200).json({
+            ok: true,
+            database: "connected"
+        });
+    } catch (err) {
+        return res.status(503).json({
+            ok: false,
+            database: "error",
+            error_code: err.code || (!SUPABASE_URL ? 'SUPABASE_URL_MISSING' : 'QUERY_FAILED')
+        });
+    }
+});
+
+// Internal Diagnostic for Supabase Credentials & Deployment Info (Safe booleans & key type only)
 app.get('/api/diagnostic/supabase', (req, res) => {
     return res.json({
         supabase_url_configured: Boolean(SUPABASE_URL),
         publishable_key_configured: isPublishableKeyConfigured(),
         server_admin_key_configured: hasServerAdminCredential(),
-        server_admin_key_type: hasServerAdminCredential() ? 'secret' : 'none'
+        server_admin_key_type: hasServerAdminCredential() ? 'secret' : 'none',
+        deployment_env: process.env.VERCEL_ENV || 'local',
+        deployment_url: process.env.VERCEL_URL || null,
+        git_commit: process.env.VERCEL_GIT_COMMIT_SHA ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7) : null
     });
 });
 
