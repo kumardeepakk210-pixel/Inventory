@@ -235,28 +235,37 @@ export async function handleUpdateOccasionSettings(req, res) {
     const master = MASTER_OCCASIONS.find(m => m.occasion_slug === targetSlug);
     const occasionName = master ? master.occasion_name : formatOccasionTitle(targetSlug);
 
-    // Update each row that differs from desired state
+    // Update each row that differs from desired state in parallel
+    const updatePromises = [];
     for (const row of allRows) {
         const isTarget = (row.occasion_slug === targetSlug);
         const shouldBeSelected = isTarget;
         const shouldBeActive = isTarget ? turnOn : false;
 
         if (row.is_selected !== shouldBeSelected || row.is_active !== shouldBeActive) {
-            await dbUpdate('occasion_settings', 'occasion_slug', row.occasion_slug, {
-                is_selected: shouldBeSelected,
-                is_active: shouldBeActive,
-                updated_at: now
-            }, { useAdmin: true });
+            updatePromises.push(
+                dbUpdate('occasion_settings', 'occasion_slug', row.occasion_slug, {
+                    is_selected: shouldBeSelected,
+                    is_active: shouldBeActive,
+                    updated_at: now
+                }, { useAdmin: true })
+            );
         }
     }
 
     // If targetSlug row was not in allRows, insert or update it
     if (!allRows.some(r => r.occasion_slug === targetSlug)) {
-        await dbUpdate('occasion_settings', 'occasion_slug', targetSlug, {
-            is_selected: true,
-            is_active: turnOn,
-            updated_at: now
-        }, { useAdmin: true });
+        updatePromises.push(
+            dbUpdate('occasion_settings', 'occasion_slug', targetSlug, {
+                is_selected: true,
+                is_active: turnOn,
+                updated_at: now
+            }, { useAdmin: true })
+        );
+    }
+
+    if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
     }
 
     // Post-update verification
