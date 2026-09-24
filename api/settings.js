@@ -224,48 +224,66 @@ export async function handleUpdateOccasionSettings(req, res) {
         if (!Array.isArray(allRows)) allRows = [];
     }
 
-    // Determine target occasion slug
-    const rawSlug = selected_occasion_slug || active_occasion_slug || active_occasion_id;
-    let targetSlug = rawSlug ? String(rawSlug).trim().toLowerCase() : null;
-    if (!targetSlug) {
-        const currentlySelected = allRows.find(r => r.is_selected === true);
-        targetSlug = currentlySelected?.occasion_slug || 'durga-puja';
-    }
+    const currentlySelectedRow = allRows.find(r => r.is_selected === true);
+    const currentlyActiveRow = allRows.find(r => r.is_active === true);
+    const currentlySelectedSlug = currentlySelectedRow?.occasion_slug || 'durga-puja';
+
+    const requestedSlug = (selected_occasion_slug || active_occasion_slug || active_occasion_id);
+    const targetSlug = requestedSlug ? String(requestedSlug).trim().toLowerCase() : currentlySelectedSlug;
 
     const master = MASTER_OCCASIONS.find(m => m.occasion_slug === targetSlug);
     const occasionName = master ? master.occasion_name : formatOccasionTitle(targetSlug);
 
-    // Update each row that differs from desired state in parallel
-    const updatePromises = [];
-    for (const row of allRows) {
-        const isTarget = (row.occasion_slug === targetSlug);
-        const shouldBeSelected = isTarget;
-        const shouldBeActive = isTarget ? turnOn : false;
-
-        if (row.is_selected !== shouldBeSelected || row.is_active !== shouldBeActive) {
-            updatePromises.push(
-                dbUpdate('occasion_settings', 'occasion_slug', row.occasion_slug, {
-                    is_selected: shouldBeSelected,
-                    is_active: shouldBeActive,
-                    updated_at: now
-                }, { useAdmin: true })
-            );
-        }
-    }
-
-    // If targetSlug row was not in allRows, insert or update it
-    if (!allRows.some(r => r.occasion_slug === targetSlug)) {
-        updatePromises.push(
-            dbUpdate('occasion_settings', 'occasion_slug', targetSlug, {
-                is_selected: true,
-                is_active: turnOn,
+    // Atomic updates matching Task 2 & Task 3 specifications
+    if (!turnOn) {
+        // Festive Mode OFF:
+        // Set is_active = false for all active rows
+        if (currentlyActiveRow) {
+            await dbUpdate('occasion_settings', 'is_active', 'true', {
+                is_active: false,
                 updated_at: now
-            }, { useAdmin: true })
-        );
-    }
+            }, { useAdmin: true });
+        }
 
-    if (updatePromises.length > 0) {
-        await Promise.all(updatePromises);
+        // If admin changed selected occasion dropdown while OFF:
+        if (targetSlug !== currentlySelectedSlug) {
+            // Deselect old
+            await dbUpdate('occasion_settings', 'is_selected', 'true', {
+                is_selected: false,
+                updated_at: now
+            }, { useAdmin: true });
+
+            // Select target
+            await dbUpdate('occasion_settings', 'occasion_slug', targetSlug, {
+                is_selected: true,
+                is_active: false,
+                updated_at: now
+            }, { useAdmin: true });
+        }
+    } else {
+        // Festive Mode ON:
+        // Deactivate all active rows
+        if (currentlyActiveRow && currentlyActiveRow.occasion_slug !== targetSlug) {
+            await dbUpdate('occasion_settings', 'is_active', 'true', {
+                is_active: false,
+                updated_at: now
+            }, { useAdmin: true });
+        }
+
+        // If selection changed, deselect old
+        if (targetSlug !== currentlySelectedSlug) {
+            await dbUpdate('occasion_settings', 'is_selected', 'true', {
+                is_selected: false,
+                updated_at: now
+            }, { useAdmin: true });
+        }
+
+        // Activate and select target occasion
+        await dbUpdate('occasion_settings', 'occasion_slug', targetSlug, {
+            is_selected: true,
+            is_active: true,
+            updated_at: now
+        }, { useAdmin: true });
     }
 
     // Post-update verification
