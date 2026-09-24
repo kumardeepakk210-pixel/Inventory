@@ -14,8 +14,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 export const PROJECT_ROOT = path.resolve(__dirname, '..');
 export const DOTENV_PATH = path.resolve(PROJECT_ROOT, '.env');
-dotenv.config({ path: DOTENV_PATH });
+if (!process.env.VERCEL) {
+    dotenv.config({ path: DOTENV_PATH });
+}
 
+// Server-side Supabase client initialization explicitly reading Vercel Production variables
 export const SUPABASE_URL = (
     process.env.SUPABASE_URL ||
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -26,12 +29,6 @@ export const SUPABASE_URL = (
 const rawSecretKey = (process.env.SUPABASE_SECRET_KEY || '').trim();
 const rawServiceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 
-const rawPublishableKey = (
-    process.env.SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    ''
-).trim();
-
 const rawAnonKey = (
     process.env.SUPABASE_ANON_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
@@ -39,16 +36,22 @@ const rawAnonKey = (
     ''
 ).trim();
 
-// Credential Priority & Categorization (STEP 3):
+const rawPublishableKey = (
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    ''
+).trim();
+
+// Credential Priority & Categorization:
 // 1. SUPABASE_SECRET_KEY (must NOT start with sb_publishable_)
 // 2. Legacy SUPABASE_SERVICE_ROLE_KEY (must NOT start with sb_publishable_)
-// 3. SUPABASE_PUBLISHABLE_KEY / SUPABASE_ANON_KEY for normal public/read operations
+// 3. SUPABASE_ANON_KEY / SUPABASE_PUBLISHABLE_KEY for normal public/read operations
 let adminKey = '';
 let adminCredentialType = 'none';
 
 if (rawSecretKey && !rawSecretKey.startsWith('sb_publishable_')) {
     adminKey = rawSecretKey;
-    adminCredentialType = rawSecretKey.startsWith('sb_secret_') ? 'secret' : 'secret';
+    adminCredentialType = 'secret';
 } else if (rawServiceRoleKey && !rawServiceRoleKey.startsWith('sb_publishable_')) {
     adminKey = rawServiceRoleKey;
     adminCredentialType = rawServiceRoleKey.startsWith('sb_secret_') ? 'secret' : 'service_role';
@@ -56,10 +59,10 @@ if (rawSecretKey && !rawSecretKey.startsWith('sb_publishable_')) {
 
 // Publishable / Client Credential:
 let publishableKey = '';
-if (rawPublishableKey) {
-    publishableKey = rawPublishableKey;
-} else if (rawAnonKey) {
+if (rawAnonKey) {
     publishableKey = rawAnonKey;
+} else if (rawPublishableKey) {
+    publishableKey = rawPublishableKey;
 } else if (rawServiceRoleKey && rawServiceRoleKey.startsWith('sb_publishable_')) {
     publishableKey = rawServiceRoleKey;
 } else if (rawSecretKey && rawSecretKey.startsWith('sb_publishable_')) {

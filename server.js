@@ -71,7 +71,9 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+if (!process.env.VERCEL) {
+    dotenv.config({ path: path.resolve(__dirname, '.env') });
+}
 
 const app = express();
 const PORT = process.env.PORT || 8085;
@@ -142,7 +144,7 @@ app.get('/api/diagnostic/db-read', async (req, res) => {
     }
 });
 
-// Internal Diagnostic for Supabase Credentials & Deployment Info (Safe booleans & key type only)
+// Safe Diagnostic for Supabase Credentials & Deployment Info (Section 6 — Safe booleans & key type only)
 app.get('/api/diagnostic/supabase', (req, res) => {
     return res.json({
         supabase_url_configured: Boolean(SUPABASE_URL),
@@ -150,16 +152,7 @@ app.get('/api/diagnostic/supabase', (req, res) => {
         server_admin_key_configured: hasServerAdminCredential(),
         server_admin_key_type: hasServerAdminCredential() ? 'secret' : 'none',
         deployment_env: process.env.VERCEL_ENV || 'local',
-        deployment_url: process.env.VERCEL_URL || null,
-        git_commit: process.env.VERCEL_GIT_COMMIT_SHA ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7) : null,
-        env_presence: {
-            SUPABASE_URL: Boolean(process.env.SUPABASE_URL),
-            SUPABASE_ANON_KEY: Boolean(process.env.SUPABASE_ANON_KEY),
-            SUPABASE_PUBLISHABLE_KEY: Boolean(process.env.SUPABASE_PUBLISHABLE_KEY),
-            SUPABASE_SECRET_KEY: Boolean(process.env.SUPABASE_SECRET_KEY),
-            SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
-        },
-        matching_env_keys: Object.keys(process.env).filter(k => k.toLowerCase().includes('supabase'))
+        git_commit: process.env.VERCEL_GIT_COMMIT_SHA ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7) : null
     });
 });
 

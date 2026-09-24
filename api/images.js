@@ -167,3 +167,9 @@ export async function handleDeleteProductImage(req, res) {
         });
     }
 }
+
+// Vercel Serverless Function entry point (dynamic import prevents circular ESM dependencies)
+export default async function handler(req, res) {
+    const { app } = await import('../server.js');
+    return app(req, res);
+}

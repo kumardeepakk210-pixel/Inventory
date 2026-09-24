@@ -201,3 +201,12 @@ export async function handleGetDashboardCategories(req, res) {
         });
     }
 }
+
+// Vercel Serverless Function entry point (dynamic import prevents circular ESM dependencies)
+export default async function handler(req, res) {
+    const { app } = await import('../server.js');
+    if (req.url && !req.url.startsWith('/api')) {
+        req.url = `/api/dashboard${req.url === '/' ? '' : req.url}`;
+    }
+    return app(req, res);
+}
