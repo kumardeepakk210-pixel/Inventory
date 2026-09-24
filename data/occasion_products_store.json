@@ -1,0 +1,40 @@
+[
+  {
+    "product_code": "TEST-SAR-99",
+    "product_name": "Royal Banarasi Silk Saree",
+    "product_description": null,
+    "category": "Festive Sarees",
+    "fabric": "Katan Silk",
+    "pattern": null,
+    "weight": null,
+    "selling_price": 6999,
+    "purchase_price": 3500,
+    "discount": 0,
+    "stock_quantity": 5,
+    "occasion_slug": "durga-puja",
+    "status": "Active",
+    "is_featured": true,
+    "purchase_date": null,
+    "created_at": "2026-09-23T03:52:53.479Z",
+    "updated_at": "2026-09-23T03:52:53.479Z"
+  },
+  {
+    "product_code": "SAR-001",
+    "product_name": "Crimson Kanjivaram Silk Saree",
+    "product_description": null,
+    "category": "Festive Sarees",
+    "fabric": "Pure Silk",
+    "pattern": "Zari Weave",
+    "weight": null,
+    "selling_price": 4999,
+    "purchase_price": 2500,
+    "discount": 10,
+    "stock_quantity": 8,
+    "occasion_slug": "durga-puja",
+    "status": "Active",
+    "is_featured": true,
+    "purchase_date": null,
+    "created_at": "2026-09-23T03:51:06.324Z",
+    "updated_at": "2026-09-23T03:51:06.324Z"
+  }
+]

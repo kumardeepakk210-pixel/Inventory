@@ -1,0 +1,26 @@
+{
+  "NSP-0006": {
+    "compare_at_price": 2499,
+    "status": "Active",
+    "updated_at": "2026-09-23T04:30:28.442Z",
+    "cost_price": 157.6,
+    "low_stock_threshold": 3,
+    "short_description": "Diamond Nose Ring",
+    "material": "925 Sterling Silver",
+    "purity": "92.5%",
+    "gst": 3,
+    "slug": "diamond-nose-ring-nsp-0006",
+    "seo_title": "Diamond Nose Ring | WishRite Pure Silver",
+    "seo_description": "Diamond Nose Ring",
+    "catalog_type": "silver_jewellery",
+    "fabric": null,
+    "color": null,
+    "pattern": null,
+    "border_style": null,
+    "design": null,
+    "occasion_slug": null,
+    "occasion_category": null,
+    "occasion_featured": false,
+    "matching_tags": null
+  }
+}
