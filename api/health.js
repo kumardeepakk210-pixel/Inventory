@@ -12,6 +12,7 @@ import { dbQuery } from './supabase-client.js';
 export function handleHealthCheck(req, res) {
     return res.status(200).json({
         ok: true,
+        success: true,
         service: "inventory-api",
         runtime: "vercel"
     });

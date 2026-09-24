@@ -4081,10 +4081,19 @@
             try {
                 // 1. Check API health
                 const health = await window.WishRiteAPI.checkHealth().catch(() => null);
-                if (health && health.success) {
+                const isApiHealthy = Boolean(
+                    health && (
+                        health.ok === true || 
+                        health.success === true || 
+                        health.status === 'healthy' || 
+                        health.status === 'ok'
+                    )
+                );
+                if (isApiHealthy) {
                     apiHealthy = true;
                     updateApiStatus('Connected');
                 } else {
+                    apiHealthy = false;
                     updateApiStatus('Disconnected');
                 }
 
