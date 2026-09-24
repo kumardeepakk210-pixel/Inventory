@@ -305,14 +305,25 @@ app.get('*', (req, res) => {
 });
 
 // ==============================================================================
-// START SERVER
+// EXPORT & START SERVER
 // ==============================================================================
 
-app.listen(PORT, () => {
-    console.log(`\n==================================================`);
-    console.log(`🚀 WishRite Inventory API & Server running`);
-    console.log(`📡 Local URL: http://localhost:${PORT}`);
-    console.log(`🛡️  Architecture: Frontend ➔ API Layer ➔ Supabase`);
-    console.log(`🔒 Supabase credentials isolated to server-side`);
-    console.log(`==================================================\n`);
-});
+export default app;
+export { app };
+
+const isDirectRun = Boolean(
+    !process.env.VERCEL &&
+    process.argv[1] &&
+    path.resolve(process.argv[1]) === path.resolve(__filename)
+);
+
+if (isDirectRun) {
+    app.listen(PORT, () => {
+        console.log(`\n==================================================`);
+        console.log(`🚀 WishRite Inventory API & Server running`);
+        console.log(`📡 Local URL: http://localhost:${PORT}`);
+        console.log(`🛡️  Architecture: Frontend ➔ API Layer ➔ Supabase`);
+        console.log(`🔒 Supabase credentials isolated to server-side`);
+        console.log(`==================================================\n`);
+    });
+}
