@@ -47,3 +47,5 @@ export async function handleDatabaseHealthCheck(req, res) {
         });
     }
 }
+
+export { default } from './index.js';

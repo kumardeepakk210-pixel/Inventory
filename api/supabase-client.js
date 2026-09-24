@@ -16,12 +16,28 @@ export const PROJECT_ROOT = path.resolve(__dirname, '..');
 export const DOTENV_PATH = path.resolve(PROJECT_ROOT, '.env');
 dotenv.config({ path: DOTENV_PATH });
 
-export const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim();
+export const SUPABASE_URL = (
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    ''
+).trim();
 
 const rawSecretKey = (process.env.SUPABASE_SECRET_KEY || '').trim();
 const rawServiceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-const rawPublishableKey = (process.env.SUPABASE_PUBLISHABLE_KEY || '').trim();
-const rawAnonKey = (process.env.SUPABASE_ANON_KEY || '').trim();
+
+const rawPublishableKey = (
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    ''
+).trim();
+
+const rawAnonKey = (
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    ''
+).trim();
 
 // Credential Priority & Categorization (STEP 3):
 // 1. SUPABASE_SECRET_KEY (must NOT start with sb_publishable_)
@@ -536,4 +552,7 @@ export function getStoragePublicUrl(bucket, path) {
     const cleanPath = path.replace(/^\/+/, '');
     return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${cleanPath}`;
 }
+
+export { default } from './index.js';
+
 

@@ -550,3 +550,5 @@ export async function handleDeleteOccasionProduct(req, res) {
         });
     }
 }
+
+export { default } from './index.js';

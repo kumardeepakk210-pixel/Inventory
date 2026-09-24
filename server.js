@@ -58,6 +58,7 @@ import {
 } from './api/auth.js';
 import { handleGetSales, handleCreateSale } from './api/sales.js';
 import { 
+    SUPABASE_URL,
     dbQuery, 
     dbInsert, 
     dbUpdate, 
@@ -74,6 +75,13 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 8085;
+
+// Step 9: Safe Server Startup Diagnostics (NEVER print actual credential values)
+console.log('[Inventory API]');
+console.log('Express app initialized: YES');
+console.log(`Supabase URL: ${SUPABASE_URL ? 'CONFIGURED' : 'MISSING'}`);
+console.log(`Publishable credential: ${isPublishableKeyConfigured() ? 'CONFIGURED' : 'MISSING'}`);
+console.log(`Server admin credential: ${hasServerAdminCredential() ? 'CONFIGURED' : 'MISSING'}`);
 
 // CORS configuration (allow local dev origins or configured origins)
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:8085,http://127.0.0.1:8085').split(',');
@@ -104,25 +112,41 @@ app.use((req, res, next) => {
 // REST API ROUTES
 // ==============================================================================
 
+// Root API status endpoint
+app.get(['/api', '/api/'], (req, res) => {
+    return res.json({
+        success: true,
+        service: "WishRite Inventory API",
+        status: "running"
+    });
+});
+
 // Health Checks
 app.get('/api/health', handleHealthCheck);
 app.get('/api/health/database', handleDatabaseHealthCheck);
 
-// Internal Diagnostic for Supabase Credentials (Section 8 — Safe booleans & key type only)
+// Internal Diagnostic for Supabase Credentials (Step 11 — Safe booleans & key type only)
 app.get('/api/diagnostic/supabase', (req, res) => {
     return res.json({
-        supabase_url_configured: Boolean(process.env.SUPABASE_URL),
+        supabase_url_configured: Boolean(SUPABASE_URL),
         publishable_key_configured: isPublishableKeyConfigured(),
         server_admin_key_configured: hasServerAdminCredential(),
-        server_admin_key_type: getAdminCredentialType()
+        server_admin_key_type: hasServerAdminCredential() ? 'secret' : 'none'
     });
 });
 
 // Public Configuration for Browser Supabase Realtime & Auth (NEVER expose service role key)
 app.get('/api/public-config', (req, res) => {
-    const supabase_url = (process.env.SUPABASE_URL || '').trim();
+    const supabase_url = SUPABASE_URL;
     // Support SUPABASE_PUBLISHABLE_KEY with fallback to SUPABASE_ANON_KEY. NEVER expose SUPABASE_SECRET_KEY.
-    const supabase_anon_key = (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
+    const supabase_anon_key = (
+        process.env.SUPABASE_PUBLISHABLE_KEY || 
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 
+        process.env.SUPABASE_ANON_KEY || 
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+        process.env.VITE_SUPABASE_ANON_KEY || 
+        ''
+    ).trim();
     if (!supabase_url || !supabase_anon_key) {
         return res.status(503).json({
             success: false,
@@ -294,7 +318,13 @@ app.delete('/api/db/:table', async (req, res) => {
 // STATIC FILE SERVING
 // ==============================================================================
 
-app.use(express.static(__dirname));
+// Bypass static file serving for /api routes
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
+    express.static(__dirname)(req, res, next);
+});
 
 // Single-page application route fallback
 app.get('*', (req, res) => {

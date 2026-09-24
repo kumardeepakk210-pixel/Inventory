@@ -86,3 +86,5 @@ export async function handleCreateSale(req, res) {
         });
     }
 }
+
+export { default } from './index.js';

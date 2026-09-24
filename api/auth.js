@@ -208,3 +208,5 @@ export async function handleCreateEmployee(req, res) {
     }
 }
 
+export { default } from './index.js';
+
