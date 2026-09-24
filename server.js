@@ -151,7 +151,15 @@ app.get('/api/diagnostic/supabase', (req, res) => {
         server_admin_key_type: hasServerAdminCredential() ? 'secret' : 'none',
         deployment_env: process.env.VERCEL_ENV || 'local',
         deployment_url: process.env.VERCEL_URL || null,
-        git_commit: process.env.VERCEL_GIT_COMMIT_SHA ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7) : null
+        git_commit: process.env.VERCEL_GIT_COMMIT_SHA ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7) : null,
+        env_presence: {
+            SUPABASE_URL: Boolean(process.env.SUPABASE_URL),
+            SUPABASE_ANON_KEY: Boolean(process.env.SUPABASE_ANON_KEY),
+            SUPABASE_PUBLISHABLE_KEY: Boolean(process.env.SUPABASE_PUBLISHABLE_KEY),
+            SUPABASE_SECRET_KEY: Boolean(process.env.SUPABASE_SECRET_KEY),
+            SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+        },
+        matching_env_keys: Object.keys(process.env).filter(k => k.toLowerCase().includes('supabase'))
     });
 });
 
