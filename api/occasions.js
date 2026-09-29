@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dbQuery, dbInsert, dbUpdate, dbDelete } from './supabase-client.js';
+import { loadLocalOccasionSettings } from './settings.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -218,8 +219,24 @@ export async function handleGetActiveOccasion(req, res) {
             if (rows && rows[0]) {
                 activeSlug = rows[0].occasion_slug || activeSlug;
                 isLive = true;
+            } else {
+                const localSettings = loadLocalOccasionSettings();
+                if (localSettings && localSettings.festive_mode_enabled) {
+                    activeSlug = localSettings.active_occasion_slug || localSettings.selected_occasion_slug || activeSlug;
+                    isLive = true;
+                } else if (localSettings && localSettings.selected_occasion_slug) {
+                    activeSlug = localSettings.selected_occasion_slug;
+                }
             }
-        } catch (e) {}
+        } catch (e) {
+            const localSettings = loadLocalOccasionSettings();
+            if (localSettings && localSettings.festive_mode_enabled) {
+                activeSlug = localSettings.active_occasion_slug || localSettings.selected_occasion_slug || activeSlug;
+                isLive = true;
+            } else if (localSettings && localSettings.selected_occasion_slug) {
+                activeSlug = localSettings.selected_occasion_slug;
+            }
+        }
 
         const occasions = loadLocalOccasions();
         const active = occasions.find(o => o.slug === activeSlug) || occasions[0];

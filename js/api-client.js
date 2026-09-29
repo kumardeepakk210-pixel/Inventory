@@ -125,6 +125,10 @@
             });
         }
 
+        async backfillAudience(updates) {
+            return await this.post('/products/backfill-audience', { updates });
+        }
+
         // ==============================================================================
         // IMAGE OPERATIONS (Via Server-side Supabase Storage)
         // ==============================================================================

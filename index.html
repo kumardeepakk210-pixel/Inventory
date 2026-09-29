@@ -192,47 +192,7 @@
 
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden relative">
 
-    <!-- CUSTOMER AUTH MODALS (INVOICE FLOW) -->
-    <div id="customer-auth-overlay"
-        class="hidden fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative p-8">
-            <button onclick="closeCustomerAuthModal()"
-                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
 
-            <!-- Step 1: OTP Entry -->
-            <div id="modal-step-otp" class="hidden">
-                <h2 class="text-xl font-bold tracking-[0.1em] text-[#5A2C31] mb-2 uppercase text-center">Verify Mobile
-                </h2>
-                <p class="text-sm text-slate-500 text-center mb-6">OTP sent to <span id="otp-display-phone"
-                        class="font-bold text-slate-800"></span></p>
-                <input type="text" id="otp-input" placeholder="Enter 6-digit OTP"
-                    class="w-full border border-slate-300 rounded-lg p-3 text-center tracking-[0.5em] text-lg font-bold focus:ring-2 focus:ring-[#5E3435] outline-none mb-4"
-                    maxlength="6">
-                <button onclick="verifyCustomerOTP()"
-                    class="w-full bg-[#5E3435] text-white font-bold py-3 rounded-lg hover:bg-[#482728] transition-colors shadow-lg">Verify
-                    OTP</button>
-            </div>
-
-            <!-- Step 2: Password Setup -->
-            <div id="modal-step-password" class="hidden">
-                <h2 class="text-xl font-bold tracking-[0.1em] text-[#5A2C31] mb-2 uppercase text-center">Create Password
-                </h2>
-                <p class="text-sm text-slate-500 text-center mb-6">Secure this customer account for future logins.</p>
-                <input type="password" id="cust-setup-pass" placeholder="Password"
-                    class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#5E3435] outline-none mb-3">
-                <input type="password" id="cust-setup-confirm" placeholder="Confirm Password"
-                    class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#5E3435] outline-none mb-6">
-                <button onclick="finalizeCustomerAccount()"
-                    class="w-full bg-[#5E3435] text-white font-bold py-3 rounded-lg hover:bg-[#482728] transition-colors shadow-lg">Create
-                    Account</button>
-            </div>
-        </div>
-    </div>
 
     <!-- PRODUCT CREATION / EDIT MODAL -->
     <div id="product-form-modal"
@@ -355,6 +315,50 @@
                                 class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none focus:bg-white focus:border-[#5E3435]">
                                 <!-- Populated dynamically -->
                             </select>
+                        </div>
+
+                        <!-- Jewellery For (Canonical Audience) -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-bold text-slate-700">Jewellery For <span id="pf-audience-required" class="text-rose-500">*</span></label>
+                                <span id="pf-audience-selected-label" class="text-[11px] font-bold text-rose-700"></span>
+                            </div>
+                            <input type="hidden" id="pf-audience" name="audience" value="">
+                            
+                            <!-- Primary Level: Male | Female | Kids -->
+                            <div class="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-lg border border-slate-200">
+                                <button type="button" id="btn-audience-male" onclick="setProductAudiencePrimary('Male')"
+                                    class="py-1.5 px-2 text-xs font-bold rounded-md transition-all text-slate-700 hover:bg-white/70">
+                                    👨 Male
+                                </button>
+                                <button type="button" id="btn-audience-female" onclick="setProductAudiencePrimary('Female')"
+                                    class="py-1.5 px-2 text-xs font-bold rounded-md transition-all text-slate-700 hover:bg-white/70">
+                                    👩 Female
+                                </button>
+                                <button type="button" id="btn-audience-kids" onclick="setProductAudiencePrimary('Kids')"
+                                    class="py-1.5 px-2 text-xs font-bold rounded-md transition-all text-slate-700 hover:bg-white/70">
+                                    🧒 Kids
+                                </button>
+                            </div>
+
+                            <!-- Sub-Selector Revealed when Kids is selected: Boys / Girls (Mandatory Choice) -->
+                            <div id="pf-kids-subselector" class="hidden mt-2 p-2.5 bg-amber-50/80 border border-amber-300 rounded-lg shadow-2xs">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider">Select Kids Option <span class="text-rose-600">*</span></span>
+                                    <span class="text-[10px] text-amber-700 font-semibold">(Persists canonical value)</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button type="button" id="btn-audience-boys" onclick="setProductAudienceSub('Boys')"
+                                        class="py-1.5 px-3 text-xs font-bold rounded-md border border-amber-300 bg-white text-slate-700 hover:border-amber-500 transition-all flex items-center justify-center gap-1.5">
+                                        👦 Boys
+                                    </button>
+                                    <button type="button" id="btn-audience-girls" onclick="setProductAudienceSub('Girls')"
+                                        class="py-1.5 px-3 text-xs font-bold rounded-md border border-amber-300 bg-white text-slate-700 hover:border-amber-500 transition-all flex items-center justify-center gap-1.5">
+                                        👧 Girls
+                                    </button>
+                                </div>
+                                <p class="text-[10px] text-amber-800 mt-1.5 leading-tight">Must choose Boys or Girls. Canonical database never stores 'Kids'.</p>
+                            </div>
                         </div>
 
                         <!-- Short Description -->
@@ -1050,6 +1054,7 @@
                             <div class="flex flex-wrap items-center gap-2 mb-2">
                                 <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700"
                                     id="pv-category">Category</span>
+                                <span id="pv-audience"></span>
                                 <span class="px-2.5 py-1 rounded-full text-xs font-bold"
                                     id="pv-status-badge">Status</span>
                                 <span class="px-2.5 py-1 rounded-full text-xs font-bold"
@@ -1120,6 +1125,63 @@
                     class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-300 transition-colors">
                     Close
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIENCE BACKFILL MODAL (Safe batch assignment for legacy records) -->
+    <div id="audience-backfill-modal"
+        class="hidden fixed inset-0 bg-slate-900/80 z-[86] flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden relative my-auto animate-fadeIn">
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">⚡</span>
+                    <div>
+                        <h2 class="text-base font-extrabold text-white">Backfill Legacy Product Audience</h2>
+                        <p class="text-xs text-slate-300">Assign canonical audience to unassigned products without altering SKU or stock</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAudienceBackfillModal()"
+                    class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors">✕</button>
+            </div>
+
+            <div class="p-4 bg-amber-50 border-b border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-4">
+                <div>
+                    <strong>Policy:</strong> Unassigned products remain accessible. Persisting selects only <strong>Male, Female, Boys, or Girls</strong>. Never stores 'Kids'.
+                </div>
+                <span id="backfill-unassigned-count" class="px-2.5 py-1 rounded-full font-extrabold bg-amber-200 text-amber-900 text-[11px] shrink-0">0 Unassigned</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 font-extrabold text-slate-600 uppercase tracking-wider text-[10px]">
+                                <th class="p-3 w-12 text-center">#</th>
+                                <th class="p-3 w-28">SKU</th>
+                                <th class="p-3">Product Name</th>
+                                <th class="p-3 w-24">Category</th>
+                                <th class="p-3 w-20 text-right">Price</th>
+                                <th class="p-3 w-64 text-center">Assign Canonical Audience</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audience-backfill-table-body" class="divide-y divide-slate-100">
+                            <tr><td colspan="6" class="p-6 text-center text-slate-400">Loading unassigned products...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+                <span class="text-xs text-slate-500" id="backfill-pending-count">0 products ready to update</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeAudienceBackfillModal()"
+                        class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100">Cancel</button>
+                    <button type="button" id="btn-save-backfill" onclick="submitAudienceBackfill()"
+                        class="px-5 py-2 rounded-xl bg-[#5E3435] text-white text-xs font-extrabold hover:bg-[#482728] shadow-xs">
+                        💾 Save Audience Backfill
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1546,6 +1608,7 @@
                                         <th class="py-2.5 px-3">Product Code</th>
                                         <th class="py-2.5 px-3">Product Name</th>
                                         <th class="py-2.5 px-3">Category</th>
+                                        <th class="py-2.5 px-3 text-center">Audience</th>
                                         <th class="py-2.5 px-3 text-right">Quantity</th>
                                         <th class="py-2.5 px-3 text-right">Purchase (₹)</th>
                                         <th class="py-2.5 px-3 text-right">Selling (₹)</th>
@@ -1569,8 +1632,9 @@
                             <p class="text-xs text-emerald-800 mt-0.5" id="bulk-ready-desc">
                                 0 products (0 new products, 0 existing products), 0 units of stock, 0 warnings, 0 errors.
                             </p>
-                            <div id="bulk-error-alert" class="hidden mt-2 p-2.5 bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold text-rose-800">
-                                ⚠️ Import blocked: Please resolve spreadsheet errors before confirming import.
+                            <div id="bulk-error-alert" class="hidden mt-2 p-2.5 bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold text-rose-800 flex items-center justify-between gap-2">
+                                <span>⚠️ Import blocked: Please resolve spreadsheet errors before confirming import.</span>
+                                <button type="button" onclick="downloadBulkErrorsReport()" class="px-2.5 py-1 bg-rose-700 hover:bg-rose-800 text-white rounded text-xs font-extrabold shadow-2xs shrink-0 cursor-pointer">📥 Download Error Report (.xlsx)</button>
                             </div>
                         </div>
                     </div>
@@ -1870,6 +1934,20 @@
                         <div class="flex items-center gap-2.5">
                             <div
                                 class="border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2 flex items-center gap-2 text-xs font-bold text-slate-700 shadow-2xs">
+                                <span>👥</span>
+                                <select id="dash-audience-filter" onchange="renderDashboard()"
+                                    class="bg-transparent outline-none cursor-pointer font-bold text-slate-700">
+                                    <option value="">All Audiences</option>
+                                    <option value="male">👨 Male</option>
+                                    <option value="female">👩 Female</option>
+                                    <option value="kids">🧒 Kids (Boys + Girls)</option>
+                                    <option value="boys">&nbsp;&nbsp;↳ 👦 Boys</option>
+                                    <option value="girls">&nbsp;&nbsp;↳ 👧 Girls</option>
+                                    <option value="unassigned">⚠️ Unassigned</option>
+                                </select>
+                            </div>
+                            <div
+                                class="border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2 flex items-center gap-2 text-xs font-bold text-slate-700 shadow-2xs">
                                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -2018,6 +2096,82 @@
                                 id="dash-revenue-month">₹0</div>
                             <div class="text-[11px] font-medium text-emerald-600 mt-2">
                                 Current calendar month
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Centralized Audience Intelligence & Stock Breakdown -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 md:p-6 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-xl">👥</span>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider">Audience Catalog & Stock Distribution</h3>
+                                    <p class="text-xs text-slate-500">Live audience segmentation — Kids combined (Boys + Girls) without double counting</p>
+                                </div>
+                            </div>
+                            <span id="dash-audience-active-filter-label" class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full">Showing: All Audiences</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                            <!-- Male -->
+                            <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-3.5 flex flex-col justify-between">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-extrabold text-blue-900">👨 Male</span>
+                                    <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded" id="dash-aud-male-count">0 items</span>
+                                </div>
+                                <div class="text-lg font-black text-blue-950 mt-1" id="dash-aud-male-stock">0 units</div>
+                                <span class="text-[11px] text-blue-700 mt-1 font-semibold" id="dash-aud-male-val">₹0 val</span>
+                            </div>
+
+                            <!-- Female -->
+                            <div class="bg-rose-50/70 border border-rose-200 rounded-xl p-3.5 flex flex-col justify-between">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-extrabold text-rose-900">👩 Female</span>
+                                    <span class="text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded" id="dash-aud-female-count">0 items</span>
+                                </div>
+                                <div class="text-lg font-black text-rose-950 mt-1" id="dash-aud-female-stock">0 units</div>
+                                <span class="text-[11px] text-rose-700 mt-1 font-semibold" id="dash-aud-female-val">₹0 val</span>
+                            </div>
+
+                            <!-- Kids (Combined Boys + Girls) -->
+                            <div class="bg-amber-50/80 border border-amber-300 rounded-xl p-3.5 flex flex-col justify-between relative overflow-hidden">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-extrabold text-amber-950">🧒 Kids (All)</span>
+                                    <span class="text-[10px] font-extrabold text-amber-800 bg-amber-200 px-1.5 py-0.5 rounded" id="dash-aud-kids-count">0 items</span>
+                                </div>
+                                <div class="text-lg font-black text-amber-950 mt-1" id="dash-aud-kids-stock">0 units</div>
+                                <span class="text-[11px] text-amber-800 mt-1 font-bold" id="dash-aud-kids-val">Combined stock</span>
+                            </div>
+
+                            <!-- Boys Sub-category -->
+                            <div class="bg-teal-50/70 border border-teal-200 rounded-xl p-3.5 flex flex-col justify-between">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-extrabold text-teal-900">👦 Boys</span>
+                                    <span class="text-[10px] font-bold text-teal-700 bg-teal-100 px-1.5 py-0.5 rounded" id="dash-aud-boys-count">0 items</span>
+                                </div>
+                                <div class="text-lg font-black text-teal-950 mt-1" id="dash-aud-boys-stock">0 units</div>
+                                <span class="text-[11px] text-teal-700 mt-1 font-semibold" id="dash-aud-boys-val">₹0 val</span>
+                            </div>
+
+                            <!-- Girls Sub-category -->
+                            <div class="bg-fuchsia-50/70 border border-fuchsia-200 rounded-xl p-3.5 flex flex-col justify-between">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-extrabold text-fuchsia-900">👧 Girls</span>
+                                    <span class="text-[10px] font-bold text-fuchsia-700 bg-fuchsia-100 px-1.5 py-0.5 rounded" id="dash-aud-girls-count">0 items</span>
+                                </div>
+                                <div class="text-lg font-black text-fuchsia-950 mt-1" id="dash-aud-girls-stock">0 units</div>
+                                <span class="text-[11px] text-fuchsia-700 mt-1 font-semibold" id="dash-aud-girls-val">₹0 val</span>
+                            </div>
+
+                            <!-- Unassigned (Legacy) -->
+                            <div class="bg-slate-100/80 border border-slate-300 rounded-xl p-3.5 flex flex-col justify-between">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-extrabold text-slate-700">⚠️ Unassigned</span>
+                                    <span class="text-[10px] font-bold text-slate-600 bg-slate-200 px-1.5 py-0.5 rounded" id="dash-aud-unassigned-count">0 items</span>
+                                </div>
+                                <div class="text-lg font-black text-slate-800 mt-1" id="dash-aud-unassigned-stock">0 units</div>
+                                <button type="button" onclick="navigate('products'); openAudienceBackfillModal();" class="text-[10px] font-bold text-amber-700 hover:underline text-left mt-1">Backfill Now →</button>
                             </div>
                         </div>
                     </div>
@@ -2236,6 +2390,17 @@
                                 categories, stock, SEO, and images.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2.5">
+                            <button onclick="exportProductsToExcel()"
+                                class="inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm"
+                                title="Export filtered products list to Excel">
+                                <span>📊</span> Export
+                            </button>
+                            <button onclick="openAudienceBackfillModal()"
+                                class="inline-flex items-center gap-2 bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm"
+                                title="Review and assign audience to legacy unassigned products">
+                                <span>⚡</span> Backfill Audience
+                                <span id="prod-backfill-count-badge" class="hidden px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-200 text-amber-900 border border-amber-300">0 Unassigned</span>
+                            </button>
                             <button onclick="openCategoryManagerModal()"
                                 class="inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm">
                                 <span>🏷️</span> Categories
@@ -2326,7 +2491,7 @@
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-5">
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
                             <!-- Search -->
-                            <div class="lg:col-span-4 relative">
+                            <div class="lg:col-span-3 relative">
                                 <svg class="w-4 h-4 absolute left-3 top-3 text-slate-400" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -2340,10 +2505,24 @@
                             </div>
 
                             <!-- Category Filter -->
-                            <div class="lg:col-span-3">
+                            <div class="lg:col-span-2">
                                 <select id="prod-filter-cat" onchange="handleProductFiltersChange()"
                                     class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:bg-white focus:border-[#5E3435] transition-all">
                                     <option value="">All Categories</option>
+                                </select>
+                            </div>
+
+                            <!-- Audience Filter -->
+                            <div class="lg:col-span-2">
+                                <select id="prod-filter-audience" onchange="handleProductFiltersChange()"
+                                    class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:bg-white focus:border-[#5E3435] transition-all font-medium">
+                                    <option value="">All Audiences</option>
+                                    <option value="male">👨 Male</option>
+                                    <option value="female">👩 Female</option>
+                                    <option value="kids">🧒 Kids (All)</option>
+                                    <option value="boys">&nbsp;&nbsp;↳ 👦 Boys</option>
+                                    <option value="girls">&nbsp;&nbsp;↳ 👧 Girls</option>
+                                    <option value="unassigned">⚠️ Unassigned</option>
                                 </select>
                             </div>
 
@@ -2408,6 +2587,7 @@
                                         <th class="py-3.5 px-4 w-32">SKU / Code</th>
                                         <th class="py-3.5 px-4">Product Name</th>
                                         <th class="py-3.5 px-4 w-28">Category</th>
+                                        <th class="py-3.5 px-4 w-28 text-center">Audience</th>
                                         <th class="py-3.5 px-4 w-36">Type / Occasion</th>
                                         <th class="py-3.5 px-4 w-32 text-right">Selling Price</th>
                                         <th class="py-3.5 px-4 w-28 text-center">Stock</th>
@@ -2418,7 +2598,7 @@
                                 </thead>
                                 <tbody id="products-table-body" class="divide-y divide-slate-100 text-sm">
                                     <tr>
-                                        <td colspan="10" class="p-8 text-center text-slate-400">Loading products
+                                        <td colspan="11" class="p-8 text-center text-slate-400">Loading products
                                             catalog...</td>
                                     </tr>
                                 </tbody>
@@ -3244,6 +3424,44 @@
                             </div>
                         </section>
 
+                        <!-- Card 5: Centralized Jewellery Audience Model -->
+                        <section class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-lg">👥</span>
+                                    <div>
+                                        <h2 class="font-extrabold text-slate-900 text-base">Centralized Jewellery Audience Model</h2>
+                                        <p class="text-xs text-slate-500">Universal audience classification rules and display labels across all tabs and website synchronization.</p>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-extrabold self-start sm:self-auto">Active Specification</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-xs">
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                                    <span class="font-extrabold text-slate-800 uppercase tracking-wider text-[11px] block">Database Canonical Values (Immutable)</span>
+                                    <p class="text-slate-600 leading-relaxed">
+                                        The canonical database stores exactly one of four values:
+                                        <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-indigo-700">Male</code>,
+                                        <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-rose-700">Female</code>,
+                                        <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-teal-700">Boys</code>, or
+                                        <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-fuchsia-700">Girls</code>.
+                                    </p>
+                                    <p class="text-amber-800 font-medium">⚠️ 'Kids' is never persisted directly. Choosing Kids in UI reveals required Boys or Girls choice.</p>
+                                </div>
+
+                                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                                    <span class="font-extrabold text-slate-800 uppercase tracking-wider text-[11px] block">UI Display & Legacy Handling</span>
+                                    <p class="text-slate-600 leading-relaxed">
+                                        Products without an assigned audience remain 100% accessible and are clearly badged as
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">⚠️ Unassigned</span>.
+                                        Safe backfill workflows enable zero-downtime classification.
+                                    </p>
+                                    <p class="text-slate-500">Existing business settings, SKUs, inventory counts, and category rules are unaffected.</p>
+                                </div>
+                            </div>
+                        </section>
+
                         <div class="flex justify-start">
                             <button type="submit"
                                 class="w-full sm:w-auto bg-[#5E3435] hover:bg-[#482728] text-white px-6 py-3 rounded-xl text-sm font-bold transition shadow-xs">
@@ -3483,19 +3701,32 @@
 
                     <!-- Saved Purchase Records Table -->
                     <div class="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
-                        <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-5 py-4">
                             <div>
                                 <h2 class="font-extrabold text-slate-800 text-base">Saved Purchase Records</h2>
                                 <p class="text-xs text-slate-500 mt-0.5">Historical log of all received inward inventory items linked to vendor shops.</p>
                             </div>
-                            <span id="purchase-record-count"
-                                class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">0 records</span>
+                            <div class="flex items-center gap-3">
+                                <select id="purchase-filter-audience" onchange="renderPurchaseDetails()"
+                                    class="border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none">
+                                    <option value="">All Audiences</option>
+                                    <option value="male">👨 Male</option>
+                                    <option value="female">👩 Female</option>
+                                    <option value="kids">🧒 Kids (Boys + Girls)</option>
+                                    <option value="boys">&nbsp;&nbsp;↳ 👦 Boys</option>
+                                    <option value="girls">&nbsp;&nbsp;↳ 👧 Girls</option>
+                                    <option value="unassigned">⚠️ Unassigned</option>
+                                </select>
+                                <span id="purchase-record-count"
+                                    class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 shrink-0">0 records</span>
+                            </div>
                         </div>
                         <div class="overflow-x-auto max-h-[600px]">
                             <table class="w-full text-left border-collapse min-w-[1050px]">
                                 <thead class="sticky top-0 bg-slate-900 shadow-sm z-10">
                                     <tr class="border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-300 font-extrabold">
                                         <th class="px-5 py-3.5">Product</th>
+                                        <th class="px-5 py-3.5">Audience</th>
                                         <th class="px-5 py-3.5">Shop / Vendor</th>
                                         <th class="px-5 py-3.5">Purchase Date</th>
                                         <th class="px-5 py-3.5">Address</th>
@@ -3506,7 +3737,7 @@
                                 </thead>
                                 <tbody id="purchase-details-body" class="text-sm divide-y divide-slate-100">
                                     <tr>
-                                        <td colspan="7" class="p-8 text-center text-slate-400">Loading purchase records...</td>
+                                        <td colspan="8" class="p-8 text-center text-slate-400">Loading purchase records...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -3665,6 +3896,13 @@
                                             placeholder="e.g. 3.25">
                                     </div>
 
+                                    <div id="stock-field-audience">
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Jewellery Audience</label>
+                                        <div id="in-audience-preview" class="p-2 border border-slate-200 bg-slate-100 rounded-xl min-h-[42px] flex items-center">
+                                            <span class="text-xs text-slate-400">Select product to view audience</span>
+                                        </div>
+                                    </div>
+
                                     <div id="stock-field-description" class="col-span-1 sm:col-span-3">
                                         <label class="block text-xs font-bold text-slate-700 mb-1">Product Description</label>
                                         <textarea id="in-desc" rows="2"
@@ -3734,7 +3972,19 @@
                         <div class="md:col-span-7 bg-white p-6 md:p-7 rounded-2xl border border-slate-200/80 shadow-xs space-y-6">
                             <form onsubmit="handleStockOut(event)">
                                 <div class="mb-5">
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Product by Code & Size <span class="text-rose-500">*</span></label>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-xs font-bold text-slate-700">Select Product <span class="text-rose-500">*</span></label>
+                                        <select id="out-filter-audience" onchange="filterStockOutProductDropdown()"
+                                            class="text-[11px] font-bold border border-slate-200 rounded-md px-1.5 py-0.5 bg-slate-50 text-slate-700 outline-none">
+                                            <option value="">All Audiences</option>
+                                            <option value="male">👨 Male</option>
+                                            <option value="female">👩 Female</option>
+                                            <option value="kids">🧒 Kids</option>
+                                            <option value="boys">👦 Boys</option>
+                                            <option value="girls">👧 Girls</option>
+                                            <option value="unassigned">⚠️ Unassigned</option>
+                                        </select>
+                                    </div>
                                     <select id="out-product" class="hidden" onchange="checkStockAvailability()">
                                         <option value="">-- Choose Product --</option>
                                     </select>
@@ -3789,6 +4039,10 @@
                                 <div class="flex justify-between items-center bg-white p-3.5 rounded-xl border border-indigo-50 shadow-2xs">
                                     <span class="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider">Category</span>
                                     <strong id="out-prev-cat" class="text-right text-slate-800 text-sm">-</strong>
+                                </div>
+                                <div class="flex justify-between items-center bg-white p-3.5 rounded-xl border border-indigo-50 shadow-2xs">
+                                    <span class="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider">Audience</span>
+                                    <span id="out-prev-audience" class="text-right text-sm">-</span>
                                 </div>
                                 <div class="flex justify-between items-center bg-white p-3.5 rounded-xl border border-indigo-50 shadow-2xs">
                                     <span class="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider">Size / Specs</span>
@@ -3848,14 +4102,29 @@
                                 <p class="text-xs text-slate-500 leading-snug">Selected products are reserved and dynamically calculated on invoice.</p>
 
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Product Code & Name <span class="text-rose-500">*</span></label>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-xs font-bold text-slate-700">Product Code & Name <span class="text-rose-500">*</span></label>
+                                        <select id="inv-filter-audience" onchange="filterInvoiceProductDropdown()"
+                                            class="text-[11px] font-bold border border-slate-200 rounded-md px-1.5 py-0.5 bg-slate-50 text-slate-700 outline-none">
+                                            <option value="">All Audiences</option>
+                                            <option value="male">👨 Male</option>
+                                            <option value="female">👩 Female</option>
+                                            <option value="kids">🧒 Kids</option>
+                                            <option value="boys">👦 Boys</option>
+                                            <option value="girls">👧 Girls</option>
+                                            <option value="unassigned">⚠️ Unassigned</option>
+                                        </select>
+                                    </div>
                                     <div id="invoice-product-dropdown" class="relative">
                                         <input type="hidden" id="inv-product" value="">
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Description</label>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-xs font-bold text-slate-700">Description</label>
+                                        <span id="inv-audience-badge-container"></span>
+                                    </div>
                                     <input type="text" id="inv-desc" readonly
                                         class="w-full border border-slate-200 bg-slate-50/80 rounded-xl p-2.5 text-xs text-slate-600 font-medium">
                                 </div>
@@ -4078,6 +4347,53 @@
 
     <script>
         // ==============================================================================
+        // CENTRALIZED JEWELLERY AUDIENCE DEFINITIONS & FORMATTER
+        // ==============================================================================
+        const AUDIENCE_CANONICAL = {
+            MALE: 'Men',
+            FEMALE: 'Female',
+            BOYS: 'Kids-Boy',
+            GIRLS: 'Kids-Girl'
+        };
+        const AUDIENCE_VALUES = AUDIENCE_CANONICAL;
+
+        const CANONICAL_AUDIENCES = ['Female', 'Men', 'Kids-Boy', 'Kids-Girl'];
+
+        function normalizeAudience(val) {
+            if (!val) return null;
+            const str = String(val).trim();
+            if (!str) return null;
+            const lower = str.toLowerCase();
+            if (lower === 'female' || lower === 'women' || lower === 'womens') return AUDIENCE_CANONICAL.FEMALE;
+            if (lower === 'men' || lower === 'male' || lower === 'mens' || lower === 'man') return AUDIENCE_CANONICAL.MALE;
+            if (lower === 'kids-boy' || lower === 'boys' || lower === 'boy') return AUDIENCE_CANONICAL.BOYS;
+            if (lower === 'kids-girl' || lower === 'girls' || lower === 'girl') return AUDIENCE_CANONICAL.GIRLS;
+            return null;
+        }
+
+        function getAudienceBadgeHtml(audience) {
+            const canonical = normalizeAudience(audience);
+            if (canonical === AUDIENCE_CANONICAL.FEMALE) {
+                return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-pink-50 text-pink-700 border border-pink-200">👩 Female</span>';
+            }
+            if (canonical === AUDIENCE_CANONICAL.MALE) {
+                return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200">👨 Male</span>';
+            }
+            if (canonical === AUDIENCE_CANONICAL.BOYS) {
+                return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-cyan-50 text-cyan-800 border border-cyan-200">👦 Boys</span>';
+            }
+            if (canonical === AUDIENCE_CANONICAL.GIRLS) {
+                return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">👧 Girls</span>';
+            }
+            return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200">Unassigned</span>';
+        }
+        window.AUDIENCE_CANONICAL = AUDIENCE_CANONICAL;
+        window.AUDIENCE_VALUES = AUDIENCE_VALUES;
+        window.CANONICAL_AUDIENCES = CANONICAL_AUDIENCES;
+        window.normalizeAudience = normalizeAudience;
+        window.getAudienceBadgeHtml = getAudienceBadgeHtml;
+
+        // ==============================================================================
         // GLOBAL OCCASION TITLE FORMATTER (One global definition before any call site)
         // ==============================================================================
         function formatOccasionTitle(slug) {
@@ -4138,79 +4454,9 @@
                 document.getElementById('cust-phone-status').classList.remove('hidden');
                 updateInvoiceCustomerDisplay();
             } else {
-                // 2. Initiate New Customer OTP
-                if (confirm("New customer detected. Send OTP to register?")) {
-                    initiateCustomerOTP(normalized);
-                }
+                document.getElementById('cust-phone-status').classList.add('hidden');
+                updateInvoiceCustomerDisplay();
             }
-        }
-
-        async function initiateCustomerOTP(phone) {
-            const { error } = await supaClient.auth.signInWithOtp({ phone: phone });
-            if (error) return alert("Failed to send OTP: " + error.message);
-
-            document.getElementById('customer-auth-overlay').classList.remove('hidden');
-            document.getElementById('modal-step-otp').classList.remove('hidden');
-            document.getElementById('modal-step-password').classList.add('hidden');
-            document.getElementById('otp-display-phone').innerText = phone;
-        }
-
-        async function verifyCustomerOTP() {
-            const otp = document.getElementById('otp-input').value;
-            if (otp.length !== 6) return alert("Enter a valid 6-digit OTP.");
-
-            const { data, error } = await supaClient.auth.verifyOtp({
-                phone: currentCustomerPhone,
-                token: otp,
-                type: 'sms'
-            });
-
-            if (error) return alert("OTP Verification Failed: " + error.message);
-
-            // OTP Success - UPSERT to reserve the unique phone number immediately
-            await supaClient.from('customers').upsert({
-                customer_phone: currentCustomerPhone,
-                customer_name: document.getElementById('cust-name').value || 'Pending Setup',
-                is_phone_verified: true,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'customer_phone' });
-
-            // Move to Password Setup
-            document.getElementById('modal-step-otp').classList.add('hidden');
-            document.getElementById('modal-step-password').classList.remove('hidden');
-        }
-
-        async function finalizeCustomerAccount() {
-            const pass = document.getElementById('cust-setup-pass').value;
-            const confirmPass = document.getElementById('cust-setup-confirm').value;
-
-            if (pass.length < 8) return alert("Password must be at least 8 characters.");
-            if (pass !== confirmPass) return alert("Passwords do not match.");
-
-            // Update Supabase Auth User with Password
-            const { data: authData, error: authError } = await supaClient.auth.updateUser({
-                password: pass
-            });
-
-            if (authError) return alert("Error setting password: " + authError.message);
-
-            // Update the final customer record mapping the auth ID
-            await supaClient.from('customers').update({
-                user_id: authData.user.id,
-                password_set: true,
-                updated_at: new Date().toISOString()
-            }).eq('customer_phone', currentCustomerPhone);
-
-            closeCustomerAuthModal();
-            document.getElementById('cust-phone-status').classList.remove('hidden');
-            alert("Customer account successfully created and linked!");
-        }
-
-        function closeCustomerAuthModal() {
-            document.getElementById('customer-auth-overlay').classList.add('hidden');
-            document.getElementById('otp-input').value = '';
-            document.getElementById('cust-setup-pass').value = '';
-            document.getElementById('cust-setup-confirm').value = '';
         }
 
         // --- END CUSTOMER IDENTITY WORKFLOW ---
@@ -5244,26 +5490,38 @@
 
         function renderPurchaseDetails() {
             const tbody = document.getElementById('purchase-details-body');
+            const audFilter = (document.getElementById('purchase-filter-audience')?.value || '').toLowerCase();
+            let filtered = inventoryData || [];
+
+            if (audFilter) {
+                filtered = filtered.filter(item => {
+                    const rawAud = item.audience;
+                    if (audFilter === 'unassigned') return !rawAud || rawAud === 'Unassigned';
+                    if (audFilter === 'kids') return rawAud === 'Boys' || rawAud === 'Girls';
+                    return (rawAud || '').toLowerCase() === audFilter;
+                });
+            }
+
             const count = document.getElementById('purchase-record-count');
-            if (count) count.innerText = `${(inventoryData || []).length} ${(inventoryData || []).length === 1 ? 'record' : 'records'}`;
+            if (count) count.innerText = `${filtered.length} ${filtered.length === 1 ? 'record' : 'records'}`;
             if (!tbody) return;
 
-            if (isInventoryLoading && (!inventoryData || inventoryData.length === 0)) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">Loading Database...</td></tr>`;
+            if (isInventoryLoading && (!filtered || filtered.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">Loading Database...</td></tr>`;
                 return;
             }
 
-            if (inventoryFetchError && (!inventoryData || inventoryData.length === 0)) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-medium">Unable to load purchase details: ${escapeHtml(inventoryFetchError.message || '')}</td></tr>`;
+            if (inventoryFetchError && (!filtered || filtered.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500 font-medium">Unable to load purchase details: ${escapeHtml(inventoryFetchError.message || '')}</td></tr>`;
                 return;
             }
 
-            if (!inventoryData || inventoryData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-400">No purchase details found.</td></tr>';
+            if (!filtered || filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">No purchase details found matching filter.</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = inventoryData.map(item => {
+            tbody.innerHTML = filtered.map(item => {
                 const purchaseDate = item.purchase_date ? new Date(`${item.purchase_date}T00:00:00`).toLocaleDateString('en-IN') : '-';
                 const mediaFiles = Array.isArray(item.product_media_urls) ? item.product_media_urls : [];
                 const fileLinks = [];
@@ -5271,10 +5529,11 @@
                 mediaFiles.forEach((url, index) => fileLinks.push(`<a href="${url}" target="_blank" rel="noopener" class="text-emerald-600 hover:underline font-bold">Product ${index + 1}</a>`));
                 return `
                     <tr class="odd:bg-white even:bg-slate-50/60 hover:bg-indigo-50/60 transition-colors">
-                        <td class="px-5 py-4 align-middle"><p class="font-bold text-slate-900">${item.product_name || '-'}</p><span class="text-xs text-slate-400">${item.product_code || '-'}</span></td>
-                        <td class="px-5 py-4 align-middle font-semibold text-slate-700">${item.shop_name || '-'}</td>
+                        <td class="px-5 py-4 align-middle"><p class="font-bold text-slate-900">${escapeHtml(item.product_name || '-')}</p><span class="text-xs text-slate-400">${escapeHtml(item.product_code || '-')}</span></td>
+                        <td class="px-5 py-4 align-middle text-center">${getAudienceBadgeHtml(item.audience)}</td>
+                        <td class="px-5 py-4 align-middle font-semibold text-slate-700">${escapeHtml(item.shop_name || '-')}</td>
                         <td class="px-5 py-4 align-middle text-slate-600">${purchaseDate}</td>
-                        <td class="px-5 py-4 align-middle text-slate-600 max-w-[220px] truncate" title="${item.shop_address || ''}">${item.shop_address || '-'}</td>
+                        <td class="px-5 py-4 align-middle text-slate-600 max-w-[220px] truncate" title="${escapeHtml(item.shop_address || '')}">${escapeHtml(item.shop_address || '-')}</td>
                         <td class="px-5 py-4 align-middle text-right font-bold text-slate-800">${item.stock_quantity || 0}</td>
                         <td class="px-5 py-4 align-middle text-right font-bold text-emerald-600">₹${Number(item.purchase_price || 0).toLocaleString('en-IN')}</td>
                         <td class="px-5 py-4 align-middle"><div class="flex flex-col items-start gap-1 text-xs">${fileLinks.length ? fileLinks.join('') : '<span class="text-slate-400">No files</span>'}</div></td>
@@ -5741,7 +6000,17 @@
             }
         }
 
-        const productDropdownOption = item => `<span class="block text-[10px] font-bold tracking-wider text-[#806565]">${escapeHtml(item.product_code)}</span><span class="block truncate text-sm font-semibold text-[#252525]">${escapeHtml(item.product_name || 'Unnamed product')}${item.size ? ` <span class="text-slate-400">(Size: ${escapeHtml(item.size)})</span>` : ''}</span>`;
+        const productDropdownOption = item => `
+            <div class="flex items-center justify-between gap-2 py-0.5 w-full">
+                <div class="min-w-0">
+                    <span class="block text-[10px] font-bold tracking-wider text-[#806565]">${escapeHtml(item.product_code)}</span>
+                    <span class="block truncate text-sm font-semibold text-[#252525]">${escapeHtml(item.product_name || 'Unnamed product')}${item.size ? ` <span class="text-slate-400 font-normal">(Size: ${escapeHtml(item.size)})</span>` : ''}</span>
+                </div>
+                <div class="shrink-0">
+                    ${getAudienceBadgeHtml(item.audience)}
+                </div>
+            </div>
+        `;
         const categoryDropdownOption = item => `<span class="block truncate text-sm font-semibold text-[#252525]">${escapeHtml(item.text)}</span>`;
         const selectOptions = id => {
             const el = document.getElementById(id);
@@ -5751,13 +6020,71 @@
 
         function initializeSearchableDropdowns() {
             if (document.getElementById('invoice-product-dropdown') && document.getElementById('inv-product')) {
-                searchableDropdowns.invoiceProduct = new SearchableDropdown({ rootId: 'invoice-product-dropdown', valueId: 'inv-product', label: 'Products', placeholder: '-- Select SKU --', searchPlaceholder: 'Search SKU or product name...', noResultsMessage: 'No products found', getOptions: () => (inventoryData || []).filter(item => item.stock_quantity > 0), value: item => item.product_code, searchText: item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`, renderOption: productDropdownOption, triggerLabel: item => item.product_code, onSelect: autoFillInvoiceItem });
+                searchableDropdowns.invoiceProduct = new SearchableDropdown({
+                    rootId: 'invoice-product-dropdown',
+                    valueId: 'inv-product',
+                    label: 'Products',
+                    placeholder: '-- Select SKU --',
+                    searchPlaceholder: 'Search SKU, product name, or audience...',
+                    noResultsMessage: 'No products found',
+                    getOptions: () => {
+                        const audFilter = (document.getElementById('inv-filter-audience')?.value || '').toLowerCase();
+                        return (inventoryData || []).filter(item => {
+                            if (item.stock_quantity <= 0) return false;
+                            if (!audFilter) return true;
+                            const rawAud = item.audience;
+                            if (audFilter === 'unassigned') return !rawAud || rawAud === 'Unassigned';
+                            if (audFilter === 'kids') return rawAud === 'Boys' || rawAud === 'Girls';
+                            return (rawAud || '').toLowerCase() === audFilter;
+                        });
+                    },
+                    value: item => item.product_code,
+                    searchText: item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''} ${item.audience || 'Unassigned'}`,
+                    renderOption: productDropdownOption,
+                    triggerLabel: item => item.product_code,
+                    onSelect: autoFillInvoiceItem
+                });
             }
             if (document.getElementById('stockin-product-dropdown') && document.getElementById('in-name-select')) {
-                searchableDropdowns.stockinProduct = new SearchableDropdown({ rootId: 'stockin-product-dropdown', valueId: 'in-name-select', label: 'Products', placeholder: '-- Select Existing Product --', searchPlaceholder: 'Search SKU or product name...', noResultsMessage: 'No products found', getOptions: () => inventoryData || [], value: item => item.product_code, searchText: item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`, renderOption: productDropdownOption, triggerLabel: item => `${item.product_code} - ${item.product_name}`, beforeOpen: async dropdown => { dropdown.setLoading('Refreshing products from database…'); await refreshStockInProducts(); } });
+                searchableDropdowns.stockinProduct = new SearchableDropdown({
+                    rootId: 'stockin-product-dropdown',
+                    valueId: 'in-name-select',
+                    label: 'Products',
+                    placeholder: '-- Select Existing Product --',
+                    searchPlaceholder: 'Search SKU, product name, or audience...',
+                    noResultsMessage: 'No products found',
+                    getOptions: () => inventoryData || [],
+                    value: item => item.product_code,
+                    searchText: item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''} ${item.audience || 'Unassigned'}`,
+                    renderOption: productDropdownOption,
+                    triggerLabel: item => `${item.product_code} - ${item.product_name}`,
+                    beforeOpen: async dropdown => { dropdown.setLoading('Refreshing products from database…'); await refreshStockInProducts(); }
+                });
             }
             if (document.getElementById('out-product-dropdown') && document.getElementById('out-product')) {
-                searchableDropdowns.stockoutProduct = new SearchableDropdown({ rootId: 'out-product-dropdown', valueId: 'out-product', label: 'Products', placeholder: '-- Choose Product --', searchPlaceholder: 'Search SKU or product name...', noResultsMessage: 'No products found', getOptions: () => (inventoryData || []).filter(item => item.stock_quantity > 0), value: item => item.product_code, searchText: item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''}`, renderOption: productDropdownOption, triggerLabel: item => `${item.product_code} - ${item.product_name}` });
+                searchableDropdowns.stockoutProduct = new SearchableDropdown({
+                    rootId: 'out-product-dropdown',
+                    valueId: 'out-product',
+                    label: 'Products',
+                    placeholder: '-- Choose Product --',
+                    searchPlaceholder: 'Search SKU, product name, or audience...',
+                    noResultsMessage: 'No products found',
+                    getOptions: () => {
+                        const audFilter = (document.getElementById('out-filter-audience')?.value || '').toLowerCase();
+                        return (inventoryData || []).filter(item => {
+                            if (item.stock_quantity <= 0) return false;
+                            if (!audFilter) return true;
+                            const rawAud = item.audience;
+                            if (audFilter === 'unassigned') return !rawAud || rawAud === 'Unassigned';
+                            if (audFilter === 'kids') return rawAud === 'Boys' || rawAud === 'Girls';
+                            return (rawAud || '').toLowerCase() === audFilter;
+                        });
+                    },
+                    value: item => item.product_code,
+                    searchText: item => `${item.product_code} ${item.product_name || ''} ${item.product_description || ''} ${item.audience || 'Unassigned'}`,
+                    renderOption: productDropdownOption,
+                    triggerLabel: item => `${item.product_code} - ${item.product_name}`
+                });
             }
             if (document.getElementById('in-cat-dropdown') && document.getElementById('in-cat')) {
                 searchableDropdowns.stockinCategory = new SearchableDropdown({ rootId: 'in-cat-dropdown', valueId: 'in-cat', label: 'Categories', placeholder: '-- Select --', searchPlaceholder: 'Search categories...', noResultsMessage: 'No categories found', getOptions: () => selectOptions('in-cat'), value: item => item.value, searchText: item => item.text, renderOption: categoryDropdownOption, triggerLabel: item => item.text });
@@ -5835,6 +6162,8 @@
         function autoFillExistingProduct() {
             const selectedCode = document.getElementById('in-name-select').value;
             const product = inventoryData.find(i => i.product_code === selectedCode);
+            const audPrev = document.getElementById('in-audience-preview');
+            const audField = document.getElementById('stock-field-audience');
 
             if (product) {
                 document.getElementById('in-cat').value = product.category;
@@ -5844,6 +6173,12 @@
                 document.getElementById('in-desc').value = product.product_description;
                 document.getElementById('in-buy').value = product.purchase_price;
                 document.getElementById('in-sale').value = product.selling_price;
+                if (audPrev && audField) {
+                    audPrev.innerHTML = getAudienceBadgeHtml(product.audience);
+                    audField.classList.remove('hidden');
+                }
+            } else {
+                if (audField) audField.classList.add('hidden');
             }
         }
 
@@ -6005,6 +6340,8 @@
                 document.getElementById('out-prev-cat').innerText = product.category;
                 document.getElementById('out-prev-size').innerText = product.size || 'N/A';
                 document.getElementById('out-prev-stock').innerText = product.stock_quantity;
+                const audEl = document.getElementById('out-prev-audience');
+                if (audEl) audEl.innerHTML = getAudienceBadgeHtml(product.audience);
                 card.classList.remove('hidden');
             } else {
                 card.classList.add('hidden');
@@ -6054,11 +6391,18 @@
 
         function autoFillInvoiceItem() {
             const product = inventoryData.find(i => i.product_code === document.getElementById('inv-product').value);
+            const badgeContainer = document.getElementById('inv-audience-badge-container');
             if (product) {
                 let desc = product.product_name;
                 if (product.size) desc += ` (Size: ${product.size})`;
                 document.getElementById('inv-desc').value = desc;
                 document.getElementById('inv-price').value = product.selling_price;
+                if (badgeContainer) {
+                    badgeContainer.innerHTML = getAudienceBadgeHtml(product.audience);
+                    badgeContainer.classList.remove('hidden');
+                }
+            } else {
+                if (badgeContainer) badgeContainer.classList.add('hidden');
             }
         }
 
@@ -6079,6 +6423,7 @@
                     code: code,
                     name: product.product_name,
                     category: product.category,
+                    audience: product.audience || null,
                     weight: product.weight,
                     size: product.size || null,
                     desc: document.getElementById('inv-desc').value,
@@ -6098,6 +6443,8 @@
                 document.getElementById('inv-qty').value = '1';
                 document.getElementById('inv-discount').value = '0';
                 document.getElementById('inv-tax').value = '0';
+                const badgeContainer = document.getElementById('inv-audience-badge-container');
+                if (badgeContainer) badgeContainer.classList.add('hidden');
             } else {
                 alert("Insufficient stock in Database or missing data!");
             }
@@ -6118,10 +6465,12 @@
                 totalDiscount += item.discount;
                 grandTotal += item.total;
 
+                const audBadge = item.audience ? `<span class="inline-block ml-1.5 align-middle">${getAudienceBadgeHtml(item.audience)}</span>` : '';
+
                 tbody.innerHTML += `
                     <tr class="border-b border-[#E8DED2]">
-                        <td class="p-3 text-[10px] font-medium tracking-wide text-[#806565]">${item.code}</td>
-                        <td class="p-3 font-semibold text-[#252525]">${item.desc}</td>
+                        <td class="p-3 text-[10px] font-medium tracking-wide text-[#806565]">${escapeHtml(item.code)}</td>
+                        <td class="p-3 font-semibold text-[#252525]">${escapeHtml(item.desc)}${audBadge}</td>
                         <td class="p-3 text-center">${item.qty}</td>
                         <td class="p-3 text-right">₹${item.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                         <td class="p-3 text-right text-[#5E3435]">-₹${item.discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
@@ -6129,7 +6478,7 @@
                         <td class="p-3 text-right font-semibold">₹${item.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                     </tr>`;
             });
-            editItems.innerHTML = invoiceItems.length ? `<p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Items in invoice</p>` + invoiceItems.map((item, index) => `<div class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs"><span class="truncate"><strong>${item.code}</strong> · ${item.name}</span><button type="button" onclick="removeInvoiceItem(${index})" title="Remove item" class="shrink-0 text-rose-600 hover:text-rose-800 font-bold">Remove</button></div>`).join('') : '';
+            editItems.innerHTML = invoiceItems.length ? `<p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Items in invoice</p>` + invoiceItems.map((item, index) => `<div class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs"><span class="truncate"><strong>${escapeHtml(item.code)}</strong> · ${escapeHtml(item.name)} ${item.audience ? `(${escapeHtml(item.audience)})` : ''}</span><button type="button" onclick="removeInvoiceItem(${index})" title="Remove item" class="shrink-0 text-rose-600 hover:text-rose-800 font-bold">Remove</button></div>`).join('') : '';
             document.getElementById('inv-subtotal').innerText = '₹' + totalItems.toLocaleString('en-IN', { minimumFractionDigits: 2 });
             document.getElementById('inv-totaltax').innerText = '₹' + totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2 });
             document.getElementById('inv-totaldiscount').innerText = '-₹' + totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 });
@@ -6298,15 +6647,134 @@
             const searchStr = (document.getElementById('global-search')?.value || '').toLowerCase();
             const allItems = inventoryData || [];
 
-            // Real KPI calculations across inventoryData
-            const totalProducts = allItems.length;
+            // Audience Intelligence breakdown (Kids = Boys + Girls without double counting)
+            let audFemaleCount = 0, audFemaleStock = 0, audFemaleVal = 0;
+            let audMaleCount = 0, audMaleStock = 0, audMaleVal = 0;
+            let audBoysCount = 0, audBoysStock = 0, audBoysVal = 0;
+            let audGirlsCount = 0, audGirlsStock = 0, audGirlsVal = 0;
+            let audUnassignedCount = 0, audUnassignedStock = 0, audUnassignedVal = 0;
+
+            allItems.forEach(item => {
+                const stock = Number(item.stock_quantity) || 0;
+                const cost = Number(item.cost_price !== undefined ? item.cost_price : (item.purchase_price !== undefined ? item.purchase_price : 0)) || 0;
+                const val = stock * cost;
+
+                const rawAud = item.audience;
+                const normAud = normalizeAudience(rawAud);
+
+                if (rawAud === AUDIENCE_CANONICAL.FEMALE || normAud === AUDIENCE_CANONICAL.FEMALE) {
+                    audFemaleCount++;
+                    audFemaleStock += stock;
+                    audFemaleVal += val;
+                } else if (rawAud === AUDIENCE_CANONICAL.MALE || normAud === AUDIENCE_CANONICAL.MALE) {
+                    audMaleCount++;
+                    audMaleStock += stock;
+                    audMaleVal += val;
+                } else if (rawAud === AUDIENCE_CANONICAL.BOYS || normAud === AUDIENCE_CANONICAL.BOYS) {
+                    audBoysCount++;
+                    audBoysStock += stock;
+                    audBoysVal += val;
+                } else if (rawAud === AUDIENCE_CANONICAL.GIRLS || normAud === AUDIENCE_CANONICAL.GIRLS) {
+                    audGirlsCount++;
+                    audGirlsStock += stock;
+                    audGirlsVal += val;
+                } else {
+                    // audience IS NULL, empty, or not in canonical set
+                    audUnassignedCount++;
+                    audUnassignedStock += stock;
+                    audUnassignedVal += val;
+                }
+            });
+
+            const audKidsCount = audBoysCount + audGirlsCount;
+            const audKidsStock = audBoysStock + audGirlsStock;
+            const audKidsVal = audBoysVal + audGirlsVal;
+
+            // DOM Updates for Audience Cards
+            if (document.getElementById('dash-aud-all-count')) document.getElementById('dash-aud-all-count').innerText = `${allItems.length} Products`;
+
+            // Male (database 'Men' -> UI 'Male')
+            if (document.getElementById('dash-aud-male-count')) document.getElementById('dash-aud-male-count').innerText = `${audMaleCount} products`;
+            if (document.getElementById('dash-aud-male-stock')) document.getElementById('dash-aud-male-stock').innerText = `${audMaleStock} units`;
+            if (document.getElementById('dash-aud-male-val')) document.getElementById('dash-aud-male-val').innerText = `${formatInr(audMaleVal)} val`;
+
+            // Female (database 'Female' -> UI 'Female')
+            if (document.getElementById('dash-aud-female-count')) document.getElementById('dash-aud-female-count').innerText = `${audFemaleCount} products`;
+            if (document.getElementById('dash-aud-female-stock')) document.getElementById('dash-aud-female-stock').innerText = `${audFemaleStock} units`;
+            if (document.getElementById('dash-aud-female-val')) document.getElementById('dash-aud-female-val').innerText = `${formatInr(audFemaleVal)} val`;
+
+            // Kids (Combined Kids-Boy + Kids-Girl without double counting)
+            if (document.getElementById('dash-aud-kids-count')) document.getElementById('dash-aud-kids-count').innerText = `${audKidsCount} products`;
+            if (document.getElementById('dash-aud-kids-stock')) document.getElementById('dash-aud-kids-stock').innerText = `${audKidsStock} units`;
+            if (document.getElementById('dash-aud-kids-val')) document.getElementById('dash-aud-kids-val').innerText = `${formatInr(audKidsVal)} val`;
+
+            // Boys (database 'Kids-Boy' -> UI 'Boys')
+            if (document.getElementById('dash-aud-boys-count')) document.getElementById('dash-aud-boys-count').innerText = `${audBoysCount} items`;
+            if (document.getElementById('dash-aud-boys-stock')) document.getElementById('dash-aud-boys-stock').innerText = `${audBoysStock} units`;
+            if (document.getElementById('dash-aud-boys-val')) document.getElementById('dash-aud-boys-val').innerText = `${formatInr(audBoysVal)} val`;
+
+            // Girls (database 'Kids-Girl' -> UI 'Girls')
+            if (document.getElementById('dash-aud-girls-count')) document.getElementById('dash-aud-girls-count').innerText = `${audGirlsCount} items`;
+            if (document.getElementById('dash-aud-girls-stock')) document.getElementById('dash-aud-girls-stock').innerText = `${audGirlsStock} units`;
+            if (document.getElementById('dash-aud-girls-val')) document.getElementById('dash-aud-girls-val').innerText = `${formatInr(audGirlsVal)} val`;
+
+            // Unassigned (Null / empty / unrecognized)
+            if (document.getElementById('dash-aud-unassigned-count')) document.getElementById('dash-aud-unassigned-count').innerText = `${audUnassignedCount} products`;
+            if (document.getElementById('dash-aud-unassigned-stock')) document.getElementById('dash-aud-unassigned-stock').innerText = `${audUnassignedStock} units`;
+
+            // Audience filter selection
+            const filterRaw = (document.getElementById('dash-audience-filter')?.value || '').trim().toLowerCase();
+            const audFilter = (!filterRaw || filterRaw === 'all') ? 'all' : filterRaw;
+
+            // Update active filter label badge
+            const filterLabel = document.getElementById('dash-audience-active-filter-label');
+            if (filterLabel) {
+                const labels = {
+                    all: 'Showing: All Audiences',
+                    male: 'Showing: Male',
+                    men: 'Showing: Male',
+                    female: 'Showing: Female',
+                    kids: 'Showing: Kids (Boys + Girls)',
+                    boys: 'Showing: Boys',
+                    girls: 'Showing: Girls',
+                    unassigned: 'Showing: Unassigned'
+                };
+                filterLabel.innerText = labels[audFilter] || `Showing: ${audFilter}`;
+            }
+
+            const targetItems = audFilter === 'all' ? allItems : allItems.filter(item => {
+                const rawAud = item.audience;
+                const normAud = normalizeAudience(rawAud);
+                if (audFilter === 'unassigned') {
+                    return !normAud;
+                }
+                if (audFilter === 'kids') {
+                    return rawAud === AUDIENCE_CANONICAL.BOYS || rawAud === AUDIENCE_CANONICAL.GIRLS || normAud === AUDIENCE_CANONICAL.BOYS || normAud === AUDIENCE_CANONICAL.GIRLS;
+                }
+                if (audFilter === 'male' || audFilter === 'men') {
+                    return rawAud === AUDIENCE_CANONICAL.MALE || normAud === AUDIENCE_CANONICAL.MALE;
+                }
+                if (audFilter === 'female') {
+                    return rawAud === AUDIENCE_CANONICAL.FEMALE || normAud === AUDIENCE_CANONICAL.FEMALE;
+                }
+                if (audFilter === 'boys') {
+                    return rawAud === AUDIENCE_CANONICAL.BOYS || normAud === AUDIENCE_CANONICAL.BOYS;
+                }
+                if (audFilter === 'girls') {
+                    return rawAud === AUDIENCE_CANONICAL.GIRLS || normAud === AUDIENCE_CANONICAL.GIRLS;
+                }
+                return false;
+            });
+
+            // Real KPI calculations across targetItems
+            const totalProducts = targetItems.length;
             let totalWholesaleVal = 0;
             let lowStockCount = 0;
             let outOfStockCount = 0;
             let activeCount = 0;
             const categoryCounts = {};
 
-            allItems.forEach(item => {
+            targetItems.forEach(item => {
                 const stock = Number(item.stock_quantity) || 0;
                 const cost = Number(item.cost_price || item.purchase_price) || 0;
                 const threshold = item.low_stock_threshold !== undefined ? Number(item.low_stock_threshold) : 3;
@@ -6361,7 +6829,7 @@
             // Occasion Status Card on Dashboard
             const festiveSettings = getFestiveSettings();
             const isLive = festiveSettings.isLive;
-            const activeOccasionSlug = festiveSettings.activeOccasion || 'durga-puja';
+            const activeOccasionSlug = (isLive ? festiveSettings.activeOccasion : null) || festiveSettings.selectedOccasion || 'durga-puja';
 
             const occBadge = document.getElementById('dash-occ-badge');
             if (occBadge) {
@@ -6435,15 +6903,15 @@
             }
 
             // Available Products Table (top items ready for sale)
-            const availableInventory = allItems.filter(item => {
+            const availableInventory = targetItems.filter(item => {
                 if (item.stock_quantity <= 0) return false;
                 if (!searchStr) return true;
-                const combined = `${item.product_name} ${item.product_code} ${item.category} ${item.shop_name}`.toLowerCase();
+                const combined = `${item.product_name} ${item.product_code} ${item.category} ${item.audience || ''} ${item.shop_name}`.toLowerCase();
                 return combined.includes(searchStr);
             }).slice(0, 10);
 
             if (availableInventory.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No available inventory found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No available inventory found matching filters.</td></tr>`;
                 return;
             }
 
@@ -6464,7 +6932,7 @@
                     <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
                         <td class="py-3 px-4 font-mono font-bold text-[#5E3435]">${escapeHtml(item.product_code)}</td>
                         <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(item.product_name)} ${sizeBadge}</td>
-                        <td class="py-3 px-4 text-slate-500 font-medium">${escapeHtml(item.category || 'General')}</td>
+                        <td class="py-3 px-4 text-slate-500 font-medium flex items-center gap-1.5">${escapeHtml(item.category || 'General')} ${getAudienceBadgeHtml(item.audience)}</td>
                         <td class="py-3 px-4 text-center">${stockPill}</td>
                         <td class="py-3 px-4 text-emerald-600 font-bold text-right">${formatInr(item.selling_price)}</td>
                     </tr>`;
@@ -6914,6 +7382,7 @@
                 "Product Name",
                 "Product Description",
                 "Category",
+                "Audience",
                 "Size",
                 "Stock Quantity",
                 "Purchase Price",
@@ -6930,6 +7399,7 @@
                     "925 Sterling Silver Ring",
                     "Classic 925 sterling silver ring with rhodium finish",
                     "Ring",
+                    "Female",
                     "7",
                     10,
                     850,
@@ -6944,6 +7414,7 @@
                     "Silver Solitaire Pendant",
                     "Solitaire silver pendant with Italian diamond cut chain",
                     "Pendant",
+                    "Female",
                     "18 inch",
                     15,
                     1200,
@@ -6958,6 +7429,7 @@
                     "Silver Tennis Bracelet",
                     "Cubic zirconia studded 925 sterling silver tennis bracelet",
                     "Bracelet",
+                    "Boys",
                     "7.5 inch",
                     8,
                     2200,
@@ -6977,6 +7449,7 @@
                 ["Product Name", "REQUIRED. Commercial title of the product."],
                 ["Product Description", "OPTIONAL. Craftsmanship notes, style details, or purity highlights."],
                 ["Category", "OPTIONAL. Product category (e.g. Ring, Chain, Bracelet, Pendant, Earrings). Defaults to 'Ring'."],
+                ["Audience", "REQUIRED for new silver jewellery. Allowed canonical values: 'Male', 'Female', 'Boys', 'Girls'. (Note: 'Kids' is not accepted; please specify 'Boys' or 'Girls'). Leave blank if unassigned."],
                 ["Size", "OPTIONAL. Ring size (7, 8, 9) or length (18 inch, 7.5 inch)."],
                 ["Stock Quantity", "REQUIRED. Non-negative integer. If product exists, this quantity is ADDED to existing stock."],
                 ["Purchase Price", "REQUIRED. Non-negative number (in INR). Wholesale procurement cost."],
@@ -7384,7 +7857,8 @@
                             matching_tags: ['matching_tags', 'tags', 'keywords'],
                             occasion_category: ['occasion_category', 'sub_category'],
                             occasion_featured: ['featured', 'is_featured'],
-                            occasion_enabled: ['enabled', 'is_enabled']
+                            occasion_enabled: ['enabled', 'is_enabled'],
+                            audience: ['audience', 'jewellery_for', 'for', 'target_audience', 'gender', 'audience_type']
                         };
 
                         const seenCodesInFile = new Set();
@@ -7465,6 +7939,29 @@
                             // Normalize Date
                             const pDate = normalizeDateValue(normalized.purchase_date);
 
+                            // Validate Audience
+                            const rawAudience = normalized.audience !== undefined && normalized.audience !== null ? String(normalized.audience).trim() : '';
+                            let canonicalAudience = null;
+
+                            if (rawAudience) {
+                                const audLower = rawAudience.toLowerCase();
+                                if (audLower === 'kids' || audLower === 'kid' || audLower === 'child' || audLower === 'children') {
+                                    rowErrors.push("Invalid Audience 'Kids'. Please specify either 'Boys' or 'Girls'.");
+                                } else if (audLower === 'female' || audLower === 'women' || audLower === 'woman' || audLower === 'ladies') {
+                                    canonicalAudience = AUDIENCE_VALUES.FEMALE;
+                                } else if (audLower === 'male' || audLower === 'men' || audLower === 'man' || audLower === 'gents') {
+                                    canonicalAudience = AUDIENCE_VALUES.MALE;
+                                } else if (audLower === 'boys' || audLower === 'boy' || audLower === 'kids-boy') {
+                                    canonicalAudience = AUDIENCE_VALUES.BOYS;
+                                } else if (audLower === 'girls' || audLower === 'girl' || audLower === 'kids-girl') {
+                                    canonicalAudience = AUDIENCE_VALUES.GIRLS;
+                                } else {
+                                    rowErrors.push(`Invalid Audience '${rawAudience}'. Allowed values: Male, Female, Boys, Girls.`);
+                                }
+                            } else {
+                                canonicalAudience = null; // Unassigned
+                            }
+
                             // Check against database inventory for existing product
                             const existingProduct = currentInventory.find(i => (i.product_code || '').toLowerCase() === codeRaw.toLowerCase());
                             const isExisting = Boolean(existingProduct);
@@ -7521,6 +8018,7 @@
                                     product_name: nameRaw,
                                     product_description: normalized.product_description || null,
                                     category: normalized.category || (bulkState.importType === 'occasion' ? (bulkState.selectedCatalogType === 'saree' ? 'Saree' : 'Occasion Wear') : 'Ring'),
+                                    audience: canonicalAudience,
                                     size: normalized.size || null,
                                     stock_quantity: isNaN(qtyNum) ? 0 : qtyNum,
                                     purchase_price: isNaN(buyNum) ? 0 : buyNum,
@@ -7663,7 +8161,7 @@
             });
 
             if (rows.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400">No records matching the selected filter.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400">No records matching the selected filter.</td></tr>`;
                 return;
             }
 
@@ -7745,6 +8243,7 @@
                         <td class="py-2.5 px-3 font-mono font-bold text-slate-900 whitespace-nowrap">${escapeHtml(item.product_code || '-')}</td>
                         <td class="py-2.5 px-3 font-semibold text-slate-800 max-w-[180px] truncate" title="${escapeHtml(item.product_name || '')}">${escapeHtml(item.product_name || '-')}</td>
                         <td class="py-2.5 px-3 text-slate-600 whitespace-nowrap">${escapeHtml(item.category || '-')}</td>
+                        <td class="py-2.5 px-3 text-center whitespace-nowrap">${getAudienceBadgeHtml(item.audience)}</td>
                         <td class="py-2.5 px-3 text-right whitespace-nowrap">${qtyDisplay}</td>
                         <td class="py-2.5 px-3 text-right text-slate-700 whitespace-nowrap">₹${Number(item.purchase_price).toFixed(2)}</td>
                         <td class="py-2.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap">₹${Number(item.selling_price).toFixed(2)}</td>
@@ -7810,6 +8309,10 @@
                         shop_address: item.shop_address,
                         updated_at: new Date().toISOString()
                     };
+
+                    if (item.audience) {
+                        updatePayload.audience = item.audience;
+                    }
 
                     // Include occasion fields if occasion import
                     if (bulkState.importType === 'occasion') {
@@ -7891,6 +8394,28 @@
         // Backward compatibility fallback for legacy inline buttons
         function downloadSampleSheet() {
             downloadSilverTemplate();
+        }
+
+        function downloadBulkErrorsReport() {
+            const errorRows = (bulkState.parsedRows || []).filter(r => r.status === 'error');
+            if (errorRows.length === 0) {
+                return alert("No error rows to download.");
+            }
+
+            const headers = ["Row", "Product Code", "Product Name", "Audience", "Errors"];
+            const rows = errorRows.map(r => [
+                r.rowNumber,
+                r.data.product_code || '',
+                r.data.product_name || '',
+                r.data.audience || 'Unassigned',
+                r.errors.join('; ')
+            ]);
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            ws['!cols'] = [{ wch: 8 }, { wch: 18 }, { wch: 30 }, { wch: 14 }, { wch: 50 }];
+            XLSX.utils.book_append_sheet(wb, ws, "Errors");
+            XLSX.writeFile(wb, `WishRite_Bulk_Import_Errors_${Date.now()}.xlsx`);
         }
 
         async function handleBulkImport(event) {
@@ -8027,6 +8552,7 @@
 
             const total = inventoryData.length;
             let active = 0, lowstock = 0, outofstock = 0, draft = 0, archived = 0;
+            let unassignedAudience = 0;
 
             inventoryData.forEach(p => {
                 const status = getProductStatus(p);
@@ -8039,6 +8565,10 @@
                 else {
                     active++;
                     if (stock > 0 && stock <= threshold) lowstock++;
+                }
+
+                if (!p.audience || p.audience === 'Unassigned') {
+                    unassignedAudience++;
                 }
             });
 
@@ -8056,6 +8586,17 @@
             if (elOut) elOut.innerText = outofstock;
             if (elDraft) elDraft.innerText = draft;
             if (elArchived) elArchived.innerText = archived;
+
+            // Update backfill badge
+            const backfillBadge = document.getElementById('prod-backfill-count-badge');
+            if (backfillBadge) {
+                backfillBadge.innerText = `${unassignedAudience} Unassigned`;
+                if (unassignedAudience > 0) {
+                    backfillBadge.classList.remove('hidden');
+                } else {
+                    backfillBadge.classList.add('hidden');
+                }
+            }
 
             // Update sub-tab count badges
             const tabAll = document.getElementById('prod-tab-count-all');
@@ -8153,6 +8694,7 @@
             const query = (document.getElementById('prod-search-input')?.value || '').trim().toLowerCase();
             const catFilter = document.getElementById('prod-filter-cat')?.value || '';
             const stockFilter = document.getElementById('prod-filter-stock')?.value || 'all';
+            const audienceFilter = (document.getElementById('prod-filter-audience')?.value || '').toLowerCase();
             const sortBy = document.getElementById('prod-sort-by')?.value || 'updated-desc';
 
             // Filter data
@@ -8171,6 +8713,26 @@
                 // Category filter
                 if (catFilter && item.category !== catFilter) return false;
 
+                // Audience filter
+                if (audienceFilter) {
+                    const normAud = normalizeAudience(item.audience);
+                    if (audienceFilter === 'unassigned') {
+                        if (normAud) return false;
+                    } else if (audienceFilter === 'kids') {
+                        if (normAud !== AUDIENCE_VALUES.BOYS && normAud !== AUDIENCE_VALUES.GIRLS) return false;
+                    } else if (audienceFilter === 'male' || audienceFilter === 'men') {
+                        if (normAud !== AUDIENCE_VALUES.MALE) return false;
+                    } else if (audienceFilter === 'female') {
+                        if (normAud !== AUDIENCE_VALUES.FEMALE) return false;
+                    } else if (audienceFilter === 'boys') {
+                        if (normAud !== AUDIENCE_VALUES.BOYS) return false;
+                    } else if (audienceFilter === 'girls') {
+                        if (normAud !== AUDIENCE_VALUES.GIRLS) return false;
+                    } else {
+                        if ((item.audience || '').toLowerCase() !== audienceFilter) return false;
+                    }
+                }
+
                 // Stock filter dropdown
                 if (stockFilter === 'in' && stock <= 0) return false;
                 if (stockFilter === 'low' && (stock <= 0 || stock > threshold)) return false;
@@ -8184,7 +8746,8 @@
                     const matchDesc = item.product_description?.toLowerCase().includes(query);
                     const matchMat = item.material?.toLowerCase().includes(query);
                     const matchShop = item.shop_name?.toLowerCase().includes(query);
-                    if (!matchSku && !matchName && !matchCat && !matchDesc && !matchMat && !matchShop) return false;
+                    const matchAudience = (item.audience || 'unassigned').toLowerCase().includes(query);
+                    if (!matchSku && !matchName && !matchCat && !matchDesc && !matchMat && !matchShop && !matchAudience) return false;
                 }
 
                 return true;
@@ -8229,19 +8792,19 @@
             const gridContainer = document.getElementById('products-grid-container');
 
             if (isInventoryLoading && (!inventoryData || inventoryData.length === 0)) {
-                if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400">Loading products catalog...</td></tr>`;
+                if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400">Loading products catalog...</td></tr>`;
                 if (gridContainer) gridContainer.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400">Loading products catalog...</div>`;
                 return;
             }
 
             if (inventoryFetchError && (!inventoryData || inventoryData.length === 0)) {
-                if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="p-12 text-center text-rose-500 font-medium">Unable to load products: ${escapeHtml(inventoryFetchError.message || 'Database query failed')}</td></tr>`;
+                if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="p-12 text-center text-rose-500 font-medium">Unable to load products: ${escapeHtml(inventoryFetchError.message || 'Database query failed')}</td></tr>`;
                 if (gridContainer) gridContainer.innerHTML = `<div class="col-span-full p-12 text-center text-rose-500">Unable to load products.</div>`;
                 return;
             }
 
             if (totalItems === 0) {
-                if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="p-12 text-center text-slate-400">
+                if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="p-12 text-center text-slate-400">
                     <span class="text-3xl block mb-2">🔍</span>
                     <p class="font-bold text-slate-600">No products found</p>
                     <p class="text-xs text-slate-400 mt-1">Try clearing filters or search query, or click "Add Product".</p>
@@ -8343,6 +8906,9 @@
                                     ${escapeHtml(item.category || 'Other')}
                                 </span>
                             </td>
+                            <td class="py-3 px-4 text-center whitespace-nowrap">
+                                ${getAudienceBadgeHtml(item.audience)}
+                            </td>
                             <td class="py-3 px-4">
                                 ${typeOccasionBadge}
                             </td>
@@ -8403,7 +8969,10 @@
                                 <div>
                                     <div class="flex items-center justify-between gap-1 mb-1">
                                         <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">${escapeHtml(item.category || '')}</span>
-                                        <span class="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">${escapeHtml(occTag)}</span>
+                                        <div class="flex items-center gap-1">
+                                            ${getAudienceBadgeHtml(item.audience)}
+                                            <span class="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">${escapeHtml(occTag)}</span>
+                                        </div>
                                     </div>
                                     <h4 class="font-bold text-sm text-slate-900 line-clamp-1 mt-0.5 hover:text-[#5E3435] cursor-pointer" onclick="openProductViewModal('${escapeHtml(item.product_code)}')">${escapeHtml(item.product_name)}</h4>
                                     <p class="text-xs text-slate-500 mt-1">Stock: <strong>${stock}</strong> units</p>
@@ -8493,6 +9062,333 @@
             }
         }
 
+        // ==============================================================================
+        // PRODUCT FORM AUDIENCE CONTROLLER
+        // ==============================================================================
+
+        function setProductAudiencePrimary(primary) {
+            const btnMale = document.getElementById('btn-audience-male');
+            const btnFemale = document.getElementById('btn-audience-female');
+            const btnKids = document.getElementById('btn-audience-kids');
+            const kidsSub = document.getElementById('pf-kids-subselector');
+            const hiddenInput = document.getElementById('pf-audience');
+            const label = document.getElementById('pf-audience-selected-label');
+
+            [btnMale, btnFemale, btnKids].forEach(btn => {
+                if (btn) btn.className = 'py-1.5 px-2 text-xs font-bold rounded-md transition-all text-slate-700 hover:bg-white/70';
+            });
+
+            if (primary === 'Male') {
+                if (btnMale) btnMale.className = 'py-1.5 px-2 text-xs font-bold rounded-md transition-all bg-[#5E3435] text-white shadow-xs';
+                if (kidsSub) kidsSub.classList.add('hidden');
+                if (hiddenInput) hiddenInput.value = AUDIENCE_VALUES.MALE;
+                if (label) {
+                    label.innerText = '✓ Selected: Male';
+                    label.className = 'text-[11px] font-bold text-emerald-700';
+                }
+            } else if (primary === 'Female') {
+                if (btnFemale) btnFemale.className = 'py-1.5 px-2 text-xs font-bold rounded-md transition-all bg-[#5E3435] text-white shadow-xs';
+                if (kidsSub) kidsSub.classList.add('hidden');
+                if (hiddenInput) hiddenInput.value = AUDIENCE_VALUES.FEMALE;
+                if (label) {
+                    label.innerText = '✓ Selected: Female';
+                    label.className = 'text-[11px] font-bold text-emerald-700';
+                }
+            } else if (primary === 'Kids') {
+                if (btnKids) btnKids.className = 'py-1.5 px-2 text-xs font-bold rounded-md transition-all bg-amber-600 text-white shadow-xs';
+                if (kidsSub) kidsSub.classList.remove('hidden');
+                const currentVal = hiddenInput?.value;
+                if (currentVal !== AUDIENCE_VALUES.BOYS && currentVal !== AUDIENCE_VALUES.GIRLS) {
+                    if (hiddenInput) hiddenInput.value = '';
+                    if (label) {
+                        label.innerText = '⚠️ Select Boys or Girls below';
+                        label.className = 'text-[11px] font-bold text-amber-700';
+                    }
+                    const btnBoys = document.getElementById('btn-audience-boys');
+                    const btnGirls = document.getElementById('btn-audience-girls');
+                    if (btnBoys) btnBoys.className = 'py-1.5 px-3 text-xs font-bold rounded-md border border-amber-300 bg-white text-slate-700 hover:border-amber-500 transition-all flex items-center justify-center gap-1.5';
+                    if (btnGirls) btnGirls.className = 'py-1.5 px-3 text-xs font-bold rounded-md border border-amber-300 bg-white text-slate-700 hover:border-amber-500 transition-all flex items-center justify-center gap-1.5';
+                }
+            }
+        }
+
+        function setProductAudienceSub(sub) {
+            const btnBoys = document.getElementById('btn-audience-boys');
+            const btnGirls = document.getElementById('btn-audience-girls');
+            const hiddenInput = document.getElementById('pf-audience');
+            const label = document.getElementById('pf-audience-selected-label');
+
+            if (btnBoys) btnBoys.className = 'py-1.5 px-3 text-xs font-bold rounded-md border border-amber-300 bg-white text-slate-700 hover:border-amber-500 transition-all flex items-center justify-center gap-1.5';
+            if (btnGirls) btnGirls.className = 'py-1.5 px-3 text-xs font-bold rounded-md border border-amber-300 bg-white text-slate-700 hover:border-amber-500 transition-all flex items-center justify-center gap-1.5';
+
+            if (sub === 'Boys') {
+                if (btnBoys) btnBoys.className = 'py-1.5 px-3 text-xs font-extrabold rounded-md border border-cyan-800 bg-cyan-700 text-white shadow-xs transition-all flex items-center justify-center gap-1.5';
+                if (hiddenInput) hiddenInput.value = AUDIENCE_VALUES.BOYS;
+                if (label) {
+                    label.innerText = '✓ Selected: Kids (Boys)';
+                    label.className = 'text-[11px] font-bold text-cyan-800';
+                }
+            } else if (sub === 'Girls') {
+                if (btnGirls) btnGirls.className = 'py-1.5 px-3 text-xs font-extrabold rounded-md border border-purple-800 bg-purple-700 text-white shadow-xs transition-all flex items-center justify-center gap-1.5';
+                if (hiddenInput) hiddenInput.value = AUDIENCE_VALUES.GIRLS;
+                if (label) {
+                    label.innerText = '✓ Selected: Kids (Girls)';
+                    label.className = 'text-[11px] font-bold text-purple-800';
+                }
+            }
+        }
+
+        function resetProductAudienceSelector() {
+            const hiddenInput = document.getElementById('pf-audience');
+            if (hiddenInput) hiddenInput.value = '';
+
+            const btnMale = document.getElementById('btn-audience-male');
+            const btnFemale = document.getElementById('btn-audience-female');
+            const btnKids = document.getElementById('btn-audience-kids');
+            const kidsSub = document.getElementById('pf-kids-subselector');
+            const btnBoys = document.getElementById('btn-audience-boys');
+            const btnGirls = document.getElementById('btn-audience-girls');
+            const label = document.getElementById('pf-audience-selected-label');
+
+            [btnMale, btnFemale, btnKids].forEach(btn => {
+                if (btn) btn.className = 'py-1.5 px-2 text-xs font-bold rounded-md transition-all text-slate-700 hover:bg-white/70';
+            });
+            if (kidsSub) kidsSub.classList.add('hidden');
+            if (btnBoys) btnBoys.className = 'py-1.5 px-3 text-xs font-bold rounded-md border border-amber-300 bg-white text-slate-700 hover:border-amber-500 transition-all flex items-center justify-center gap-1.5';
+            if (btnGirls) btnGirls.className = 'py-1.5 px-3 text-xs font-bold rounded-md border border-amber-300 bg-white text-slate-700 hover:border-amber-500 transition-all flex items-center justify-center gap-1.5';
+            if (label) {
+                label.innerText = '';
+                label.className = 'text-[11px] font-bold text-rose-700';
+            }
+        }
+
+        function loadProductAudienceSelector(val) {
+            resetProductAudienceSelector();
+            const norm = normalizeAudience(val);
+            if (norm === AUDIENCE_VALUES.MALE) {
+                setProductAudiencePrimary('Male');
+            } else if (norm === AUDIENCE_VALUES.FEMALE) {
+                setProductAudiencePrimary('Female');
+            } else if (norm === AUDIENCE_VALUES.BOYS) {
+                setProductAudiencePrimary('Kids');
+                setProductAudienceSub('Boys');
+            } else if (norm === AUDIENCE_VALUES.GIRLS) {
+                setProductAudiencePrimary('Kids');
+                setProductAudienceSub('Girls');
+            } else {
+                const label = document.getElementById('pf-audience-selected-label');
+                if (label) {
+                    label.innerText = '(Unassigned legacy record)';
+                    label.className = 'text-[11px] font-normal text-slate-400 italic';
+                }
+            }
+        }
+
+        // ==============================================================================
+        // PRODUCT EXPORT TO EXCEL (Including Audience)
+        // ==============================================================================
+
+        function exportProductsToExcel() {
+            if (!inventoryData || inventoryData.length === 0) {
+                return alert("No products available to export.");
+            }
+
+            const query = (document.getElementById('prod-search-input')?.value || '').toLowerCase().trim();
+            const catFilter = document.getElementById('prod-filter-category')?.value || '';
+            const typeFilter = document.getElementById('prod-filter-catalog-type')?.value || '';
+            const statusFilter = document.getElementById('prod-filter-status')?.value || '';
+            const audienceFilter = (document.getElementById('prod-filter-audience')?.value || '').toLowerCase();
+
+            const exportList = inventoryData.filter(item => {
+                const status = getProductStatus(item);
+                if (catFilter && item.category !== catFilter) return false;
+                if (typeFilter && (item.catalog_type || 'silver_jewellery') !== typeFilter) return false;
+                if (statusFilter && status !== statusFilter) return false;
+                if (audienceFilter) {
+                    const rawAud = item.audience;
+                    if (audienceFilter === 'unassigned') {
+                        if (rawAud && rawAud !== 'Unassigned') return false;
+                    } else if (audienceFilter === 'kids') {
+                        if (rawAud !== 'Boys' && rawAud !== 'Girls') return false;
+                    } else {
+                        if ((rawAud || '').toLowerCase() !== audienceFilter) return false;
+                    }
+                }
+                if (query) {
+                    const matchSku = item.product_code?.toLowerCase().includes(query);
+                    const matchName = item.product_name?.toLowerCase().includes(query);
+                    const matchCat = item.category?.toLowerCase().includes(query);
+                    const matchAudience = (item.audience || 'unassigned').toLowerCase().includes(query);
+                    if (!matchSku && !matchName && !matchCat && !matchAudience) return false;
+                }
+                return true;
+            });
+
+            if (exportList.length === 0) {
+                return alert("No products match the selected filters for export.");
+            }
+
+            const rows = exportList.map((p, idx) => ({
+                '#': idx + 1,
+                'SKU / Product Code': p.product_code || '',
+                'Product Name': p.product_name || '',
+                'Category': p.category || '',
+                'Audience': p.audience || 'Unassigned',
+                'Catalog Type': p.catalog_type || 'silver_jewellery',
+                'Status': getProductStatus(p),
+                'Stock Quantity': Number(p.stock_quantity) || 0,
+                'Low Stock Threshold': Number(p.low_stock_threshold) || 3,
+                'Selling Price (INR)': Number(p.selling_price) || 0,
+                'Cost Price (INR)': Number(p.cost_price || p.purchase_price) || 0,
+                'Compare MRP (INR)': Number(p.compare_at_price) || 0,
+                'Material': p.material || '925 Sterling Silver',
+                'Purity': p.purity || '92.5%',
+                'Weight (g)': p.weight || '',
+                'Size': p.size || '',
+                'Shop / Supplier': p.shop_name || 'WishRite',
+                'Purchase Date': p.purchase_date || '',
+                'Occasion': p.occasion_slug || '',
+                'Last Updated': p.updated_at ? new Date(p.updated_at).toLocaleDateString('en-IN') : ''
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory Products");
+            const fileName = `WishRite_Products_Export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
+        // ==============================================================================
+        // AUDIENCE BACKFILL MODAL CONTROLLER
+        // ==============================================================================
+
+        let pendingBackfillUpdates = {};
+
+        function openAudienceBackfillModal() {
+            if (!inventoryData || inventoryData.length === 0) {
+                return alert("Inventory data is empty or still loading.");
+            }
+
+            pendingBackfillUpdates = {};
+            const unassigned = inventoryData.filter(p => !p.audience || p.audience === 'Unassigned');
+
+            const countBadge = document.getElementById('backfill-unassigned-count');
+            if (countBadge) countBadge.innerText = `${unassigned.length} Unassigned`;
+
+            renderAudienceBackfillTable(unassigned);
+            updateBackfillPendingCount();
+
+            const modal = document.getElementById('audience-backfill-modal');
+            if (modal) modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAudienceBackfillModal() {
+            const modal = document.getElementById('audience-backfill-modal');
+            if (modal) modal.classList.add('hidden');
+            document.body.style.overflow = '';
+            pendingBackfillUpdates = {};
+        }
+
+        function onBackfillSelectChange(sku, val) {
+            const norm = normalizeAudience(val);
+            if (norm) {
+                pendingBackfillUpdates[sku] = norm;
+            } else {
+                delete pendingBackfillUpdates[sku];
+            }
+            updateBackfillPendingCount();
+        }
+
+        function updateBackfillPendingCount() {
+            const count = Object.keys(pendingBackfillUpdates).length;
+            const el = document.getElementById('backfill-pending-count');
+            if (el) el.innerText = `${count} product${count === 1 ? '' : 's'} ready to update`;
+            const btn = document.getElementById('btn-save-backfill');
+            if (btn) btn.disabled = (count === 0);
+        }
+
+        function renderAudienceBackfillTable(unassignedList) {
+            const tbody = document.getElementById('audience-backfill-table-body');
+            if (!tbody) return;
+
+            if (unassignedList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-slate-500">
+                            <span class="text-3xl block mb-2">🎉</span>
+                            <strong class="text-sm font-bold text-slate-800">All products have an audience assigned!</strong>
+                            <p class="text-xs text-slate-400 mt-1">There are no legacy unassigned records in your inventory.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = unassignedList.map((item, idx) => {
+                const sku = escapeHtml(item.product_code);
+                const currentVal = pendingBackfillUpdates[item.product_code] || '';
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-3 text-center text-slate-400 font-semibold">${idx + 1}</td>
+                        <td class="p-3 font-mono font-bold text-[#5E3435]">${sku}</td>
+                        <td class="p-3 font-semibold text-slate-900">${escapeHtml(item.product_name || 'Unnamed')}</td>
+                        <td class="p-3 text-slate-600">${escapeHtml(item.category || '-')}</td>
+                        <td class="p-3 text-right font-bold text-emerald-700">${formatInr(item.selling_price || 0)}</td>
+                        <td class="p-3 text-center">
+                            <select onchange="onBackfillSelectChange('${sku}', this.value)"
+                                class="w-full max-w-[200px] border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 bg-white focus:border-[#5E3435] outline-none">
+                                <option value="" ${!currentVal ? 'selected' : ''}>-- Assign Audience --</option>
+                                <option value="Men" ${currentVal === 'Men' ? 'selected' : ''}>👨 Male</option>
+                                <option value="Female" ${currentVal === 'Female' ? 'selected' : ''}>👩 Female</option>
+                                <option value="Kids-Boy" ${currentVal === 'Kids-Boy' ? 'selected' : ''}>👦 Boys (Kids)</option>
+                                <option value="Kids-Girl" ${currentVal === 'Kids-Girl' ? 'selected' : ''}>👧 Girls (Kids)</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function submitAudienceBackfill() {
+            const updates = Object.entries(pendingBackfillUpdates).map(([code, aud]) => {
+                const p = inventoryData.find(x => x.product_code === code);
+                return {
+                    id: p?.id,
+                    product_code: code,
+                    audience: aud
+                };
+            }).filter(u => u.audience && CANONICAL_AUDIENCES.includes(u.audience));
+
+            if (updates.length === 0) {
+                return alert("No audience selections made. Please select an audience for at least one product.");
+            }
+
+            const btn = document.getElementById('btn-save-backfill');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Saving...';
+            }
+
+            try {
+                const res = await window.WishRiteAPI.backfillAudience(updates);
+                if (res && res.success) {
+                    alert(`✓ Successfully updated audience for ${updates.length} product(s)!`);
+                    closeAudienceBackfillModal();
+                    await fetchInventory();
+                } else {
+                    alert(`Failed to backfill: ${res?.error?.message || 'Server error'}`);
+                }
+            } catch (err) {
+                alert(`Error saving audience backfill: ${err.message}`);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = '💾 Save Audience Backfill';
+                }
+            }
+        }
+
         function openProductFormModal(mode, productCode = null) {
             populateProductCategoriesDropdown();
             const modal = document.getElementById('product-form-modal');
@@ -8525,9 +9421,12 @@
                 }
                 onCatalogTypeChanged();
 
+                // Reset audience selector
+                resetProductAudienceSelector();
+
                 // Occasion default
                 if (document.getElementById('pf-occasion-slug')) {
-                    document.getElementById('pf-occasion-slug').value = festiveSettings.activeOccasion || '';
+                    document.getElementById('pf-occasion-slug').value = festiveSettings.selectedOccasion || festiveSettings.activeOccasion || '';
                 }
                 if (document.getElementById('pf-occasion-cat')) document.getElementById('pf-occasion-cat').value = '';
                 if (document.getElementById('pf-occasion-featured')) document.getElementById('pf-occasion-featured').checked = false;
@@ -8583,6 +9482,9 @@
                     document.getElementById('pf-catalog-type').value = catalogType;
                 }
                 onCatalogTypeChanged();
+
+                // Load product audience selector
+                loadProductAudienceSelector(product.audience);
 
                 // Occasion fields
                 if (document.getElementById('pf-occasion-slug')) document.getElementById('pf-occasion-slug').value = product.occasion_slug || '';
@@ -8737,6 +9639,15 @@
             if (!category) return alert("Please select a category.");
             if (isNaN(sellingPrice) || sellingPrice < 0) return alert("Please enter a valid selling price.");
 
+            const catalogType = document.getElementById('pf-catalog-type')?.value || 'silver_jewellery';
+            const audienceVal = normalizeAudience(document.getElementById('pf-audience')?.value);
+
+            if (mode === 'create' && (catalogType === 'silver_jewellery' || !catalogType) && !audienceVal) {
+                alert("Please select jewellery audience (Male, Female, or Kids with Boys/Girls choice).");
+                setProductFormSection('basic');
+                return;
+            }
+
             // Verify SKU uniqueness on create
             if (mode === 'create') {
                 const existing = inventoryData.find(p => (p.product_code || '').toUpperCase() === code);
@@ -8760,7 +9671,6 @@
             const statusRadio = document.querySelector('input[name="pf-status-radio"]:checked');
             const statusVal = statusRadio ? statusRadio.value : (stockVal > 0 ? 'Active' : 'Out of Stock');
 
-            const catalogType = document.getElementById('pf-catalog-type')?.value || 'silver_jewellery';
             const occasionSlug = document.getElementById('pf-occasion-slug')?.value || null;
             const occasionCat = document.getElementById('pf-occasion-cat')?.value || null;
             const occasionFeatured = document.getElementById('pf-occasion-featured')?.checked || false;
@@ -8784,6 +9694,7 @@
                 product_name: name,
                 category: category,
                 catalog_type: catalogType,
+                audience: audienceVal,
                 product_description: document.getElementById('pf-desc').value.trim() || null,
                 short_description: document.getElementById('pf-short-desc').value.trim() || null,
                 selling_price: sellingPrice,
@@ -9588,6 +10499,9 @@
             const stockBadge = document.getElementById('pv-stock-badge');
             stockBadge.innerText = stock === 0 ? 'Out of Stock' : `${stock} in stock`;
             stockBadge.className = `px-2.5 py-1 rounded-full text-xs font-bold ${stock === 0 ? 'bg-rose-100 text-rose-800' : (stock <= threshold ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')}`;
+
+            const audBadgeContainer = document.getElementById('pv-audience');
+            if (audBadgeContainer) audBadgeContainer.innerHTML = getAudienceBadgeHtml(product.audience);
 
             // Specs
             document.getElementById('pv-material').innerText = product.material || '925 Sterling Silver';

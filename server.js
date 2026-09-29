@@ -17,7 +17,8 @@ import {
     handleGetProductById, 
     handleCreateProduct, 
     handleUpdateProduct, 
-    handleDeleteProduct 
+    handleDeleteProduct,
+    handleBatchBackfillAudience
 } from './api/products.js';
 import { 
     handleGetOccasionSettings, 
@@ -188,6 +189,7 @@ app.get('/api/public-config', (req, res) => {
 
 // Products
 app.get('/api/products', handleGetProducts);
+app.post('/api/products/backfill-audience', handleBatchBackfillAudience);
 app.get('/api/products/:id', handleGetProductById);
 app.post('/api/products', handleCreateProduct);
 app.patch('/api/products/:id', handleUpdateProduct);

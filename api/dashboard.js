@@ -5,13 +5,15 @@
 // ==============================================================================
 
 import { dbQuery } from './supabase-client.js';
+import { loadLocalOccasionSettings } from './settings.js';
+import { AUDIENCE_CANONICAL, normalizeAudience } from './products.js';
 
 /**
  * GET /api/dashboard/summary
  */
 export async function handleGetDashboardSummary(req, res) {
     try {
-        const products = await dbQuery('inventory', 'select=id,product_code,product_name,stock_quantity,purchase_price,selling_price,category');
+        const allProducts = await dbQuery('inventory', 'select=id,product_code,product_name,stock_quantity,purchase_price,selling_price,category,audience');
         
         let sales = [];
         try {
@@ -20,13 +22,81 @@ export async function handleGetDashboardSummary(req, res) {
             console.warn('[Dashboard API] Sales query optional notice:', e.message);
         }
 
-        const totalProducts = products.length;
+        // Calculate centralized audience breakdown across all products
+        const audienceSummary = {
+            male: { products: 0, stock: 0, value: 0 },
+            female: { products: 0, stock: 0, value: 0 },
+            boys: { products: 0, stock: 0, value: 0 },
+            girls: { products: 0, stock: 0, value: 0 },
+            kids: { products: 0, stock: 0, value: 0 },
+            unassigned: { products: 0, stock: 0, value: 0 }
+        };
+
+        allProducts.forEach(p => {
+            const stock = Number(p.stock_quantity) || 0;
+            const cost = Number(p.purchase_price) || 0;
+            const val = stock * cost;
+            const normAud = normalizeAudience(p.audience);
+
+            if (normAud === AUDIENCE_CANONICAL.MALE) {
+                audienceSummary.male.products++;
+                audienceSummary.male.stock += stock;
+                audienceSummary.male.value += val;
+            } else if (normAud === AUDIENCE_CANONICAL.FEMALE) {
+                audienceSummary.female.products++;
+                audienceSummary.female.stock += stock;
+                audienceSummary.female.value += val;
+            } else if (normAud === AUDIENCE_CANONICAL.BOYS) {
+                audienceSummary.boys.products++;
+                audienceSummary.boys.stock += stock;
+                audienceSummary.boys.value += val;
+            } else if (normAud === AUDIENCE_CANONICAL.GIRLS) {
+                audienceSummary.girls.products++;
+                audienceSummary.girls.stock += stock;
+                audienceSummary.girls.value += val;
+            } else {
+                audienceSummary.unassigned.products++;
+                audienceSummary.unassigned.stock += stock;
+                audienceSummary.unassigned.value += val;
+            }
+        });
+
+        // Kids combined without double counting (strictly boys + girls)
+        audienceSummary.kids = {
+            products: audienceSummary.boys.products + audienceSummary.girls.products,
+            stock: audienceSummary.boys.stock + audienceSummary.girls.stock,
+            value: audienceSummary.boys.value + audienceSummary.girls.value
+        };
+
+        // Support optional audience filter on dashboard summary KPIs
+        const filterAudience = (req.query.audience || '').trim().toLowerCase();
+        let filteredProducts = allProducts;
+        if (filterAudience) {
+            if (filterAudience === 'kids') {
+                filteredProducts = allProducts.filter(p => {
+                    const normAud = normalizeAudience(p.audience);
+                    return normAud === AUDIENCE_CANONICAL.BOYS || normAud === AUDIENCE_CANONICAL.GIRLS;
+                });
+            } else if (filterAudience === 'unassigned') {
+                filteredProducts = allProducts.filter(p => !normalizeAudience(p.audience));
+            } else if (filterAudience === 'male' || filterAudience === 'men') {
+                filteredProducts = allProducts.filter(p => normalizeAudience(p.audience) === AUDIENCE_CANONICAL.MALE);
+            } else if (filterAudience === 'female') {
+                filteredProducts = allProducts.filter(p => normalizeAudience(p.audience) === AUDIENCE_CANONICAL.FEMALE);
+            } else if (filterAudience === 'boys' || filterAudience === 'kids-boy') {
+                filteredProducts = allProducts.filter(p => normalizeAudience(p.audience) === AUDIENCE_CANONICAL.BOYS);
+            } else if (filterAudience === 'girls' || filterAudience === 'kids-girl') {
+                filteredProducts = allProducts.filter(p => normalizeAudience(p.audience) === AUDIENCE_CANONICAL.GIRLS);
+            }
+        }
+
+        const totalProducts = filteredProducts.length;
         let totalWholesaleVal = 0;
         let lowStockCount = 0;
         let outOfStockCount = 0;
         let activeCount = 0;
 
-        products.forEach(p => {
+        filteredProducts.forEach(p => {
             const stock = Number(p.stock_quantity) || 0;
             const cost = Number(p.purchase_price) || 0;
             const threshold = 3;
@@ -69,6 +139,8 @@ export async function handleGetDashboardSummary(req, res) {
                 inventory_value: totalWholesaleVal,
                 low_stock: lowStockCount,
                 out_of_stock: outOfStockCount,
+                audience_filter: filterAudience || null,
+                audience_summary: audienceSummary,
                 today_sales: {
                     total: todaySalesTotal,
                     orders: todayOrdersCount
@@ -124,8 +196,28 @@ export async function handleGetDashboardInsights(req, res) {
                 festiveLive = true;
                 festiveOccasionName = occSettings[0].occasion_name || 'Durga Puja';
                 festiveOccasionSlug = occSettings[0].occasion_slug || 'durga-puja';
+            } else {
+                const localSettings = loadLocalOccasionSettings();
+                if (localSettings && localSettings.festive_mode_enabled) {
+                    festiveLive = true;
+                    festiveOccasionSlug = localSettings.active_occasion_slug || localSettings.selected_occasion_slug || 'durga-puja';
+                    festiveOccasionName = localSettings.active_occasion_name || localSettings.selected_occasion_name || 'Durga Puja';
+                } else if (localSettings && localSettings.selected_occasion_slug) {
+                    festiveOccasionSlug = localSettings.selected_occasion_slug;
+                    festiveOccasionName = localSettings.selected_occasion_name || 'Durga Puja';
+                }
             }
-        } catch (e) {}
+        } catch (e) {
+            const localSettings = loadLocalOccasionSettings();
+            if (localSettings && localSettings.festive_mode_enabled) {
+                festiveLive = true;
+                festiveOccasionSlug = localSettings.active_occasion_slug || localSettings.selected_occasion_slug || 'durga-puja';
+                festiveOccasionName = localSettings.active_occasion_name || localSettings.selected_occasion_name || 'Durga Puja';
+            } else if (localSettings && localSettings.selected_occasion_slug) {
+                festiveOccasionSlug = localSettings.selected_occasion_slug;
+                festiveOccasionName = localSettings.selected_occasion_name || 'Durga Puja';
+            }
+        }
 
         try {
             const occProducts = await dbQuery('occasion_inventory', 'select=id');

@@ -190,7 +190,7 @@ const tableColumnsCache = {
         'id', 'product_code', 'product_name', 'product_description', 'category',
         'selling_price', 'purchase_price', 'stock_quantity', 'weight', 'size',
         'shop_name', 'shop_address', 'purchase_date', 'storage_folder',
-        'created_at', 'updated_at'
+        'audience', 'created_at', 'updated_at'
     ]),
     occasion_inventory: new Set([
         'id', 'product_code', 'product_name', 'product_description', 'category',

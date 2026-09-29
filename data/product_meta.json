@@ -22,5 +22,42 @@
     "occasion_category": null,
     "occasion_featured": false,
     "matching_tags": null
+  },
+  "BRL-0018": {
+    "audience": "Kids-Girl",
+    "updated_at": "2026-09-29T19:07:12.728Z"
+  },
+  "PDT-0015": {
+    "audience": "Female",
+    "updated_at": "2026-09-29T18:08:02.403Z"
+  },
+  "BRL-0001": {
+    "audience": "Female",
+    "updated_at": "2026-09-29T18:08:02.863Z"
+  },
+  "ERN-0009": {
+    "audience": "Men",
+    "cost_price": 1100,
+    "compare_at_price": 0,
+    "low_stock_threshold": 3,
+    "status": "Active",
+    "short_description": "Unisex Bali",
+    "material": "925 Sterling Silver",
+    "purity": "92.5%",
+    "gst": 3,
+    "slug": "unisex-bali-ern-0009",
+    "seo_title": "Unisex Bali | WishRite Pure Silver",
+    "seo_description": "Unisex Bali",
+    "catalog_type": "silver_jewellery",
+    "fabric": null,
+    "color": null,
+    "pattern": null,
+    "border_style": null,
+    "design": null,
+    "occasion_slug": null,
+    "occasion_category": null,
+    "occasion_featured": false,
+    "matching_tags": null,
+    "updated_at": "2026-09-29T19:08:15.570Z"
   }
 }

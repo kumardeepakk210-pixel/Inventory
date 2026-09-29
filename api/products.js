@@ -45,6 +45,35 @@ function saveProductMeta(productCode, meta) {
     }
 }
 
+// Canonical Jewellery Audiences matching Supabase inventory_audience_check constraint
+export const AUDIENCE_VALUES = {
+    MALE: 'Men',
+    FEMALE: 'Female',
+    BOYS: 'Kids-Boy',
+    GIRLS: 'Kids-Girl'
+};
+export const AUDIENCE_CANONICAL = AUDIENCE_VALUES;
+
+export const CANONICAL_AUDIENCES = ['Female', 'Men', 'Kids-Boy', 'Kids-Girl'];
+
+/**
+ * Case-insensitive safe normalization for canonical audience values.
+ * Maps incoming UI/legacy values to the exact Supabase database check constraint values:
+ * Male -> Men
+ * Female -> Female
+ * Boys -> Kids-Boy
+ * Girls -> Kids-Girl
+ */
+export function normalizeAudience(val) {
+    if (!val) return null;
+    const str = String(val).trim().toLowerCase();
+    if (str === 'female' || str === 'women' || str === 'woman' || str === 'womens') return AUDIENCE_VALUES.FEMALE;
+    if (str === 'men' || str === 'male' || str === 'man' || str === 'mens') return AUDIENCE_VALUES.MALE;
+    if (str === 'kids-boy' || str === 'boys' || str === 'boy') return AUDIENCE_VALUES.BOYS;
+    if (str === 'kids-girl' || str === 'girls' || str === 'girl') return AUDIENCE_VALUES.GIRLS;
+    return null;
+}
+
 // Merge product row from Supabase with extended metadata
 function enrichProduct(item, metaMap) {
     if (!item) return item;
@@ -53,6 +82,7 @@ function enrichProduct(item, metaMap) {
 
     return {
         ...item,
+        audience: item.audience !== undefined && item.audience !== null ? item.audience : (meta.audience || null),
         cost_price: item.cost_price !== undefined ? item.cost_price : (meta.cost_price !== undefined ? meta.cost_price : item.purchase_price || 0),
         compare_at_price: item.compare_at_price !== undefined ? item.compare_at_price : (meta.compare_at_price !== undefined ? meta.compare_at_price : 0),
         low_stock_threshold: item.low_stock_threshold !== undefined ? item.low_stock_threshold : (meta.low_stock_threshold !== undefined ? meta.low_stock_threshold : 3),
@@ -92,6 +122,26 @@ export function validateProductData(data, isCreate = true) {
         }
         if (!data.category || typeof data.category !== 'string' || !data.category.trim()) {
             errors.push('Category is required');
+        }
+    }
+
+    // Audience validation
+    if (data.audience !== undefined && data.audience !== null && String(data.audience).trim() !== '') {
+        const rawAud = String(data.audience).trim();
+        const audLower = rawAud.toLowerCase();
+        if (audLower === 'kids' || audLower === 'kid') {
+            errors.push("Kids is a UI category; please select 'Boys' or 'Girls' as canonical audience.");
+        } else {
+            const normalized = normalizeAudience(rawAud);
+            if (!normalized) {
+                errors.push(`Invalid audience '${rawAud}'. Allowed values are Male, Female, Boys, Girls.`);
+            }
+        }
+    } else if (isCreate) {
+        // Require valid audience for new silver jewellery products
+        const catType = data.catalog_type || 'silver_jewellery';
+        if (catType === 'silver_jewellery' && !data.occasion_slug) {
+            errors.push("Jewellery audience ('Male', 'Female', 'Boys', or 'Girls') is required for new silver jewellery products.");
         }
     }
 
@@ -136,6 +186,7 @@ export async function handleGetProducts(req, res) {
             occasion,
             catalog_type,
             category,
+            audience,
             stock,
             status,
             featured,
@@ -180,6 +231,18 @@ export async function handleGetProducts(req, res) {
             filtered = filtered.filter(p => p.category === category);
         }
 
+        // Audience filter: supports Male, Female, Kids (combining Boys & Girls), Boys, Girls, and Unassigned
+        if (audience && audience !== 'all') {
+            const audLower = audience.toLowerCase();
+            if (audLower === 'kids' || audLower === 'kid') {
+                filtered = filtered.filter(p => p.audience === 'Boys' || p.audience === 'Girls');
+            } else if (audLower === 'unassigned' || audLower === 'none' || audLower === 'null') {
+                filtered = filtered.filter(p => !p.audience);
+            } else {
+                filtered = filtered.filter(p => p.audience && p.audience.toLowerCase() === audLower);
+            }
+        }
+
         if (stock) {
             if (stock === 'in') filtered = filtered.filter(p => (Number(p.stock_quantity) || 0) > 0);
             if (stock === 'out') filtered = filtered.filter(p => (Number(p.stock_quantity) || 0) === 0);
@@ -204,6 +267,7 @@ export async function handleGetProducts(req, res) {
                 (p.product_code && p.product_code.toLowerCase().includes(s)) ||
                 (p.product_name && p.product_name.toLowerCase().includes(s)) ||
                 (p.category && p.category.toLowerCase().includes(s)) ||
+                (p.audience && p.audience.toLowerCase().includes(s)) ||
                 (p.product_description && p.product_description.toLowerCase().includes(s)) ||
                 (p.matching_tags && p.matching_tags.toLowerCase().includes(s))
             );
@@ -284,11 +348,14 @@ export async function handleCreateProduct(req, res) {
             });
         }
 
+        const normalizedAudience = raw.audience ? normalizeAudience(raw.audience) : null;
+
         // Base database payload
         const payload = {
             product_code: code,
             product_name: String(raw.product_name).trim(),
             category: String(raw.category).trim(),
+            audience: normalizedAudience,
             product_description: raw.product_description?.trim() || null,
             selling_price: parseFloat(raw.selling_price) || 0,
             purchase_price: parseFloat(raw.cost_price || raw.purchase_price) || 0,
@@ -306,6 +373,7 @@ export async function handleCreateProduct(req, res) {
 
         // Save extended metadata locally
         const extendedMeta = {
+            audience: normalizedAudience,
             cost_price: parseFloat(raw.cost_price || raw.purchase_price) || 0,
             compare_at_price: parseFloat(raw.compare_at_price) || 0,
             low_stock_threshold: parseInt(raw.low_stock_threshold, 10) || 3,
@@ -390,6 +458,10 @@ export async function handleUpdateProduct(req, res) {
 
         if (raw.product_name !== undefined) dbPayload.product_name = String(raw.product_name).trim();
         if (raw.category !== undefined) dbPayload.category = String(raw.category).trim();
+        if (raw.audience !== undefined) {
+            const normAud = raw.audience ? normalizeAudience(raw.audience) : null;
+            dbPayload.audience = normAud;
+        }
         if (raw.product_description !== undefined) dbPayload.product_description = raw.product_description?.trim() || null;
         if (raw.selling_price !== undefined) dbPayload.selling_price = parseFloat(raw.selling_price) || 0;
         if (raw.purchase_price !== undefined) dbPayload.purchase_price = parseFloat(raw.purchase_price) || 0;
@@ -401,12 +473,28 @@ export async function handleUpdateProduct(req, res) {
         if (raw.shop_address !== undefined) dbPayload.shop_address = raw.shop_address?.trim() || null;
         if (raw.purchase_date !== undefined) dbPayload.purchase_date = raw.purchase_date || null;
 
+        const audience = dbPayload.audience;
+        const productName = dbPayload.product_name || raw.product_name;
+        const fullPayload = raw;
+        if (process.env.DEBUG || process.env.NODE_ENV !== 'production') {
+            console.log('[AUDIENCE SAVE DEBUG]', {
+                productCode,
+                productName,
+                audience,
+                audienceType: typeof audience,
+                payloadAudience: fullPayload?.audience
+            });
+        }
+
         // Execute database update
         const result = await dbUpdate('inventory', filterKey, id, dbPayload);
 
         // Update persistent extended metadata
         if (productCode) {
             const metaUpdate = {};
+            if (raw.audience !== undefined) {
+                metaUpdate.audience = raw.audience ? normalizeAudience(raw.audience) : null;
+            }
             if (raw.cost_price !== undefined) metaUpdate.cost_price = parseFloat(raw.cost_price) || 0;
             if (raw.compare_at_price !== undefined) metaUpdate.compare_at_price = parseFloat(raw.compare_at_price) || 0;
             if (raw.low_stock_threshold !== undefined) metaUpdate.low_stock_threshold = parseInt(raw.low_stock_threshold, 10) || 3;
@@ -449,6 +537,54 @@ export async function handleUpdateProduct(req, res) {
             success: false,
             error: { code: 'PRODUCT_UPDATE_FAILED', message: err.message || 'Unable to update product' }
         });
+    }
+}
+
+/**
+ * POST /api/products/backfill-audience
+ * Batch update audience for legacy unassigned products safely
+ */
+export async function handleBatchBackfillAudience(req, res) {
+    try {
+        const { updates } = req.body || {};
+        if (!Array.isArray(updates) || updates.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: { message: "An array of product 'updates' with product_code and audience is required." }
+            });
+        }
+
+        const results = [];
+        for (const item of updates) {
+            const code = String(item.product_code || '').trim().toUpperCase();
+            if (!code) continue;
+
+            const normAud = normalizeAudience(item.audience);
+            if (!normAud && item.audience !== null && item.audience !== '') {
+                results.push({ product_code: code, success: false, error: `Invalid audience: ${item.audience}` });
+                continue;
+            }
+
+            try {
+                await dbUpdate('inventory', 'product_code', code, {
+                    audience: normAud,
+                    updated_at: new Date().toISOString()
+                });
+                saveProductMeta(code, { audience: normAud });
+                results.push({ product_code: code, success: true, audience: normAud });
+            } catch (err) {
+                results.push({ product_code: code, success: false, error: err.message });
+            }
+        }
+
+        return res.json({
+            success: true,
+            message: `Processed ${results.length} backfill updates.`,
+            results
+        });
+    } catch (err) {
+        console.error('[API Batch Backfill Audience Error]:', err);
+        return res.status(500).json({ success: false, error: { message: err.message } });
     }
 }
 
