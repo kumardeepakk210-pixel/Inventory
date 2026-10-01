@@ -185,12 +185,14 @@ export const getAdminHeaders = (extraHeaders = {}) => {
 };
 
 // Known schema column caches to avoid blind schema mismatch requests
-const tableColumnsCache = {
+export const tableColumnsCache = {
     inventory: new Set([
         'id', 'product_code', 'product_name', 'product_description', 'category',
-        'selling_price', 'purchase_price', 'stock_quantity', 'weight', 'size',
-        'shop_name', 'shop_address', 'purchase_date', 'storage_folder',
-        'audience', 'created_at', 'updated_at'
+        'stock_quantity', 'purchase_price', 'selling_price', 'weight',
+        'purchase_date', 'shop_name', 'shop_address',
+        'size', 'storage_folder', 'audience',
+        'design_group', 'variant_type', 'variant_value', 'product_slug',
+        'created_at', 'updated_at'
     ]),
     occasion_inventory: new Set([
         'id', 'product_code', 'product_name', 'product_description', 'category',

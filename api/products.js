@@ -75,7 +75,7 @@ export function normalizeAudience(val) {
 }
 
 // Merge product row from Supabase with extended metadata
-function enrichProduct(item, metaMap) {
+export function enrichProduct(item, metaMap = {}) {
     if (!item) return item;
     const meta = metaMap[item.product_code] || {};
     const stock = Number(item.stock_quantity) || 0;
@@ -91,7 +91,12 @@ function enrichProduct(item, metaMap) {
         material: item.material || meta.material || '925 Sterling Silver',
         purity: item.purity || meta.purity || '92.5%',
         gst: item.gst !== undefined ? item.gst : (meta.gst !== undefined ? meta.gst : 3),
-        slug: item.slug || meta.slug || `${item.product_name || 'product'}-${item.product_code || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        slug: item.product_slug || item.slug || meta.product_slug || meta.slug || `${item.product_name || 'product'}-${item.product_code || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        product_slug: item.product_slug || item.slug || meta.product_slug || meta.slug || `${item.product_name || 'product'}-${item.product_code || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        design_group: item.design_group !== undefined && item.design_group !== null ? item.design_group : (meta.design_group || null),
+        variant_type: item.variant_type !== undefined && item.variant_type !== null ? item.variant_type : (meta.variant_type || null),
+        variant_value: item.variant_value !== undefined && item.variant_value !== null ? item.variant_value : (meta.variant_value || null),
+        storage_folder: item.storage_folder !== undefined && item.storage_folder !== null ? item.storage_folder : (meta.storage_folder || null),
         seo_title: item.seo_title || meta.seo_title || `${item.product_name || ''} | WishRite Pure Silver`,
         seo_description: item.seo_description || meta.seo_description || item.product_description || '',
         catalog_type: item.catalog_type || meta.catalog_type || 'silver_jewellery',
@@ -170,6 +175,22 @@ export function validateProductData(data, isCreate = true) {
         const num = Number(data.stock_quantity);
         if (isNaN(num) || num < 0 || !Number.isInteger(num)) {
             errors.push('Stock quantity must be a non-negative whole number');
+        }
+    }
+
+    if (data.weight !== undefined && data.weight !== null && data.weight !== '') {
+        const num = Number(data.weight);
+        if (isNaN(num) || num < 0) {
+            errors.push('Weight must be a non-negative number');
+        }
+    }
+
+    // Alphabet variant check constraint: variant_type <> 'alphabet' OR variant_value ~ '^[A-Z]$'
+    const vType = (data.variant_type || '').trim().toLowerCase();
+    if (vType === 'alphabet') {
+        const vVal = (data.variant_value || '').trim();
+        if (!/^[A-Z]$/.test(vVal)) {
+            errors.push("For 'alphabet' variant type, variant value must be a single uppercase letter (A-Z).");
         }
     }
 
@@ -261,6 +282,11 @@ export async function handleGetProducts(req, res) {
             filtered = filtered.filter(p => Boolean(p.occasion_featured));
         }
 
+        if (req.query.design_group) {
+            const dg = req.query.design_group.toLowerCase().trim();
+            filtered = filtered.filter(p => p.design_group && p.design_group.toLowerCase() === dg);
+        }
+
         if (search) {
             const s = search.toLowerCase().trim();
             filtered = filtered.filter(p => 
@@ -269,6 +295,9 @@ export async function handleGetProducts(req, res) {
                 (p.category && p.category.toLowerCase().includes(s)) ||
                 (p.audience && p.audience.toLowerCase().includes(s)) ||
                 (p.product_description && p.product_description.toLowerCase().includes(s)) ||
+                (p.design_group && p.design_group.toLowerCase().includes(s)) ||
+                (p.variant_value && p.variant_value.toLowerCase().includes(s)) ||
+                (p.product_slug && p.product_slug.toLowerCase().includes(s)) ||
                 (p.matching_tags && p.matching_tags.toLowerCase().includes(s))
             );
         }
@@ -349,22 +378,34 @@ export async function handleCreateProduct(req, res) {
         }
 
         const normalizedAudience = raw.audience ? normalizeAudience(raw.audience) : null;
+        const vType = raw.variant_type ? String(raw.variant_type).trim() : null;
+        let vVal = raw.variant_value ? String(raw.variant_value).trim() : null;
+        if (vType && vType.toLowerCase() === 'alphabet' && vVal) {
+            vVal = vVal.toUpperCase();
+        }
+        const productSlug = (raw.product_slug || raw.slug || `${raw.product_name}-${code}`).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const storageFolder = raw.storage_folder?.trim() || `products/${productSlug}`;
 
-        // Base database payload
+        // Base database payload matching public.inventory schema exactly
         const payload = {
             product_code: code,
             product_name: String(raw.product_name).trim(),
-            category: String(raw.category).trim(),
-            audience: normalizedAudience,
             product_description: raw.product_description?.trim() || null,
-            selling_price: parseFloat(raw.selling_price) || 0,
-            purchase_price: parseFloat(raw.cost_price || raw.purchase_price) || 0,
+            category: String(raw.category).trim(),
             stock_quantity: parseInt(raw.stock_quantity, 10) || 0,
-            weight: raw.weight !== undefined && raw.weight !== '' ? parseFloat(raw.weight) : null,
-            size: raw.size?.trim() || null,
+            purchase_price: parseFloat(raw.cost_price !== undefined ? raw.cost_price : raw.purchase_price) || 0,
+            selling_price: parseFloat(raw.selling_price) || 0,
+            weight: raw.weight !== undefined && raw.weight !== '' && raw.weight !== null ? parseFloat(raw.weight) : null,
+            purchase_date: raw.purchase_date || null,
             shop_name: raw.shop_name?.trim() || 'WishRite',
             shop_address: raw.shop_address?.trim() || null,
-            purchase_date: raw.purchase_date || null,
+            size: raw.size?.trim() || null,
+            storage_folder: storageFolder,
+            audience: normalizedAudience,
+            design_group: raw.design_group?.trim() || null,
+            variant_type: vType,
+            variant_value: vVal,
+            product_slug: productSlug,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
@@ -374,6 +415,11 @@ export async function handleCreateProduct(req, res) {
         // Save extended metadata locally
         const extendedMeta = {
             audience: normalizedAudience,
+            design_group: payload.design_group,
+            variant_type: payload.variant_type,
+            variant_value: payload.variant_value,
+            product_slug: payload.product_slug,
+            storage_folder: payload.storage_folder,
             cost_price: parseFloat(raw.cost_price || raw.purchase_price) || 0,
             compare_at_price: parseFloat(raw.compare_at_price) || 0,
             low_stock_threshold: parseInt(raw.low_stock_threshold, 10) || 3,
@@ -472,6 +518,18 @@ export async function handleUpdateProduct(req, res) {
         if (raw.shop_name !== undefined) dbPayload.shop_name = raw.shop_name?.trim() || 'WishRite';
         if (raw.shop_address !== undefined) dbPayload.shop_address = raw.shop_address?.trim() || null;
         if (raw.purchase_date !== undefined) dbPayload.purchase_date = raw.purchase_date || null;
+        if (raw.storage_folder !== undefined) dbPayload.storage_folder = raw.storage_folder?.trim() || null;
+        if (raw.design_group !== undefined) dbPayload.design_group = raw.design_group?.trim() || null;
+        if (raw.variant_type !== undefined) dbPayload.variant_type = raw.variant_type ? String(raw.variant_type).trim() : null;
+        if (raw.variant_value !== undefined) {
+            let vVal = raw.variant_value ? String(raw.variant_value).trim() : null;
+            const currentType = (raw.variant_type !== undefined ? raw.variant_type : (dbPayload.variant_type || '')).toLowerCase();
+            if (currentType === 'alphabet' && vVal) vVal = vVal.toUpperCase();
+            dbPayload.variant_value = vVal;
+        }
+        if (raw.product_slug !== undefined || raw.slug !== undefined) {
+            dbPayload.product_slug = (raw.product_slug || raw.slug)?.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || null;
+        }
 
         const audience = dbPayload.audience;
         const productName = dbPayload.product_name || raw.product_name;
@@ -495,6 +553,14 @@ export async function handleUpdateProduct(req, res) {
             if (raw.audience !== undefined) {
                 metaUpdate.audience = raw.audience ? normalizeAudience(raw.audience) : null;
             }
+            if (raw.design_group !== undefined) metaUpdate.design_group = raw.design_group?.trim() || null;
+            if (raw.variant_type !== undefined) metaUpdate.variant_type = raw.variant_type ? String(raw.variant_type).trim() : null;
+            if (raw.variant_value !== undefined) metaUpdate.variant_value = dbPayload.variant_value;
+            if (raw.storage_folder !== undefined) metaUpdate.storage_folder = raw.storage_folder?.trim() || null;
+            if (raw.product_slug !== undefined || raw.slug !== undefined) {
+                metaUpdate.product_slug = dbPayload.product_slug;
+                metaUpdate.slug = dbPayload.product_slug;
+            }
             if (raw.cost_price !== undefined) metaUpdate.cost_price = parseFloat(raw.cost_price) || 0;
             if (raw.compare_at_price !== undefined) metaUpdate.compare_at_price = parseFloat(raw.compare_at_price) || 0;
             if (raw.low_stock_threshold !== undefined) metaUpdate.low_stock_threshold = parseInt(raw.low_stock_threshold, 10) || 3;
@@ -503,7 +569,6 @@ export async function handleUpdateProduct(req, res) {
             if (raw.material !== undefined) metaUpdate.material = raw.material?.trim() || '925 Sterling Silver';
             if (raw.purity !== undefined) metaUpdate.purity = raw.purity?.trim() || '92.5%';
             if (raw.gst !== undefined) metaUpdate.gst = parseFloat(raw.gst) || 3;
-            if (raw.slug !== undefined) metaUpdate.slug = raw.slug?.trim() || null;
             if (raw.seo_title !== undefined) metaUpdate.seo_title = raw.seo_title?.trim() || null;
             if (raw.seo_description !== undefined) metaUpdate.seo_description = raw.seo_description?.trim() || null;
             if (raw.catalog_type !== undefined) metaUpdate.catalog_type = raw.catalog_type;

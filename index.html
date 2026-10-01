@@ -477,6 +477,45 @@
                                     class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
                             </div>
                         </div>
+
+                        <!-- Design Group & Product Variants (public.inventory schema) -->
+                        <div class="p-4 bg-indigo-50/70 border border-indigo-200/90 rounded-xl space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">🔤</span>
+                                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-indigo-950">Design Group & Variants</h4>
+                                </div>
+                                <span class="text-[11px] text-indigo-700 font-semibold">Group designs & alphabet variants</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Design Group</label>
+                                    <input type="text" id="pf-design-group" placeholder="e.g. ALPHA-PENDANT, SNAKE-CHAIN"
+                                        class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm outline-none focus:border-[#5E3435]">
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Shared design identifier for grouping.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Variant Type</label>
+                                    <select id="pf-variant-type" onchange="onVariantTypeChanged()"
+                                        class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm outline-none focus:border-[#5E3435]">
+                                        <option value="">-- No Variant --</option>
+                                        <option value="alphabet">Alphabet (A-Z)</option>
+                                        <option value="size">Size</option>
+                                        <option value="color">Color / Plating</option>
+                                        <option value="design">Design Pattern</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Variant category identifier.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Variant Value</label>
+                                    <input type="text" id="pf-variant-value" placeholder="e.g. A, B, 18-inch, Rose Gold"
+                                        oninput="onVariantValueInput(this)"
+                                        class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm outline-none focus:border-[#5E3435]">
+                                    <p id="pf-variant-feedback" class="text-[10px] text-slate-400 mt-0.5">For alphabet: single letter (A-Z).</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Saree Specific Fields -->
@@ -668,10 +707,21 @@
                             <input type="text" id="pf-shop-address" placeholder="e.g. Kolkata, West Bengal"
                                 class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
                         </div>
+
+                        <!-- Storage Folder (public.inventory.storage_folder) -->
+                        <div class="sm:col-span-3">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Storage Folder (Supabase Storage)</label>
+                            <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono">
+                                <span class="text-slate-400">product-images/</span>
+                                <input type="text" id="pf-storage-folder" placeholder="products/classic-snake-silver-chain-wr-slv-001"
+                                    class="flex-1 bg-transparent text-slate-800 font-bold outline-none">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Storage bucket folder path corresponding to storage_folder in public.inventory.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Section 5: SEO & Slug -->
+                <!-- Section 6: SEO & Slug -->
                 <div id="pform-sec-seo" class="pform-sec hidden space-y-4">
                     <h3
                         class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">
@@ -679,7 +729,7 @@
                     <div class="space-y-3">
                         <!-- Slug -->
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Product URL Slug</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Product URL Slug (product_slug)</label>
                             <div
                                 class="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono">
                                 <span class="text-slate-400">wishrite.com/product/</span>
@@ -1078,7 +1128,7 @@
 
                 <!-- Specs Grid -->
                 <div
-                    class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+                    class="grid grid-cols-2 sm:grid-cols-6 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
                     <div>
                         <span class="text-slate-400 block uppercase font-bold text-[10px]">Material</span>
                         <strong class="text-slate-800" id="pv-material">925 Sterling Silver</strong>
@@ -1095,6 +1145,14 @@
                         <span class="text-slate-400 block uppercase font-bold text-[10px]">Size</span>
                         <strong class="text-slate-800" id="pv-size">-</strong>
                     </div>
+                    <div>
+                        <span class="text-indigo-500 block uppercase font-bold text-[10px]">Design Group</span>
+                        <strong class="text-indigo-900" id="pv-design-group">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-purple-500 block uppercase font-bold text-[10px]">Variant</span>
+                        <strong class="text-purple-900" id="pv-variant">-</strong>
+                    </div>
                 </div>
 
                 <!-- Inventory & SEO Info -->
@@ -1107,6 +1165,7 @@
                         <div><span class="text-slate-400">Low Stock Threshold:</span> <span id="pv-threshold">-</span>
                         </div>
                         <div><span class="text-slate-400">Purchase Date:</span> <span id="pv-pdate">-</span></div>
+                        <div><span class="text-slate-400">Storage Folder:</span> <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px] text-slate-700" id="pv-storage-folder">-</code></div>
                     </div>
                     <div class="border border-slate-200 rounded-xl p-3.5 space-y-2">
                         <strong class="text-slate-800 font-bold block border-b border-slate-100 pb-1">Website URL &
@@ -5305,6 +5364,11 @@
             return {
                 ...ext,
                 ...item,
+                design_group: item.design_group !== undefined && item.design_group !== null ? item.design_group : (ext.design_group || null),
+                variant_type: item.variant_type !== undefined && item.variant_type !== null ? item.variant_type : (ext.variant_type || null),
+                variant_value: item.variant_value !== undefined && item.variant_value !== null ? item.variant_value : (ext.variant_value || null),
+                storage_folder: item.storage_folder !== undefined && item.storage_folder !== null ? item.storage_folder : (ext.storage_folder || null),
+                product_slug: item.product_slug || ext.product_slug || item.slug || ext.slug || `${item.product_name || ''}-${item.product_code || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
                 catalog_type: item.catalog_type || ext.catalog_type || (item.category === 'Saree' ? 'saree' : 'silver_jewellery'),
                 occasion_slug: item.occasion_slug !== undefined ? item.occasion_slug : (ext.occasion_slug || null),
                 occasion_category: item.occasion_category !== undefined ? item.occasion_category : (ext.occasion_category || null),
@@ -5316,7 +5380,7 @@
                 gst: item.gst !== undefined ? item.gst : (ext.gst || 3),
                 low_stock_threshold: item.low_stock_threshold !== undefined ? item.low_stock_threshold : (ext.low_stock_threshold || 3),
                 status: item.status || ext.status || (item.stock_quantity > 0 ? 'Active' : 'Out of Stock'),
-                slug: item.slug || ext.slug || `${item.product_name || ''}-${item.product_code || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+                slug: item.product_slug || ext.product_slug || item.slug || ext.slug || `${item.product_name || ''}-${item.product_code || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '-')
             };
         }
 
@@ -6292,13 +6356,15 @@
                 product_name: productName
             };
 
+            const productFolder = `products/${storageSafeName(productName)}`;
+            payload.storage_folder = productFolder;
+            payload.product_slug = `${storageSafeName(productName)}-${storageSafeName(code)}`;
+
             try {
-                const productFolder = `products/${storageSafeName(productName)}`;
                 if (productFiles.length > 0) {
-                    payload.product_media_urls = [];
                     for (const file of productFiles) {
                         const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
-                        payload.product_media_urls.push(await uploadInventoryFile(file, 'product-images', `product-image/${storageSafeName(productName)}/${mediaType}`));
+                        await uploadInventoryFile(file, 'product-images', `${productFolder}/${mediaType}`);
                     }
                 }
             } catch (error) {
@@ -8747,7 +8813,10 @@
                     const matchMat = item.material?.toLowerCase().includes(query);
                     const matchShop = item.shop_name?.toLowerCase().includes(query);
                     const matchAudience = (item.audience || 'unassigned').toLowerCase().includes(query);
-                    if (!matchSku && !matchName && !matchCat && !matchDesc && !matchMat && !matchShop && !matchAudience) return false;
+                    const matchDesignGroup = item.design_group?.toLowerCase().includes(query);
+                    const matchVariant = item.variant_value?.toLowerCase().includes(query);
+                    const matchSlug = (item.product_slug || item.slug || '').toLowerCase().includes(query);
+                    if (!matchSku && !matchName && !matchCat && !matchDesc && !matchMat && !matchShop && !matchAudience && !matchDesignGroup && !matchVariant && !matchSlug) return false;
                 }
 
                 return true;
@@ -8875,11 +8944,13 @@
                         ? new Date(item.updated_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
                         : (item.created_at ? new Date(item.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : '-');
 
-                    // Size / Weight tags
+                    // Size / Weight / Design Group / Variant tags
                     const tags = [];
                     if (item.weight) tags.push(`${item.weight}g`);
-                    if (item.size) tags.push(`Size: ${item.size}`);
-                    const tagsHtml = tags.length ? `<span class="text-[11px] text-slate-400 block">${tags.join(' · ')}</span>` : '';
+                    if (item.size) tags.push(`Size: ${escapeHtml(item.size)}`);
+                    if (item.design_group) tags.push(`<span class="inline-flex items-center text-indigo-700 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">Group: ${escapeHtml(item.design_group)}</span>`);
+                    if (item.variant_type && item.variant_value) tags.push(`<span class="inline-flex items-center text-purple-700 font-semibold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">${escapeHtml(item.variant_type)}: ${escapeHtml(item.variant_value)}</span>`);
+                    const tagsHtml = tags.length ? `<span class="text-[11px] text-slate-400 block mt-0.5 space-x-1">${tags.join(' · ')}</span>` : '';
 
                     const isArchived = status === 'Archived';
 
@@ -9432,6 +9503,13 @@
                 if (document.getElementById('pf-occasion-featured')) document.getElementById('pf-occasion-featured').checked = false;
                 if (document.getElementById('pf-tags')) document.getElementById('pf-tags').value = '';
 
+                // Reset public.inventory design group, variant & storage folder
+                if (document.getElementById('pf-design-group')) document.getElementById('pf-design-group').value = '';
+                if (document.getElementById('pf-variant-type')) document.getElementById('pf-variant-type').value = '';
+                if (document.getElementById('pf-variant-value')) document.getElementById('pf-variant-value').value = '';
+                if (document.getElementById('pf-storage-folder')) document.getElementById('pf-storage-folder').value = '';
+                onVariantTypeChanged();
+
                 // Clear adaptive fields
                 ['pf-saree-type', 'pf-fabric', 'pf-color', 'pf-pattern', 'pf-border-style', 'pf-saree-length', 'pf-art-subtype', 'pf-art-material', 'pf-art-plating', 'pf-design'].forEach(id => {
                     const el = document.getElementById(id);
@@ -9472,9 +9550,16 @@
                 document.getElementById('pf-purchase-date').value = product.purchase_date ? normalizePurchaseDate(product.purchase_date) : '';
                 document.getElementById('pf-shop-name').value = product.shop_name || '';
                 document.getElementById('pf-shop-address').value = product.shop_address || '';
-                document.getElementById('pf-slug').value = product.slug || '';
+                document.getElementById('pf-slug').value = product.product_slug || product.slug || '';
                 document.getElementById('pf-seo-title').value = product.seo_title || '';
                 document.getElementById('pf-seo-desc').value = product.seo_description || '';
+
+                // Map public.inventory design group, variant & storage folder
+                if (document.getElementById('pf-design-group')) document.getElementById('pf-design-group').value = product.design_group || '';
+                if (document.getElementById('pf-variant-type')) document.getElementById('pf-variant-type').value = product.variant_type || '';
+                if (document.getElementById('pf-variant-value')) document.getElementById('pf-variant-value').value = product.variant_value || '';
+                if (document.getElementById('pf-storage-folder')) document.getElementById('pf-storage-folder').value = product.storage_folder || '';
+                onVariantTypeChanged();
 
                 // Product type classification & adaptive fields
                 const catalogType = product.catalog_type || (product.category === 'Saree' ? 'saree' : 'silver_jewellery');
@@ -9602,6 +9687,78 @@
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/^-|-$/g, '');
                 slugInput.value = combined;
+                const storageInput = document.getElementById('pf-storage-folder');
+                if (storageInput && (!storageInput.value || document.getElementById('pf-mode').value === 'create') && combined) {
+                    storageInput.value = `products/${combined}`;
+                }
+            }
+        }
+
+        function onVariantTypeChanged() {
+            const type = document.getElementById('pf-variant-type')?.value || '';
+            const valInput = document.getElementById('pf-variant-value');
+            const feedback = document.getElementById('pf-variant-feedback');
+            if (!valInput) return;
+
+            if (type === 'alphabet') {
+                valInput.placeholder = 'Single letter A-Z (e.g. A)';
+                valInput.maxLength = 1;
+                if (feedback) {
+                    feedback.innerText = 'Alphabet variant must be a single uppercase letter (A-Z).';
+                    feedback.className = 'text-[10px] text-amber-600 font-semibold mt-0.5';
+                }
+                valInput.value = (valInput.value || '').trim().toUpperCase().slice(0, 1);
+            } else {
+                valInput.removeAttribute('maxLength');
+                if (type === 'size') {
+                    valInput.placeholder = 'e.g. 16-inch, 18-inch, Free Size';
+                    if (feedback) {
+                        feedback.innerText = 'Size value for this item.';
+                        feedback.className = 'text-[10px] text-slate-400 mt-0.5';
+                    }
+                } else if (type === 'color') {
+                    valInput.placeholder = 'e.g. Rose Gold, Silver, Oxidized';
+                    if (feedback) {
+                        feedback.innerText = 'Color or plating finish variant.';
+                        feedback.className = 'text-[10px] text-slate-400 mt-0.5';
+                    }
+                } else if (type === 'design') {
+                    valInput.placeholder = 'e.g. Pattern A, Floral, Classic';
+                    if (feedback) {
+                        feedback.innerText = 'Design pattern variation.';
+                        feedback.className = 'text-[10px] text-slate-400 mt-0.5';
+                    }
+                } else if (type === 'custom') {
+                    valInput.placeholder = 'e.g. Custom identifier';
+                    if (feedback) {
+                        feedback.innerText = 'Custom variant value.';
+                        feedback.className = 'text-[10px] text-slate-400 mt-0.5';
+                    }
+                } else {
+                    valInput.placeholder = 'e.g. A, B, 18-inch, Rose Gold';
+                    if (feedback) {
+                        feedback.innerText = 'For alphabet: single letter (A-Z).';
+                        feedback.className = 'text-[10px] text-slate-400 mt-0.5';
+                    }
+                }
+            }
+        }
+
+        function onVariantValueInput(inputEl) {
+            if (!inputEl) return;
+            const type = document.getElementById('pf-variant-type')?.value || '';
+            if (type === 'alphabet') {
+                inputEl.value = (inputEl.value || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 1);
+                const feedback = document.getElementById('pf-variant-feedback');
+                if (feedback) {
+                    if (/^[A-Z]$/.test(inputEl.value)) {
+                        feedback.innerText = `✓ Valid alphabet variant: '${inputEl.value}'`;
+                        feedback.className = 'text-[10px] text-emerald-600 font-bold mt-0.5';
+                    } else {
+                        feedback.innerText = 'Alphabet variant must be a single uppercase letter (A-Z).';
+                        feedback.className = 'text-[10px] text-rose-600 font-semibold mt-0.5';
+                    }
+                }
             }
         }
 
@@ -9676,6 +9833,34 @@
             const occasionFeatured = document.getElementById('pf-occasion-featured')?.checked || false;
             const matchingTags = document.getElementById('pf-tags')?.value.trim() || null;
 
+            // Schema constraint validations
+            if (!isNaN(weightVal) && weightVal < 0) {
+                alert("Weight cannot be negative.");
+                setProductFormSection('specs');
+                if (btn) btn.disabled = false;
+                if (icon) icon.innerText = '💾';
+                if (text) text.innerText = 'Save Product';
+                return;
+            }
+
+            // Design Group & Variants (public.inventory schema)
+            const designGroup = document.getElementById('pf-design-group')?.value.trim() || null;
+            const variantType = document.getElementById('pf-variant-type')?.value.trim() || null;
+            let variantValue = document.getElementById('pf-variant-value')?.value.trim() || null;
+            const storageFolder = document.getElementById('pf-storage-folder')?.value.trim() || null;
+
+            if (variantType === 'alphabet') {
+                if (!variantValue || !/^[A-Z]$/.test(variantValue.toUpperCase())) {
+                    alert("Variant type 'alphabet' requires a single uppercase letter (A-Z) in Variant Value.");
+                    setProductFormSection('specs');
+                    if (btn) btn.disabled = false;
+                    if (icon) icon.innerText = '💾';
+                    if (text) text.innerText = 'Save Product';
+                    return;
+                }
+                variantValue = variantValue.toUpperCase();
+            }
+
             // Adaptive spec fields
             const fabric = document.getElementById('pf-fabric')?.value.trim() || null;
             const color = document.getElementById('pf-color')?.value.trim() || null;
@@ -9688,6 +9873,8 @@
             const plating = document.getElementById('pf-art-plating')?.value.trim() || null;
             const design = document.getElementById('pf-design')?.value.trim() || null;
 
+            const slugVal = document.getElementById('pf-slug').value.trim() || `${name}-${code}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
             // Full Comprehensive Payload
             const fullPayload = {
                 product_code: code,
@@ -9695,6 +9882,12 @@
                 category: category,
                 catalog_type: catalogType,
                 audience: audienceVal,
+                design_group: designGroup,
+                variant_type: variantType,
+                variant_value: variantValue,
+                storage_folder: storageFolder,
+                product_slug: slugVal,
+                slug: slugVal,
                 product_description: document.getElementById('pf-desc').value.trim() || null,
                 short_description: document.getElementById('pf-short-desc').value.trim() || null,
                 selling_price: sellingPrice,
@@ -9709,7 +9902,6 @@
                 gst: isNaN(gstVal) ? 3 : gstVal,
                 low_stock_threshold: isNaN(thresholdVal) ? 3 : thresholdVal,
                 status: statusVal,
-                slug: document.getElementById('pf-slug').value.trim() || `${name}-${code}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
                 seo_title: document.getElementById('pf-seo-title').value.trim() || null,
                 seo_description: document.getElementById('pf-seo-desc').value.trim() || null,
                 shop_name: document.getElementById('pf-shop-name').value.trim() || 'WishRite',
@@ -10508,15 +10700,24 @@
             document.getElementById('pv-purity').innerText = product.purity || '92.5%';
             document.getElementById('pv-weight').innerText = product.weight ? `${product.weight}g` : '-';
             document.getElementById('pv-size').innerText = product.size || '-';
+            if (document.getElementById('pv-design-group')) {
+                document.getElementById('pv-design-group').innerText = product.design_group || '-';
+            }
+            if (document.getElementById('pv-variant')) {
+                document.getElementById('pv-variant').innerText = product.variant_type ? `${product.variant_type}: ${product.variant_value || '-'}` : (product.variant_value || '-');
+            }
 
             // Inventory & Procurement
             document.getElementById('pv-supplier').innerText = product.shop_name || '-';
             document.getElementById('pv-cost').innerText = formatInr(costPrice);
             document.getElementById('pv-threshold').innerText = `${threshold} units`;
             document.getElementById('pv-pdate').innerText = product.purchase_date || '-';
+            if (document.getElementById('pv-storage-folder')) {
+                document.getElementById('pv-storage-folder').innerText = product.storage_folder || '-';
+            }
 
             // SEO
-            const slug = product.slug || `${product.product_name}-${product.product_code}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const slug = product.product_slug || product.slug || `${product.product_name}-${product.product_code}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             document.getElementById('pv-slug').innerText = slug;
             document.getElementById('pv-seo-title').innerText = product.seo_title || product.product_name;
             document.getElementById('pv-seo-desc').innerText = product.seo_description || product.product_description || '-';
