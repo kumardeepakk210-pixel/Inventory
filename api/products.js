@@ -383,7 +383,9 @@ export async function handleCreateProduct(req, res) {
         if (vType && vType.toLowerCase() === 'alphabet' && vVal) {
             vVal = vVal.toUpperCase();
         }
-        const productSlug = (raw.product_slug || raw.slug || `${raw.product_name}-${code}`).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const fallbackSlug = `${raw.product_name || 'product'}-${code}`;
+        const rawSlug = raw.product_slug || raw.slug || fallbackSlug;
+        const productSlug = String(rawSlug).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const storageFolder = raw.storage_folder?.trim() || `products/${productSlug}`;
 
         // Base database payload matching public.inventory schema exactly
@@ -523,12 +525,14 @@ export async function handleUpdateProduct(req, res) {
         if (raw.variant_type !== undefined) dbPayload.variant_type = raw.variant_type ? String(raw.variant_type).trim() : null;
         if (raw.variant_value !== undefined) {
             let vVal = raw.variant_value ? String(raw.variant_value).trim() : null;
-            const currentType = (raw.variant_type !== undefined ? raw.variant_type : (dbPayload.variant_type || '')).toLowerCase();
+            const resolvedType = raw.variant_type !== undefined ? raw.variant_type : dbPayload.variant_type;
+            const currentType = (resolvedType || '').toString().trim().toLowerCase();
             if (currentType === 'alphabet' && vVal) vVal = vVal.toUpperCase();
             dbPayload.variant_value = vVal;
         }
         if (raw.product_slug !== undefined || raw.slug !== undefined) {
-            dbPayload.product_slug = (raw.product_slug || raw.slug)?.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || null;
+            const slugCandidate = raw.product_slug || raw.slug;
+            dbPayload.product_slug = slugCandidate ? String(slugCandidate).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') : null;
         }
 
         const audience = dbPayload.audience;

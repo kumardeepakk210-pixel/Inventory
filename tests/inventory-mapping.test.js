@@ -163,4 +163,40 @@ test('Inventory Database Schema Mapping Tests', async (t) => {
         assert.ok(indexHtml.includes('openProductFormModal'), 'Should have openProductFormModal');
         assert.ok(indexHtml.includes('handleProductFormSubmit'), 'Should have handleProductFormSubmit');
     });
+
+    await t.test('6. handleUpdateProduct safely handles null variant_type, variant_value, and product_slug', async () => {
+        const { handleUpdateProduct } = await import('../api/products.js');
+        const req = {
+            params: { id: 'MISC' },
+            body: {
+                product_code: 'MISC',
+                product_name: 'Thread',
+                variant_type: null,
+                variant_value: null,
+                product_slug: null
+            }
+        };
+        let statusCode = 200;
+        let responseJson = null;
+        const res = {
+            status(code) {
+                statusCode = code;
+                return this;
+            },
+            json(data) {
+                responseJson = data;
+                return this;
+            }
+        };
+
+        await handleUpdateProduct(req, res);
+        if (responseJson && responseJson.error) {
+            assert.notEqual(
+                responseJson.error.message,
+                "Cannot read properties of null (reading 'toLowerCase')",
+                "Must not fail with null toLowerCase"
+            );
+        }
+    });
 });
+
