@@ -5,13 +5,14 @@
 // ==============================================================================
 
 import multer from 'multer';
+import crypto from 'crypto';
 import { storageUpload, storageDelete, storageList, getStoragePublicUrl, dbQuery, dbInsert, dbDelete } from './supabase-client.js';
 
 // Configure in-memory upload (files are immediately streamed to Supabase Storage)
 const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB limit
     fileFilter: (req, file, cb) => {
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
         if (allowedTypes.includes(file.mimetype)) {
@@ -97,15 +98,31 @@ export async function handleUploadProductImage(req, res) {
         // Upload to Supabase Storage
         const publicUrl = await storageUpload(BUCKET, storagePath, file.buffer, file.mimetype);
 
+        // Look up product_id from public.inventory
+        let productId = null;
+        try {
+            const list = await dbQuery('inventory', `product_code=eq.${encodeURIComponent(cleanSku)}&limit=1`);
+            if (list && list[0]) productId = list[0].id;
+        } catch (e) {}
+
         // Record metadata in product_images table if available
         let newRecord = {
-            id: 'IMG-' + Date.now(),
+            id: crypto.randomUUID(),
+            product_id: productId,
             product_code: cleanSku,
             image_url: publicUrl,
             file_name: fileName,
             storage_path: storagePath,
+            image_type: req.body.is_primary === 'true' ? 'Main' : 'Gallery',
+            image_role: req.body.image_role || 'manual_upload',
+            sort_order: parseInt(req.body.sort_order, 10) || 0,
+            alt_text: req.body.alt_text || `${cleanSku} jewellery photograph`,
             is_primary: req.body.is_primary === 'true' || false,
-            created_at: new Date().toISOString()
+            generation_source: 'manual',
+            generation_status: 'completed',
+            is_ai_generated: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
         };
 
         try {
