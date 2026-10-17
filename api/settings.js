@@ -164,6 +164,13 @@ export async function handleGetOccasionSettings(req, res) {
                 activeOccasion: activeSlug,
                 selectedOccasion: selectedSlug,
                 festive_mode_enabled: isLive,
+                is_active: isLive,
+                occasion_name: isLive ? activeName : null,
+                occasion_slug: isLive ? activeSlug : null,
+                page_title: null,
+                banner_image: null,
+                start_date: null,
+                end_date: null,
                 selected_occasion_slug: selectedSlug,
                 selected_occasion_name: selectedName,
                 active_occasion_slug: activeSlug,
@@ -192,6 +199,13 @@ export async function handleGetOccasionSettings(req, res) {
             activeOccasion: activeSlug,
             selectedOccasion: selectedSlug,
             festive_mode_enabled: isLive,
+            is_active: isLive,
+            occasion_name: isLive ? activeName : null,
+            occasion_slug: isLive ? activeSlug : null,
+            page_title: activeRow?.page_title || null,
+            banner_image: activeRow?.banner_image || null,
+            start_date: activeRow?.start_date || null,
+            end_date: activeRow?.end_date || null,
             selected_occasion_slug: selectedSlug,
             selected_occasion_name: selectedName,
             active_occasion_slug: activeSlug,
@@ -294,12 +308,11 @@ export async function handleUpdateOccasionSettings(req, res) {
             }
         } else {
             // Festive Mode ON:
-            if (currentlyActiveRow && currentlyActiveRow.occasion_slug !== targetSlug) {
-                await dbUpdate('occasion_settings', 'is_active', 'true', {
-                    is_active: false,
-                    updated_at: now
-                }, { useAdmin: true }).catch(() => {});
-            }
+            // Always deactivate any currently active occasion first so single_active unique index is respected
+            await dbUpdate('occasion_settings', 'is_active', 'true', {
+                is_active: false,
+                updated_at: now
+            }, { useAdmin: true }).catch(() => {});
 
             if (targetSlug !== currentlySelectedSlug) {
                 await dbUpdate('occasion_settings', 'is_selected', 'true', {
@@ -320,11 +333,18 @@ export async function handleUpdateOccasionSettings(req, res) {
     // Always update local persistent store immediately
     const updatedSettings = {
         isLive: turnOn,
-        activeOccasion: turnOn ? targetSlug : null,
-        selectedOccasion: targetSlug,
         festive_mode_enabled: turnOn,
+        is_active: turnOn,
+        occasion_name: turnOn ? occasionName : null,
+        occasion_slug: turnOn ? targetSlug : null,
+        page_title: null,
+        banner_image: null,
+        start_date: null,
+        end_date: null,
+        activeOccasion: turnOn ? targetSlug : null,
         active_occasion_slug: turnOn ? targetSlug : null,
         active_occasion_name: turnOn ? occasionName : null,
+        selectedOccasion: targetSlug,
         selected_occasion_slug: targetSlug,
         selected_occasion_name: occasionName,
         updated_at: now
