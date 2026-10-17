@@ -45,36 +45,36 @@ function saveProductMeta(productCode, meta) {
     }
 }
 
-// Canonical Jewellery Audiences matching Supabase inventory_audience_check constraint
+// Canonical Jewellery Audiences: Male, Female, Boys, Girls
 export const AUDIENCE_VALUES = {
-    MALE: 'Men',
+    MALE: 'Male',
     FEMALE: 'Female',
-    BOYS: 'Kids-Boy',
-    GIRLS: 'Kids-Girl'
+    BOYS: 'Boys',
+    GIRLS: 'Girls'
 };
 export const AUDIENCE_CANONICAL = AUDIENCE_VALUES;
 
-export const CANONICAL_AUDIENCES = ['Female', 'Men', 'Kids-Boy', 'Kids-Girl'];
+export const CANONICAL_AUDIENCES = ['Female', 'Male', 'Boys', 'Girls'];
 
 /**
  * Case-insensitive safe normalization for canonical audience values.
- * Maps incoming UI/legacy values to the exact Supabase database check constraint values:
- * Male -> Men
- * Female -> Female
- * Boys -> Kids-Boy
- * Girls -> Kids-Girl
+ * Directly maps incoming UI/legacy values to canonical database values:
+ * Male / Men -> Male
+ * Female / Women -> Female
+ * Boys / Kids-Boy -> Boys
+ * Girls / Kids-Girl -> Girls
  */
 export function normalizeAudience(val) {
     if (!val) return null;
     const str = String(val).trim().toLowerCase();
     if (str === 'female' || str === 'women' || str === 'woman' || str === 'womens') return AUDIENCE_VALUES.FEMALE;
-    if (str === 'men' || str === 'male' || str === 'man' || str === 'mens') return AUDIENCE_VALUES.MALE;
-    if (str === 'kids-boy' || str === 'boys' || str === 'boy') return AUDIENCE_VALUES.BOYS;
-    if (str === 'kids-girl' || str === 'girls' || str === 'girl') return AUDIENCE_VALUES.GIRLS;
+    if (str === 'male' || str === 'men' || str === 'man' || str === 'mens') return AUDIENCE_VALUES.MALE;
+    if (str === 'boys' || str === 'boy' || str === 'kids-boy') return AUDIENCE_VALUES.BOYS;
+    if (str === 'girls' || str === 'girl' || str === 'kids-girl') return AUDIENCE_VALUES.GIRLS;
     return null;
 }
 
-// Merge product row from Supabase with extended metadata
+// Merge product row from Supabase with extended metadata (prioritizing authoritative DB columns)
 export function enrichProduct(item, metaMap = {}) {
     if (!item) return item;
     const meta = metaMap[item.product_code] || {};
@@ -83,15 +83,17 @@ export function enrichProduct(item, metaMap = {}) {
     return {
         ...item,
         audience: item.audience !== undefined && item.audience !== null ? item.audience : (meta.audience || null),
-        cost_price: item.cost_price !== undefined ? item.cost_price : (meta.cost_price !== undefined ? meta.cost_price : item.purchase_price || 0),
-        compare_at_price: item.compare_at_price !== undefined ? item.compare_at_price : (meta.compare_at_price !== undefined ? meta.compare_at_price : 0),
-        low_stock_threshold: item.low_stock_threshold !== undefined ? item.low_stock_threshold : (meta.low_stock_threshold !== undefined ? meta.low_stock_threshold : 3),
-        status: item.status || meta.status || (stock > 0 ? 'Active' : 'Out of Stock'),
+        cost_price: item.cost_price !== undefined && item.cost_price !== null ? Number(item.cost_price) : (meta.cost_price !== undefined ? Number(meta.cost_price) : Number(item.purchase_price) || 0),
+        compare_at_price: item.compare_at_price !== undefined && item.compare_at_price !== null ? Number(item.compare_at_price) : (meta.compare_at_price !== undefined ? Number(meta.compare_at_price) : 0),
+        low_stock_threshold: item.low_stock_threshold !== undefined && item.low_stock_threshold !== null ? Number(item.low_stock_threshold) : (meta.low_stock_threshold !== undefined ? Number(meta.low_stock_threshold) : 3),
+        status: item.status || meta.status || 'Active',
         short_description: item.short_description || meta.short_description || item.product_description || '',
         material: item.material || meta.material || '925 Sterling Silver',
         purity: item.purity || meta.purity || '92.5%',
-        gst: item.gst !== undefined ? item.gst : (meta.gst !== undefined ? meta.gst : 3),
-        slug: item.product_slug || item.slug || meta.product_slug || meta.slug || `${item.product_name || 'product'}-${item.product_code || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        finish: item.finish || meta.finish || null,
+        gst_rate: item.gst_rate !== undefined && item.gst_rate !== null ? Number(item.gst_rate) : (item.gst !== undefined ? Number(item.gst) : (meta.gst !== undefined ? Number(meta.gst) : 3)),
+        gst: item.gst_rate !== undefined && item.gst_rate !== null ? Number(item.gst_rate) : (item.gst !== undefined ? Number(item.gst) : (meta.gst !== undefined ? Number(meta.gst) : 3)),
+        slug: item.slug || item.product_slug || meta.slug || meta.product_slug || `${item.product_name || 'product'}-${item.product_code || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         product_slug: item.product_slug || item.slug || meta.product_slug || meta.slug || `${item.product_name || 'product'}-${item.product_code || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         design_group: item.design_group !== undefined && item.design_group !== null ? item.design_group : (meta.design_group || null),
         variant_type: item.variant_type !== undefined && item.variant_type !== null ? item.variant_type : (meta.variant_type || null),
@@ -99,6 +101,7 @@ export function enrichProduct(item, metaMap = {}) {
         storage_folder: item.storage_folder !== undefined && item.storage_folder !== null ? item.storage_folder : (meta.storage_folder || null),
         seo_title: item.seo_title || meta.seo_title || `${item.product_name || ''} | WishRite Pure Silver`,
         seo_description: item.seo_description || meta.seo_description || item.product_description || '',
+        seo_keywords: item.seo_keywords || meta.seo_keywords || null,
         catalog_type: item.catalog_type || meta.catalog_type || 'silver_jewellery',
         fabric: item.fabric || meta.fabric || null,
         color: item.color || meta.color || null,
@@ -108,7 +111,10 @@ export function enrichProduct(item, metaMap = {}) {
         occasion_slug: item.occasion_slug || meta.occasion_slug || null,
         occasion_category: item.occasion_category || meta.occasion_category || null,
         occasion_featured: item.occasion_featured !== undefined ? item.occasion_featured : (meta.occasion_featured || false),
-        matching_tags: item.matching_tags || meta.matching_tags || null
+        occasion_enabled: item.occasion_enabled !== undefined ? item.occasion_enabled : (meta.occasion_enabled || false),
+        matching_tags: item.matching_tags || meta.matching_tags || null,
+        image_url: item.image_url || meta.image_url || null,
+        product_media_urls: item.product_media_urls || meta.product_media_urls || []
     };
 }
 
@@ -388,25 +394,48 @@ export async function handleCreateProduct(req, res) {
         const productSlug = String(rawSlug).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const storageFolder = raw.storage_folder?.trim() || `products/${productSlug}`;
 
-        // Base database payload matching public.inventory schema exactly
+        // Base database payload matching public.inventory canonical schema
         const payload = {
             product_code: code,
             product_name: String(raw.product_name).trim(),
             product_description: raw.product_description?.trim() || null,
+            short_description: raw.short_description?.trim() || null,
             category: String(raw.category).trim(),
-            stock_quantity: parseInt(raw.stock_quantity, 10) || 0,
-            purchase_price: parseFloat(raw.cost_price !== undefined ? raw.cost_price : raw.purchase_price) || 0,
+            catalog_type: raw.catalog_type || 'silver_jewellery',
+            audience: normalizedAudience,
             selling_price: parseFloat(raw.selling_price) || 0,
+            compare_at_price: raw.compare_at_price !== undefined && raw.compare_at_price !== '' && raw.compare_at_price !== null ? parseFloat(raw.compare_at_price) : 0,
+            purchase_price: raw.purchase_price !== undefined && raw.purchase_price !== '' && raw.purchase_price !== null ? parseFloat(raw.purchase_price) : 0,
+            cost_price: raw.cost_price !== undefined && raw.cost_price !== '' && raw.cost_price !== null ? parseFloat(raw.cost_price) : (raw.purchase_price !== undefined ? parseFloat(raw.purchase_price) : 0),
+            gst_rate: raw.gst_rate !== undefined && raw.gst_rate !== '' ? parseFloat(raw.gst_rate) : (raw.gst !== undefined ? parseFloat(raw.gst) : 3.00),
+            stock_quantity: parseInt(raw.stock_quantity, 10) || 0,
+            low_stock_threshold: raw.low_stock_threshold !== undefined && raw.low_stock_threshold !== '' ? parseInt(raw.low_stock_threshold, 10) : 3,
+            status: raw.status || 'Active',
+            material: raw.material?.trim() || '925 Sterling Silver',
+            purity: raw.purity?.trim() || '92.5%',
+            finish: raw.finish?.trim() || null,
             weight: raw.weight !== undefined && raw.weight !== '' && raw.weight !== null ? parseFloat(raw.weight) : null,
+            size: raw.size?.trim() || null,
             purchase_date: raw.purchase_date || null,
             shop_name: raw.shop_name?.trim() || 'WishRite',
             shop_address: raw.shop_address?.trim() || null,
-            size: raw.size?.trim() || null,
-            storage_folder: storageFolder,
-            audience: normalizedAudience,
             design_group: raw.design_group?.trim() || null,
             variant_type: vType,
             variant_value: vVal,
+            occasion_slug: raw.occasion_slug || null,
+            occasion_category: raw.occasion_category || null,
+            occasion_enabled: raw.occasion_enabled !== undefined ? Boolean(raw.occasion_enabled) : false,
+            occasion_featured: raw.occasion_featured !== undefined ? Boolean(raw.occasion_featured) : false,
+            color: raw.color?.trim() || null,
+            fabric: raw.fabric?.trim() || null,
+            design: raw.design?.trim() || null,
+            pattern: raw.pattern?.trim() || null,
+            border_style: raw.border_style?.trim() || null,
+            matching_tags: raw.matching_tags?.trim() || null,
+            seo_title: raw.seo_title?.trim() || null,
+            seo_description: raw.seo_description?.trim() || null,
+            seo_keywords: raw.seo_keywords?.trim() || null,
+            storage_folder: storageFolder,
             product_slug: productSlug,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -414,7 +443,7 @@ export async function handleCreateProduct(req, res) {
 
         const result = await dbInsert('inventory', payload);
 
-        // Save extended metadata locally
+        // Save extended metadata locally as secondary cache/fallback
         const extendedMeta = {
             audience: normalizedAudience,
             design_group: payload.design_group,
@@ -422,27 +451,33 @@ export async function handleCreateProduct(req, res) {
             variant_value: payload.variant_value,
             product_slug: payload.product_slug,
             storage_folder: payload.storage_folder,
-            cost_price: parseFloat(raw.cost_price || raw.purchase_price) || 0,
-            compare_at_price: parseFloat(raw.compare_at_price) || 0,
-            low_stock_threshold: parseInt(raw.low_stock_threshold, 10) || 3,
-            status: raw.status || (payload.stock_quantity > 0 ? 'Active' : 'Out of Stock'),
-            short_description: raw.short_description?.trim() || raw.product_description?.trim() || '',
-            material: raw.material?.trim() || '925 Sterling Silver',
-            purity: raw.purity?.trim() || '92.5%',
-            gst: parseFloat(raw.gst) || 3,
-            slug: raw.slug?.trim() || `${payload.product_name}-${code}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            seo_title: raw.seo_title?.trim() || null,
-            seo_description: raw.seo_description?.trim() || null,
-            catalog_type: raw.catalog_type || 'silver_jewellery',
-            fabric: raw.fabric?.trim() || null,
-            color: raw.color?.trim() || null,
-            pattern: raw.pattern?.trim() || null,
-            border_style: raw.border_style?.trim() || null,
-            design: raw.design?.trim() || null,
-            occasion_slug: raw.occasion_slug || null,
-            occasion_category: raw.occasion_category || null,
-            occasion_featured: Boolean(raw.occasion_featured),
-            matching_tags: raw.matching_tags?.trim() || null
+            cost_price: payload.cost_price,
+            purchase_price: payload.purchase_price,
+            selling_price: payload.selling_price,
+            compare_at_price: payload.compare_at_price,
+            low_stock_threshold: payload.low_stock_threshold,
+            status: payload.status,
+            short_description: payload.short_description || '',
+            material: payload.material,
+            purity: payload.purity,
+            finish: payload.finish,
+            gst_rate: payload.gst_rate,
+            gst: payload.gst_rate,
+            slug: payload.product_slug,
+            seo_title: payload.seo_title,
+            seo_description: payload.seo_description,
+            seo_keywords: payload.seo_keywords,
+            catalog_type: payload.catalog_type,
+            fabric: payload.fabric,
+            color: payload.color,
+            pattern: payload.pattern,
+            border_style: payload.border_style,
+            design: payload.design,
+            occasion_slug: payload.occasion_slug,
+            occasion_category: payload.occasion_category,
+            occasion_featured: payload.occasion_featured,
+            occasion_enabled: payload.occasion_enabled,
+            matching_tags: payload.matching_tags
         };
         saveProductMeta(code, extendedMeta);
 
@@ -506,15 +541,24 @@ export async function handleUpdateProduct(req, res) {
 
         if (raw.product_name !== undefined) dbPayload.product_name = String(raw.product_name).trim();
         if (raw.category !== undefined) dbPayload.category = String(raw.category).trim();
+        if (raw.catalog_type !== undefined) dbPayload.catalog_type = String(raw.catalog_type).trim();
         if (raw.audience !== undefined) {
             const normAud = raw.audience ? normalizeAudience(raw.audience) : null;
             dbPayload.audience = normAud;
         }
         if (raw.product_description !== undefined) dbPayload.product_description = raw.product_description?.trim() || null;
+        if (raw.short_description !== undefined) dbPayload.short_description = raw.short_description?.trim() || null;
         if (raw.selling_price !== undefined) dbPayload.selling_price = parseFloat(raw.selling_price) || 0;
-        if (raw.purchase_price !== undefined) dbPayload.purchase_price = parseFloat(raw.purchase_price) || 0;
-        if (raw.cost_price !== undefined && dbPayload.purchase_price === undefined) dbPayload.purchase_price = parseFloat(raw.cost_price) || 0;
+        if (raw.compare_at_price !== undefined) dbPayload.compare_at_price = raw.compare_at_price !== '' && raw.compare_at_price !== null ? parseFloat(raw.compare_at_price) : 0;
+        if (raw.purchase_price !== undefined) dbPayload.purchase_price = raw.purchase_price !== '' && raw.purchase_price !== null ? parseFloat(raw.purchase_price) : 0;
+        if (raw.cost_price !== undefined) dbPayload.cost_price = raw.cost_price !== '' && raw.cost_price !== null ? parseFloat(raw.cost_price) : 0;
+        if (raw.gst_rate !== undefined || raw.gst !== undefined) dbPayload.gst_rate = parseFloat(raw.gst_rate !== undefined ? raw.gst_rate : raw.gst) || 3.00;
         if (raw.stock_quantity !== undefined) dbPayload.stock_quantity = parseInt(raw.stock_quantity, 10) || 0;
+        if (raw.low_stock_threshold !== undefined) dbPayload.low_stock_threshold = parseInt(raw.low_stock_threshold, 10) || 3;
+        if (raw.status !== undefined) dbPayload.status = String(raw.status).trim();
+        if (raw.material !== undefined) dbPayload.material = raw.material?.trim() || '925 Sterling Silver';
+        if (raw.purity !== undefined) dbPayload.purity = raw.purity?.trim() || '92.5%';
+        if (raw.finish !== undefined) dbPayload.finish = raw.finish?.trim() || null;
         if (raw.weight !== undefined) dbPayload.weight = raw.weight !== '' && raw.weight !== null ? parseFloat(raw.weight) : null;
         if (raw.size !== undefined) dbPayload.size = raw.size?.trim() || null;
         if (raw.shop_name !== undefined) dbPayload.shop_name = raw.shop_name?.trim() || 'WishRite';
@@ -530,6 +574,19 @@ export async function handleUpdateProduct(req, res) {
             if (currentType === 'alphabet' && vVal) vVal = vVal.toUpperCase();
             dbPayload.variant_value = vVal;
         }
+        if (raw.occasion_slug !== undefined) dbPayload.occasion_slug = raw.occasion_slug || null;
+        if (raw.occasion_category !== undefined) dbPayload.occasion_category = raw.occasion_category || null;
+        if (raw.occasion_enabled !== undefined) dbPayload.occasion_enabled = Boolean(raw.occasion_enabled);
+        if (raw.occasion_featured !== undefined) dbPayload.occasion_featured = Boolean(raw.occasion_featured);
+        if (raw.color !== undefined) dbPayload.color = raw.color?.trim() || null;
+        if (raw.fabric !== undefined) dbPayload.fabric = raw.fabric?.trim() || null;
+        if (raw.design !== undefined) dbPayload.design = raw.design?.trim() || null;
+        if (raw.pattern !== undefined) dbPayload.pattern = raw.pattern?.trim() || null;
+        if (raw.border_style !== undefined) dbPayload.border_style = raw.border_style?.trim() || null;
+        if (raw.matching_tags !== undefined) dbPayload.matching_tags = raw.matching_tags?.trim() || null;
+        if (raw.seo_title !== undefined) dbPayload.seo_title = raw.seo_title?.trim() || null;
+        if (raw.seo_description !== undefined) dbPayload.seo_description = raw.seo_description?.trim() || null;
+        if (raw.seo_keywords !== undefined) dbPayload.seo_keywords = raw.seo_keywords?.trim() || null;
         if (raw.product_slug !== undefined || raw.slug !== undefined) {
             const slugCandidate = raw.product_slug || raw.slug;
             dbPayload.product_slug = slugCandidate ? String(slugCandidate).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') : null;

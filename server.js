@@ -50,6 +50,14 @@ import {
     handleDeleteProductImage,
     uploadMiddleware 
 } from './api/images.js';
+import {
+    handleUploadOriginalImage,
+    handleGenerateAiImages,
+    handleGetAiImagesStatus,
+    handleRegenerateAiImage,
+    handleDeleteAiImage,
+    uploadOriginalMiddleware
+} from './api/ai-images.js';
 import { 
     handleLogin,
     handleCheckSetup,
@@ -58,6 +66,13 @@ import {
     handleCreateEmployee
 } from './api/auth.js';
 import { handleGetSales, handleCreateSale } from './api/sales.js';
+import { 
+    handleGetCustomers, 
+    handleGetCustomerById, 
+    handleCreateCustomer, 
+    handleUpdateCustomer, 
+    handleAdjustCustomerBalance 
+} from './api/customers.js';
 import { 
     SUPABASE_URL,
     dbQuery, 
@@ -100,8 +115,8 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -201,6 +216,13 @@ app.get('/api/products/:sku/images', handleGetProductImages);
 app.post('/api/products/:sku/images', uploadMiddleware, handleUploadProductImage);
 app.delete('/api/products/:sku/images/:fileName', handleDeleteProductImage);
 
+// AI Product Image Generator (Studio) Endpoints
+app.post('/api/products/:productId/original-image', uploadOriginalMiddleware, handleUploadOriginalImage);
+app.post('/api/products/:productId/ai-images/generate', handleGenerateAiImages);
+app.get('/api/products/:productId/ai-images/status', handleGetAiImagesStatus);
+app.post('/api/products/:productId/ai-images/:imageId/regenerate', handleRegenerateAiImage);
+app.delete('/api/products/:productId/ai-images/:imageId', handleDeleteAiImage);
+
 // Occasions & Festive Settings
 app.get('/api/settings/occasion', handleGetOccasionSettings);
 app.patch('/api/settings/occasion', handleUpdateOccasionSettings);
@@ -236,6 +258,13 @@ app.post('/api/employees', handleCreateEmployee);
 // Sales & Invoices
 app.get('/api/sales', handleGetSales);
 app.post('/api/sales', handleCreateSale);
+
+// Customers & Rewards
+app.get('/api/customers', handleGetCustomers);
+app.get('/api/customers/:id', handleGetCustomerById);
+app.post('/api/customers', handleCreateCustomer);
+app.patch('/api/customers/:id', handleUpdateCustomer);
+app.post('/api/customers/:id/adjust-balance', handleAdjustCustomerBalance);
 
 // Categories
 app.get('/api/categories', async (req, res) => {

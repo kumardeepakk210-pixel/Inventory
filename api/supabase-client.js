@@ -187,11 +187,16 @@ export const getAdminHeaders = (extraHeaders = {}) => {
 // Known schema column caches to avoid blind schema mismatch requests
 export const tableColumnsCache = {
     inventory: new Set([
-        'id', 'product_code', 'product_name', 'product_description', 'category',
-        'stock_quantity', 'purchase_price', 'selling_price', 'weight',
+        'id', 'product_code', 'product_name', 'product_description', 'short_description', 'category',
+        'catalog_type', 'stock_quantity', 'low_stock_threshold', 'status',
+        'purchase_price', 'cost_price', 'selling_price', 'compare_at_price', 'gst_rate',
+        'weight', 'size', 'material', 'purity', 'finish',
         'purchase_date', 'shop_name', 'shop_address',
-        'size', 'storage_folder', 'audience',
-        'design_group', 'variant_type', 'variant_value', 'product_slug',
+        'storage_folder', 'image_url', 'product_media_urls', 'audience',
+        'design_group', 'variant_type', 'variant_value', 'product_slug', 'slug',
+        'occasion_slug', 'occasion_category', 'occasion_enabled', 'occasion_featured',
+        'color', 'fabric', 'design', 'pattern', 'border_style', 'matching_tags',
+        'seo_title', 'seo_description', 'seo_keywords',
         'created_at', 'updated_at'
     ]),
     occasion_inventory: new Set([
@@ -207,6 +212,35 @@ export const tableColumnsCache = {
     ]),
     occasion_product_images: new Set([
         'id', 'product_id', 'image_url', 'is_primary', 'sort_order', 'created_at'
+    ]),
+    product_images: new Set([
+        'id', 'product_id', 'product_code', 'file_name', 'image_url', 'storage_path',
+        'image_type', 'image_role', 'sort_order', 'alt_text', 'is_primary', 'is_active',
+        'generation_source', 'generation_model', 'generation_prompt',
+        'resolution', 'width', 'height', 'generation_status', 'generation_job_id',
+        'is_ai_generated', 'parent_image_id',
+        'master_8k_url', 'master_4k_url', 'derivative_urls',
+        'generation_resolution', 'is_native_4k', 'upscale_provider', 'upscale_method', 'upscale_quality',
+        'version', 'created_at', 'updated_at'
+    ]),
+    ai_image_jobs: new Set([
+        'id', 'product_id', 'product_code', 'source_image_url', 'status',
+        'total_images', 'completed_images', 'failed_images', 'model',
+        'output_resolution', 'created_at', 'started_at', 'completed_at',
+        'error_message'
+    ]),
+    customers: new Set([
+        'id', 'customer_name', 'customer_phone', 'customer_email',
+        'customer_address', 'customer_city', 'customer_state', 'customer_country', 'customer_pin',
+        'wallet_balance', 'points_balance', 'total_purchased_amount',
+        'referral_code', 'referred_by_code',
+        'is_phone_verified', 'last_login_at', 'user_id', 'password_set',
+        'created_at', 'updated_at'
+    ]),
+    customer_balance_audit: new Set([
+        'id', 'customer_id', 'customer_phone', 'action_type',
+        'wallet_delta', 'wallet_balance_after', 'points_delta', 'points_balance_after',
+        'note', 'performed_by', 'created_at'
     ])
 };
 
@@ -358,10 +392,13 @@ export async function dbInsert(table, payload, options = {}) {
             if (missingMatch && missingMatch[1]) {
                 const col = missingMatch[1];
                 if (tableColumnsCache[table]) tableColumnsCache[table].delete(col);
-                const err = new Error(`Schema mismatch: column '${col}' does not exist on table '${table}'`);
-                err.status = 400;
-                err.code = 'SCHEMA_COLUMN_NOT_FOUND';
-                throw err;
+                if (isArray) {
+                    validItems.forEach(item => delete item[col]);
+                } else {
+                    delete validItems[0][col];
+                }
+                omittedColumns.push(col);
+                continue;
             }
 
             if (attempts < maxAttempts && isTransientError(res.status, null)) {
@@ -405,7 +442,7 @@ export async function dbUpdate(table, filterKey, filterVal, payload, options = {
 
     const url = `${SUPABASE_URL}/rest/v1/${table}?${filterKey}=eq.${encodeURIComponent(filterVal)}`;
     let attempts = 0;
-    const maxAttempts = 2;
+    const maxAttempts = 15;
 
     while (attempts < maxAttempts) {
         attempts++;
@@ -432,10 +469,12 @@ export async function dbUpdate(table, filterKey, filterVal, payload, options = {
             if (missingMatch && missingMatch[1]) {
                 const col = missingMatch[1];
                 if (tableColumnsCache[table]) tableColumnsCache[table].delete(col);
-                const err = new Error(`Schema mismatch: column '${col}' not found in table '${table}'`);
-                err.status = 400;
-                err.code = 'SCHEMA_COLUMN_NOT_FOUND';
-                throw err;
+                delete validPayload[col];
+                omittedColumns.push(col);
+                if (Object.keys(validPayload).length === 0) {
+                    return { data: null, omittedColumns };
+                }
+                continue;
             }
 
             if (attempts < maxAttempts && isTransientError(res.status, null)) {
@@ -497,12 +536,13 @@ export async function dbAdminDelete(table, filterKey, filterVal) {
 export async function storageUpload(bucket, path, buffer, contentType) {
     const cleanPath = path.replace(/^\/+/, '');
     const url = `${SUPABASE_URL}/storage/v1/object/${bucket}/${cleanPath}`;
+    const activeKey = adminKey || SUPABASE_KEY;
     
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'apikey': activeKey,
+            'Authorization': `Bearer ${activeKey}`,
             'Content-Type': contentType || 'application/octet-stream',
             'x-upsert': 'true'
         },

@@ -154,6 +154,39 @@
         }
 
         // ==============================================================================
+        // AI PRODUCT IMAGE STUDIO (GEMINI 8K MASTER WORKFLOW)
+        // ==============================================================================
+
+        async uploadOriginalReferenceImage(skuOrId, file) {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            return await this.request(`/products/${encodeURIComponent(skuOrId)}/original-image`, {
+                method: 'POST',
+                body: formData
+            });
+        }
+
+        async generateAiImages(skuOrId, sourceImageUrl = null) {
+            return await this.post(`/products/${encodeURIComponent(skuOrId)}/ai-images/generate`, {
+                source_image_url: sourceImageUrl
+            });
+        }
+
+        async getAiImagesStatus(skuOrId) {
+            const res = await this.get(`/products/${encodeURIComponent(skuOrId)}/ai-images/status`);
+            return res.data;
+        }
+
+        async regenerateAiImage(skuOrId, imageIdOrRole) {
+            return await this.post(`/products/${encodeURIComponent(skuOrId)}/ai-images/${encodeURIComponent(imageIdOrRole)}/regenerate`, {});
+        }
+
+        async deleteAiImage(skuOrId, imageId) {
+            return await this.delete(`/products/${encodeURIComponent(skuOrId)}/ai-images/${encodeURIComponent(imageId)}`);
+        }
+
+        // ==============================================================================
         // OCCASIONS & FESTIVE SETTINGS
         // ==============================================================================
 
@@ -334,6 +367,32 @@
 
         async createSale(salePayload) {
             return await this.post('/sales', salePayload);
+        }
+
+        // ==============================================================================
+        // CUSTOMERS & REWARDS
+        // ==============================================================================
+
+        async getCustomers(filters = {}) {
+            const res = await this.get('/customers', filters);
+            return res;
+        }
+
+        async getCustomer(id) {
+            const res = await this.get(`/customers/${encodeURIComponent(id)}`);
+            return res.data;
+        }
+
+        async createCustomer(payload) {
+            return await this.post('/customers', payload);
+        }
+
+        async updateCustomer(id, payload) {
+            return await this.patch(`/customers/${encodeURIComponent(id)}`, payload);
+        }
+
+        async adjustCustomerBalance(id, payload) {
+            return await this.post(`/customers/${encodeURIComponent(id)}/adjust-balance`, payload);
         }
 
         async getCategories() {

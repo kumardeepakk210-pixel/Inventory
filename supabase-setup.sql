@@ -116,12 +116,34 @@ create table if not exists public.product_images (
     sort_order integer not null default 0,
     alt_text text,
     is_primary boolean not null default false,
+    product_code text,
+    file_name text,
+    generation_source text default 'manual',
+    generation_model text,
+    generation_prompt text,
+    resolution text,
+    width integer,
+    height integer,
+    generation_status text default 'completed',
+    generation_job_id uuid,
+    is_ai_generated boolean default false,
+    parent_image_id uuid,
+    image_role text,
+    master_8k_url text,
+    master_4k_url text,
+    derivative_urls jsonb,
+    generation_resolution text,
+    is_native_4k boolean,
+    upscale_provider text,
+    upscale_method text,
+    upscale_quality text,
     created_at timestamptz not null default now()
 );
 
 -- Index for quick lookup of images by product_id
 create index if not exists idx_product_images_product_id on public.product_images (product_id);
 create index if not exists idx_product_images_sort on public.product_images (product_id, sort_order);
+create index if not exists idx_product_images_role on public.product_images (product_id, image_role);
 
 -- Enable RLS on product_images
 alter table public.product_images enable row level security;
@@ -148,6 +170,55 @@ with check (true);
 drop policy if exists "Product images can be deleted" on public.product_images;
 create policy "Product images can be deleted"
 on public.product_images for delete
+to anon, authenticated
+using (true);
+
+
+-- 5B. CREATE AI IMAGE JOBS TABLE
+create table if not exists public.ai_image_jobs (
+    id uuid primary key default gen_random_uuid(),
+    product_id uuid not null references public.inventory(id) on delete cascade,
+    product_code text not null,
+    source_image_url text,
+    status text not null default 'queued',
+    total_images integer not null default 10,
+    completed_images integer not null default 0,
+    failed_images integer not null default 0,
+    model text,
+    output_resolution text default '8K',
+    created_at timestamptz not null default now(),
+    started_at timestamptz,
+    completed_at timestamptz,
+    error_message text
+);
+
+create index if not exists idx_ai_image_jobs_product_id on public.ai_image_jobs (product_id);
+create index if not exists idx_ai_image_jobs_status on public.ai_image_jobs (status);
+
+alter table public.ai_image_jobs enable row level security;
+
+drop policy if exists "AI jobs are viewable by all" on public.ai_image_jobs;
+create policy "AI jobs are viewable by all"
+on public.ai_image_jobs for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "AI jobs can be inserted" on public.ai_image_jobs;
+create policy "AI jobs can be inserted"
+on public.ai_image_jobs for insert
+to anon, authenticated
+with check (true);
+
+drop policy if exists "AI jobs can be updated" on public.ai_image_jobs;
+create policy "AI jobs can be updated"
+on public.ai_image_jobs for update
+to anon, authenticated
+using (true)
+with check (true);
+
+drop policy if exists "AI jobs can be deleted" on public.ai_image_jobs;
+create policy "AI jobs can be deleted"
+on public.ai_image_jobs for delete
 to anon, authenticated
 using (true);
 

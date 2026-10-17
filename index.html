@@ -409,16 +409,28 @@
                             <p class="text-[11px] text-slate-400 mt-1">Price paid by customers.</p>
                         </div>
 
-                        <!-- Cost / Purchase Price -->
+                        <!-- Purchase Price -->
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Cost / Purchase Price (₹)</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Purchase Price (₹)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-slate-400 font-bold">₹</span>
+                                <input type="number" step="0.01" min="0" id="pf-purchase-price" placeholder="1000"
+                                    oninput="calculateMarginPreview()"
+                                    class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none focus:bg-white focus:border-[#5E3435]">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Supplier acquisition invoice price.</p>
+                        </div>
+
+                        <!-- Cost Price (Landed Cost) -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Cost Price (₹)</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-2 text-slate-400 font-bold">₹</span>
                                 <input type="number" step="0.01" min="0" id="pf-cost-price" placeholder="1200"
                                     oninput="calculateMarginPreview()"
                                     class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium outline-none focus:bg-white focus:border-[#5E3435]">
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">Wholesale cost per piece.</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Landed cost to WishRite.</p>
                         </div>
 
                         <!-- Compare-at Price / MRP -->
@@ -465,7 +477,7 @@
 
                     <!-- Silver Specific Fields -->
                     <div id="pf-silver-fields" class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Material</label>
                                 <input type="text" id="pf-material" value="925 Sterling Silver"
@@ -475,6 +487,11 @@
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Purity</label>
                                 <input type="text" id="pf-purity" value="92.5%" placeholder="92.5%"
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Finish</label>
+                                <input type="text" id="pf-finish" placeholder="e.g. Rhodium, Oxidized"
                                     class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
                             </div>
                             <div>
@@ -782,7 +799,7 @@
                     <h3
                         class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">
                         Catalog Status & Visibility</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <label
                             class="flex flex-col p-4 border rounded-xl cursor-pointer transition hover:bg-slate-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/40">
                             <div class="flex items-center justify-between mb-1">
@@ -790,8 +807,7 @@
                                 <input type="radio" name="pf-status-radio" value="Active" checked
                                     class="accent-emerald-600">
                             </div>
-                            <span class="text-xs text-slate-500">Live on website and available for customers to
-                                order.</span>
+                            <span class="text-xs text-slate-500">Live in catalog. Availability (In Stock/Low Stock/Out of Stock) is calculated automatically from inventory count.</span>
                         </label>
 
                         <label
@@ -800,16 +816,7 @@
                                 <span class="font-bold text-sm text-slate-700">Draft</span>
                                 <input type="radio" name="pf-status-radio" value="Draft" class="accent-slate-600">
                             </div>
-                            <span class="text-xs text-slate-500">Work in progress; hidden from customer view.</span>
-                        </label>
-
-                        <label
-                            class="flex flex-col p-4 border rounded-xl cursor-pointer transition hover:bg-slate-50 has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/40">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="font-bold text-sm text-rose-700">Out of Stock</span>
-                                <input type="radio" name="pf-status-radio" value="Out of Stock" class="accent-rose-600">
-                            </div>
-                            <span class="text-xs text-slate-500">Displays 'Sold Out' badge on customer website.</span>
+                            <span class="text-xs text-slate-500">Work in progress; unpublished and hidden from customer catalog.</span>
                         </label>
 
                         <label
@@ -818,8 +825,7 @@
                                 <span class="font-bold text-sm text-zinc-700">Archived</span>
                                 <input type="radio" name="pf-status-radio" value="Archived" class="accent-zinc-600">
                             </div>
-                            <span class="text-xs text-slate-500">Discontinued product hidden from all active
-                                sales.</span>
+                            <span class="text-xs text-slate-500">Discontinued product hidden from all active sales.</span>
                         </label>
                     </div>
                 </div>
@@ -891,6 +897,97 @@
             </div>
 
             <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- ============================================================================== -->
+                <!-- AI PRODUCT IMAGE STUDIO (SECTION 15) -->
+                <!-- ============================================================================== -->
+                <div id="ai-product-studio-card" class="bg-gradient-to-br from-slate-900 via-[#2e1819] to-slate-900 rounded-2xl p-5 md:p-6 text-white border border-amber-500/20 shadow-xl space-y-5">
+                    <!-- Studio Header -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-400 text-slate-900 flex items-center gap-1 shadow">
+                                    <span>✨</span> AI PRODUCT STUDIO
+                                </span>
+                                <span class="bg-white/10 text-white/80 font-mono text-[11px] px-2 py-0.5 rounded">
+                                    8K Master Output
+                                </span>
+                            </div>
+                            <h3 class="text-base md:text-lg font-extrabold text-white">Generate 10 Consistent Website-Ready Luxury Images</h3>
+                            <p class="text-xs text-slate-300">Preserves exact 925 sterling silver geometry, stones, setting, and proportions. Never redesigns your jewellery.</p>
+                        </div>
+                        
+                        <!-- Main Action Button -->
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" id="btn-generate-10-ai-images" onclick="triggerAiGeneration10()"
+                                class="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs md:text-sm shadow-lg hover:shadow-amber-500/25 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span class="text-base">✨</span>
+                                <span id="btn-generate-ai-text">Generate 10 AI Images</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Master Reference Image Control -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-white/5 border border-white/10 items-center">
+                        <div class="flex items-center gap-3 md:col-span-2">
+                            <div id="ai-reference-preview-box" class="w-16 h-16 rounded-xl bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center shrink-0">
+                                <img id="ai-reference-img-preview" src="" alt="Reference Image" class="w-full h-full object-cover hidden">
+                                <span id="ai-reference-empty-icon" class="text-2xl text-slate-400">💍</span>
+                            </div>
+                            <div class="space-y-0.5">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-xs font-bold text-white">Original High-Resolution Reference</h4>
+                                    <span id="ai-reference-badge" class="text-[10px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.2 rounded">Master Source</span>
+                                </div>
+                                <p class="text-[11px] text-slate-300">Upload raw image up to 50MB. Never resized or compressed before Gemini.</p>
+                                <div class="text-[10px] text-amber-300/80 font-mono" id="ai-reference-filename">Using current product primary photo</div>
+                            </div>
+                        </div>
+                        <div class="flex md:justify-end">
+                            <input type="file" id="ai-original-file-input" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleOriginalFileInputChange(event)">
+                            <button type="button" onclick="document.getElementById('ai-original-file-input').click()"
+                                class="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white flex items-center gap-1.5 transition-colors">
+                                <span>📤</span> Upload Raw Master (50MB)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Realtime Generation Progress Panel (Visible when queued/processing/completed) -->
+                    <div id="ai-progress-panel" class="hidden p-4 rounded-xl bg-black/40 border border-white/10 space-y-4">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" id="ai-progress-indicator-dot"></span>
+                                <span class="font-extrabold text-white" id="ai-progress-status-title">Generation in progress...</span>
+                            </div>
+                            <span class="font-mono font-bold text-amber-400 text-sm" id="ai-progress-pct">0%</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+                            <div id="ai-progress-bar-fill" class="bg-gradient-to-r from-amber-500 to-emerald-400 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+
+                        <!-- 10 Roles Checklist Grid -->
+                        <div id="ai-roles-checklist" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-[11px]">
+                            <!-- Populated dynamically: ✓ 01 Main E-commerce, ⟳ 02 Premium Hero, etc. -->
+                        </div>
+                    </div>
+
+                    <!-- AI Generated Images Preview Grid -->
+                    <div id="ai-generated-results-section" class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <h4 class="text-xs font-extrabold text-white uppercase tracking-wider">AI Generated Master Images (8K)</h4>
+                                <span id="ai-generated-count" class="bg-amber-400/20 text-amber-300 font-mono text-[10px] px-2 py-0.5 rounded-full border border-amber-400/30">0/10 Ready</span>
+                            </div>
+                            <span class="text-[11px] text-slate-400">Click Regenerate on any image to re-run individually</span>
+                        </div>
+
+                        <div id="ai-generated-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Populated dynamically with 10 role cards -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Dropzone Area -->
                 <div id="img-dropzone" ondragover="handleImageDropzoneOver(event)"
                     ondragleave="handleImageDropzoneLeave(event)" ondrop="handleImageDropzoneDrop(event)"
@@ -1894,6 +1991,303 @@
         </div>
     </div>
 
+    <!-- CUSTOMER ADD / EDIT MODAL -->
+    <div id="customer-modal"
+        class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden animate-fadeIn">
+        <div class="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-5 md:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-[#5E3435]/10 text-[#5E3435] flex items-center justify-center font-bold text-lg">
+                        👤
+                    </div>
+                    <div>
+                        <h2 class="text-lg md:text-xl font-extrabold text-slate-900" id="cust-modal-title">Customer Profile</h2>
+                        <p class="text-xs text-slate-500 mt-0.5" id="cust-modal-subtitle">Add or update customer information and reward balances.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeCustomerModal()"
+                    class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="customer-form" onsubmit="handleSaveCustomer(event)" class="flex-1 overflow-y-auto p-5 md:p-6 space-y-4">
+                <input type="hidden" id="cust-form-id" value="">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Customer Full Name <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" id="cust-form-name" required placeholder="e.g. Priya Sharma"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Phone Number <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="tel" id="cust-form-phone" required placeholder="e.g. 9876543210"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Email Address
+                        </label>
+                        <input type="email" id="cust-form-email" placeholder="e.g. priya@example.com"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            City
+                        </label>
+                        <input type="text" id="cust-form-city" placeholder="e.g. Kolkata"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            State
+                        </label>
+                        <input type="text" id="cust-form-state" placeholder="e.g. West Bengal"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            PIN Code
+                        </label>
+                        <input type="text" id="cust-form-pin" placeholder="e.g. 700001" maxlength="6"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Country
+                        </label>
+                        <input type="text" id="cust-form-country" value="India"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Delivery Address
+                        </label>
+                        <textarea id="cust-form-address" rows="2" placeholder="Street, Flat/House No., Landmark"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]"></textarea>
+                    </div>
+
+                    <div class="sm:col-span-2 p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+                        <span class="text-xs font-extrabold text-[#5E3435] uppercase tracking-wider block">Initial Balances (Optional)</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Wallet Balance (₹)</label>
+                                <input type="number" id="cust-form-wallet" min="0" step="1" value="0"
+                                    class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-indigo-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">WishRite Points (Pts)</label>
+                                <input type="number" id="cust-form-points" min="0" step="1" value="0"
+                                    class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-amber-600 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeCustomerModal()"
+                        class="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" id="cust-modal-submit-btn"
+                        class="px-5 py-2.5 bg-[#5E3435] hover:bg-[#482728] text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5">
+                        <span>💾</span> Save Customer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOMER DETAILS & BALANCE ADJUSTMENT MODAL -->
+    <div id="customer-detail-modal"
+        class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden animate-fadeIn">
+        <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+            <!-- Header -->
+            <div class="p-5 md:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-3.5">
+                    <div id="cust-detail-avatar" class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#5E3435] to-[#8C6D3F] text-white font-black text-xl flex items-center justify-center shadow-xs">
+                        P
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-lg md:text-xl font-extrabold text-slate-900" id="cust-detail-name">Customer Name</h2>
+                            <span id="cust-detail-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                Active Buyer
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
+                            <span id="cust-detail-phone">📞 —</span>
+                            <span>•</span>
+                            <span id="cust-detail-email">✉️ —</span>
+                            <span>•</span>
+                            <span id="cust-detail-city">📍 —</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeCustomerDetailModal()"
+                    class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Tab Buttons inside Modal -->
+            <div class="flex items-center gap-2 px-6 pt-3 border-b border-slate-100 bg-white">
+                <button type="button" onclick="setCustomerDetailSubTab('overview')" id="cust-tab-overview"
+                    class="px-4 py-2 border-b-2 border-[#5E3435] text-[#5E3435] text-xs font-bold transition">
+                    📊 Overview & Purchases
+                </button>
+                <button type="button" onclick="setCustomerDetailSubTab('adjust')" id="cust-tab-adjust"
+                    class="px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 text-xs font-semibold transition">
+                    👛 Adjust Wallet & Points
+                </button>
+            </div>
+
+            <!-- Modal Body Content -->
+            <div class="flex-1 overflow-y-auto p-5 md:p-6 space-y-6">
+                <!-- SUBTAB: OVERVIEW -->
+                <div id="cust-subtab-overview-view" class="space-y-6">
+                    <!-- Key Balances -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">TOTAL PURCHASED</span>
+                            <div class="text-xl font-black text-emerald-700 mt-1" id="cust-detail-total-purchased">₹0</div>
+                            <span class="text-[10px] text-emerald-600" id="cust-detail-order-count">0 orders recorded</span>
+                        </div>
+                        <div class="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-800">WALLET BALANCE</span>
+                            <div class="text-xl font-black text-indigo-700 mt-1" id="cust-detail-wallet">₹0</div>
+                            <span class="text-[10px] text-indigo-600">Available to spend</span>
+                        </div>
+                        <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-100">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800">WISHRITE POINTS</span>
+                            <div class="text-xl font-black text-amber-700 mt-1" id="cust-detail-points">0 Pts</div>
+                            <span class="text-[10px] text-amber-600">Loyalty balance</span>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600">LAST ACTIVITY</span>
+                            <div class="text-sm font-bold text-slate-800 mt-1" id="cust-detail-last-date">—</div>
+                            <span class="text-[10px] text-slate-500">Order timestamp</span>
+                        </div>
+                    </div>
+
+                    <!-- Customer Address Details Card -->
+                    <div class="bg-slate-50/60 p-4 rounded-2xl border border-slate-200 text-xs space-y-1">
+                        <div class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Saved Shipping Address</div>
+                        <p class="text-slate-600" id="cust-detail-full-address">No detailed address saved.</p>
+                    </div>
+
+                    <!-- Purchase History Table -->
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-xs">
+                        <div class="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                            <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Purchase History & Transactions</h3>
+                            <span class="text-xs text-slate-400" id="cust-detail-sales-count-pill">0 items</span>
+                        </div>
+                        <div class="overflow-x-auto max-h-64">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] border-b border-slate-200">
+                                        <th class="py-2.5 px-4">Date</th>
+                                        <th class="py-2.5 px-4">Product / Details</th>
+                                        <th class="py-2.5 px-4 text-center">Qty</th>
+                                        <th class="py-2.5 px-4 text-right">Amount (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cust-detail-sales-table-body" class="divide-y divide-slate-100">
+                                    <tr>
+                                        <td colspan="4" class="p-6 text-center text-slate-400">Loading purchase records...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBTAB: ADJUST BALANCES -->
+                <div id="cust-subtab-adjust-view" class="space-y-6 hidden">
+                    <form id="cust-balance-adjust-form" onsubmit="handleAdjustBalance(event)" class="space-y-5">
+                        <div class="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-indigo-950 uppercase tracking-wider">👛 Wallet Balance Adjustment</span>
+                                <span class="text-xs font-black text-indigo-700" id="cust-adjust-current-wallet">Current: ₹0</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Adjustment Type</label>
+                                    <select id="cust-wallet-adjust-type" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                        <option value="none">No Change</option>
+                                        <option value="credit">➕ Credit Amount (+₹)</option>
+                                        <option value="debit">➖ Debit Amount (-₹)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Amount (₹)</label>
+                                    <input type="number" id="cust-wallet-adjust-amount" min="0" step="1" placeholder="0"
+                                        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-amber-50/60 rounded-2xl border border-amber-100 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-amber-950 uppercase tracking-wider">🎁 WishRite Points Adjustment</span>
+                                <span class="text-xs font-black text-amber-700" id="cust-adjust-current-points">Current: 0 Pts</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Adjustment Type</label>
+                                    <select id="cust-points-adjust-type" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                        <option value="none">No Change</option>
+                                        <option value="credit">➕ Award Reward Points (+Pts)</option>
+                                        <option value="debit">➖ Deduct Reward Points (-Pts)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Points Count</label>
+                                    <input type="number" id="cust-points-adjust-amount" min="0" step="1" placeholder="0"
+                                        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Reason / Audit Note <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="text" id="cust-adjust-note" required placeholder="e.g. Festive promotion credit, refund adjustment, customer support courtesy"
+                                class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                        </div>
+
+                        <div class="flex items-center justify-end gap-3 pt-2">
+                            <button type="submit" id="cust-adjust-submit-btn"
+                                class="px-5 py-2.5 bg-[#5E3435] hover:bg-[#482728] text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5">
+                                <span>⚡</span> Confirm & Update Balances
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MAIN APP CONTAINER -->
     <div id="app-container" class="h-full w-full flex overflow-hidden">
 
@@ -1934,6 +2328,11 @@
                         class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
                         data-target="sales-dashboard">
                         <span class="text-lg">📈</span> <span class="nav-text truncate">Sales Dashboard</span>
+                    </button>
+                    <button onclick="navigate('customers')" id="nav-customers"
+                        class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                        data-target="customers">
+                        <span class="text-lg">👥</span> <span class="nav-text truncate font-semibold">Customers</span>
                     </button>
                     <button onclick="navigate('influencers')" id="nav-influencers"
                         class="nav-btn w-full flex items-center gap-3 hover:bg-slate-800 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
@@ -2978,6 +3377,219 @@
                                 <tbody id="sales-table-body" class="divide-y divide-slate-100 text-sm">
                                     <tr>
                                         <td colspan="5" class="p-8 text-center text-slate-400">Loading Database...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CUSTOMER TAB -->
+                <div id="customers" class="page space-y-6">
+                    <!-- Customer Header -->
+                    <div
+                        class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="text-xs font-extrabold uppercase tracking-[0.2em] text-[#5E3435]">CUSTOMER
+                                    RELATIONSHIP & REWARDS</span>
+                                <span class="h-1.5 w-1.5 rounded-full bg-[#5E3435]"></span>
+                                <span class="text-xs font-semibold text-slate-400">WishRite CRM & Loyalty</span>
+                            </div>
+                            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+                                Customer Directory</h1>
+                            <p class="text-slate-500 mt-1 text-xs md:text-sm">Manage customer profiles, lifetime
+                                purchases, wallet balances, and WishRite reward points.</p>
+                        </div>
+                        <div class="flex items-center gap-2.5 flex-wrap">
+                            <button onclick="fetchCustomers().then(() => renderCustomersView())"
+                                class="p-2.5 border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 transition shadow-2xs"
+                                title="Refresh Customer Data">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                    </path>
+                                </svg>
+                            </button>
+                            <button onclick="exportCustomersCSV()"
+                                class="inline-flex items-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold px-3.5 py-2.5 rounded-xl transition shadow-2xs whitespace-nowrap">
+                                <span>📥</span> Export CSV
+                            </button>
+                            <button onclick="openCustomerModal()"
+                                class="inline-flex items-center gap-1.5 bg-[#5E3435] hover:bg-[#482728] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-xs whitespace-nowrap">
+                                <span>➕</span> Add Customer
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Customer KPI Metric Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div
+                            class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition group">
+                            <div class="flex items-center justify-between text-slate-400 mb-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">TOTAL
+                                    CUSTOMERS</span>
+                                <span class="text-base group-hover:scale-110 transition-transform">👥</span>
+                            </div>
+                            <div class="text-2xl font-black text-slate-900 tracking-tight" id="cust-kpi-total">0</div>
+                            <div class="text-[11px] font-medium text-slate-500 mt-2">Registered & POS buyers</div>
+                        </div>
+
+                        <div
+                            class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-emerald-300 transition group">
+                            <div class="flex items-center justify-between text-slate-400 mb-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">TOTAL
+                                    PURCHASED</span>
+                                <span class="text-base group-hover:scale-110 transition-transform">💰</span>
+                            </div>
+                            <div class="text-2xl font-black text-emerald-700 tracking-tight truncate"
+                                id="cust-kpi-purchased">₹0</div>
+                            <div class="text-[11px] font-medium text-slate-500 mt-2">Gross cumulative sales revenue</div>
+                        </div>
+
+                        <div
+                            class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-indigo-300 transition group">
+                            <div class="flex items-center justify-between text-slate-400 mb-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">WALLET
+                                    BALANCES</span>
+                                <span class="text-base group-hover:scale-110 transition-transform">👛</span>
+                            </div>
+                            <div class="text-2xl font-black text-indigo-700 tracking-tight truncate"
+                                id="cust-kpi-wallet">₹0</div>
+                            <div class="text-[11px] font-medium text-slate-500 mt-2">Active funds in customer wallets</div>
+                        </div>
+
+                        <div
+                            class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-amber-300 transition group">
+                            <div class="flex items-center justify-between text-slate-400 mb-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700">WISHRITE
+                                    POINTS</span>
+                                <span class="text-base group-hover:scale-110 transition-transform">🎁</span>
+                            </div>
+                            <div class="text-2xl font-black text-amber-600 tracking-tight truncate"
+                                id="cust-kpi-points">0 Pts</div>
+                            <div class="text-[11px] font-medium text-slate-500 mt-2">Loyalty points awaiting redemption</div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Filters & Search -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                            <!-- Search Bar -->
+                            <div class="relative flex-1">
+                                <svg class="w-4 h-4 absolute left-3.5 top-3 text-slate-400" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                                <input type="text" id="cust-search-filter" oninput="filterCustomersTable()"
+                                    placeholder="Search customer name, phone number, email ID, city..."
+                                    class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-[#5E3435] bg-slate-50 focus:bg-white transition">
+                            </div>
+
+                            <!-- Dropdown Filters -->
+                            <div class="flex flex-wrap items-center gap-2">
+                                <!-- Spend Filter -->
+                                <select id="cust-spend-filter" onchange="filterCustomersTable()"
+                                    class="border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="all">All Spending</option>
+                                    <option value="high">High Value (&gt; ₹5,000)</option>
+                                    <option value="medium">Medium (&gt; ₹1,000)</option>
+                                    <option value="low">Low (₹1 - ₹1,000)</option>
+                                    <option value="zero">Zero Purchases (₹0)</option>
+                                </select>
+
+                                <!-- Wallet Balance Filter -->
+                                <select id="cust-wallet-filter" onchange="filterCustomersTable()"
+                                    class="border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="all">All Wallets</option>
+                                    <option value="has_balance">Has Balance (&gt; ₹0)</option>
+                                    <option value="zero_balance">Zero Balance (₹0)</option>
+                                </select>
+
+                                <!-- Wishrite Points Filter -->
+                                <select id="cust-points-filter" onchange="filterCustomersTable()"
+                                    class="border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="all">All Points</option>
+                                    <option value="has_points">Has Points (&gt; 0)</option>
+                                    <option value="zero_points">Zero Points (0)</option>
+                                </select>
+
+                                <!-- Sorting -->
+                                <select id="cust-sort-filter" onchange="filterCustomersTable()"
+                                    class="border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="purchased_desc">Purchased (High to Low)</option>
+                                    <option value="purchased_asc">Purchased (Low to High)</option>
+                                    <option value="wallet_desc">Wallet Balance (High to Low)</option>
+                                    <option value="points_desc">Points (High to Low)</option>
+                                    <option value="name_asc">Name (A-Z)</option>
+                                    <option value="recent">Most Recent</option>
+                                </select>
+
+                                <button onclick="resetCustomerFilters()"
+                                    class="text-xs text-slate-500 hover:text-slate-900 font-semibold px-2 py-2 transition"
+                                    title="Reset All Filters">
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Filter Chips -->
+                        <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide pt-1 text-xs">
+                            <span class="text-[11px] font-bold uppercase text-slate-400">Quick Filters:</span>
+                            <button type="button" onclick="setCustomerQuickFilter('all')" id="chip-cust-all"
+                                class="cust-chip px-3 py-1.5 rounded-xl font-bold bg-[#5E3435] text-white transition">
+                                All (<span id="chip-count-all">0</span>)
+                            </button>
+                            <button type="button" onclick="setCustomerQuickFilter('buyers')" id="chip-cust-buyers"
+                                class="cust-chip px-3 py-1.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                                Active Buyers (<span id="chip-count-buyers">0</span>)
+                            </button>
+                            <button type="button" onclick="setCustomerQuickFilter('wallet')" id="chip-cust-wallet"
+                                class="cust-chip px-3 py-1.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                                Wallet Holders (<span id="chip-count-wallet">0</span>)
+                            </button>
+                            <button type="button" onclick="setCustomerQuickFilter('rewards')" id="chip-cust-rewards"
+                                class="cust-chip px-3 py-1.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                                Rewards Members (<span id="chip-count-rewards">0</span>)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Customer Table Card -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                        <div
+                            class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+                            <div>
+                                <h2 class="font-bold text-slate-900 text-sm md:text-base">Customer Accounts & Loyalty</h2>
+                                <p class="text-xs text-slate-500 mt-0.5" id="cust-table-status-label">
+                                    Synchronized directory across POS sales, customer registration, and reward ledgers.
+                                </p>
+                            </div>
+                            <div class="text-xs font-semibold text-slate-500" id="cust-showing-count">
+                                Showing 0 customers
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[850px]">
+                                <thead>
+                                    <tr
+                                        class="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">
+                                        <th class="py-3.5 px-5">Customer</th>
+                                        <th class="py-3.5 px-5">Phone Number</th>
+                                        <th class="py-3.5 px-5">Mail ID</th>
+                                        <th class="py-3.5 px-5 text-right">Total Purchased</th>
+                                        <th class="py-3.5 px-5 text-center">Wallet Balance</th>
+                                        <th class="py-3.5 px-5 text-center">WishRite Points</th>
+                                        <th class="py-3.5 px-5">Location</th>
+                                        <th class="py-3.5 px-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customers-table-body" class="divide-y divide-slate-100 text-sm">
+                                    <tr>
+                                        <td colspan="8" class="p-8 text-center text-slate-400">Loading Customers...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -4940,10 +5552,20 @@
             business_type: 'Jewelry Retail and Wholesale',
             product_fields: { product_name: true, product_code: true, category: true, size: true, weight: true, description: true, purchase_price: true, selling_price: true, stock_quantity: true },
             categories: [
-                { name: 'Chain', prefix: 'CHN' }, { name: 'Ring', prefix: 'RNG' }, { name: 'Earring', prefix: 'ERN' },
-                { name: 'Pendant', prefix: 'PDT' }, { name: 'Bracelet', prefix: 'BRL' }, { name: 'Necklace', prefix: 'NKC' },
-                { name: 'Toe Rings', prefix: 'TRN' }, { name: 'Anklet', prefix: 'ANC' }, { name: 'Rakhi', prefix: 'RKH' },
-                { name: 'Nose Pin', prefix: 'NSP' }, { name: 'Bali', prefix: 'BLI' }, { name: 'Set', prefix: 'SET' }, { name: 'Other', prefix: 'MISC' }
+                { name: 'Earring', prefix: 'ERN' },
+                { name: 'Ring', prefix: 'RNG' },
+                { name: 'Pendant', prefix: 'PDT' },
+                { name: 'Chain', prefix: 'CHN' },
+                { name: 'Necklace', prefix: 'NKC' },
+                { name: 'Bracelet', prefix: 'BRL' },
+                { name: 'Bangle', prefix: 'BAN' },
+                { name: 'Anklet', prefix: 'ANC' },
+                { name: 'Toe Ring', prefix: 'TRN' },
+                { name: 'Nose Pin', prefix: 'NSP' },
+                { name: 'Jewellery Set', prefix: 'SET' },
+                { name: 'Rakhi', prefix: 'RKH' },
+                { name: 'Festive Saree', prefix: 'SAR' },
+                { name: 'Other', prefix: 'MISC' }
             ],
             workflows: { inventory: true, purchases: true, stock_adjustments: true, sales: true, invoices: true, revenue: true, influencers: true }
         };
@@ -5152,10 +5774,11 @@
                 setupUserUI();
                 navigate('dashboard');
 
-                // Fetch live inventory, sales, and festive settings on login
+                // Fetch live inventory, sales, customers, and festive settings on login
                 loadFestiveState();
                 fetchInventory();
                 fetchSales();
+                fetchCustomers();
             } catch (err) {
                 console.error("Login exception:", err);
                 return alert("Login Failed: " + (err?.message || "Could not authenticate with server."));
@@ -5172,7 +5795,7 @@
         }
 
         function applyRolePermissions(role) {
-            const buttons = ['nav-dashboard', 'nav-products', 'nav-occasion', 'nav-business-setup', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-influencers'];
+            const buttons = ['nav-dashboard', 'nav-products', 'nav-occasion', 'nav-business-setup', 'nav-stock-in', 'nav-purchase-details', 'nav-stock-out', 'nav-invoice', 'nav-employees', 'nav-sales-dash', 'nav-customers', 'nav-influencers'];
             buttons.forEach(id => {
                 if (document.getElementById(id)) document.getElementById(id).style.display = 'flex';
             });
@@ -5189,6 +5812,7 @@
                 document.getElementById('nav-invoice').style.display = 'none';
                 document.getElementById('nav-employees').style.display = 'none';
                 document.getElementById('nav-sales-dash').style.display = 'none';
+                document.getElementById('nav-customers').style.display = 'none';
             }
         }
 
@@ -5227,12 +5851,17 @@
             if (targetId === 'business-setup') renderBusinessConfiguration();
             if (targetId === 'purchase-details') renderPurchaseDetails();
             if (targetId === 'sales-dashboard') renderSalesDashboard();
+            if (targetId === 'customers') {
+                renderCustomersView();
+                fetchCustomers().then(() => renderCustomersView());
+            }
             if (supaClient) {
                 // Always reload product data when entering Stock In so its existing-product
                 // picker reflects the database, rather than only an earlier cached fetch.
                 if (targetId === 'stock-in') refreshStockInProducts();
                 else fetchInventory();
                 fetchSales();
+                fetchCustomers();
             }
         }
 
@@ -5660,7 +6289,7 @@
         }
 
         function applyWorkflowVisibility() {
-            const workflowNavigation = { inventory: ['nav-inventory', 'nav-stock-in'], purchases: ['nav-purchase-details'], stock_adjustments: ['nav-stock-out'], sales: ['nav-sales-dash'], invoices: ['nav-invoice'], influencers: ['nav-influencers'] };
+            const workflowNavigation = { inventory: ['nav-inventory', 'nav-stock-in'], purchases: ['nav-purchase-details'], stock_adjustments: ['nav-stock-out'], sales: ['nav-sales-dash', 'nav-customers'], invoices: ['nav-invoice'], influencers: ['nav-influencers'] };
             Object.entries(workflowNavigation).forEach(([workflow, navigationIds]) => {
                 navigationIds.forEach(navigationId => {
                     const element = document.getElementById(navigationId);
@@ -5881,6 +6510,566 @@
                         <td class="p-4 text-emerald-600 font-medium text-right">₹${itemRev.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                     </tr>`;
             });
+        }
+
+        // ==============================================================================
+        // WISHRITE CUSTOMER DIRECTORY & REWARDS CONTROLLER
+        // ==============================================================================
+
+        let customersData = [];
+        let customersSummary = { total_customers: 0, total_purchased: 0, total_wallet_balance: 0, total_points_balance: 0 };
+        let isCustomersLoading = false;
+        let customerFetchError = null;
+        let activeCustomerQuickFilter = 'all';
+        let currentEditingCustomerId = null;
+        let currentDetailCustomerId = null;
+
+        async function fetchCustomers() {
+            isCustomersLoading = true;
+            try {
+                const res = await window.WishRiteAPI.getCustomers();
+                if (res && res.success) {
+                    customersData = res.data || [];
+                    customersSummary = res.summary || {
+                        total_customers: customersData.length,
+                        total_purchased: customersData.reduce((acc, c) => acc + (c.total_purchased_amount || 0), 0),
+                        total_wallet_balance: customersData.reduce((acc, c) => acc + (c.wallet_balance || 0), 0),
+                        total_points_balance: customersData.reduce((acc, c) => acc + (c.points_balance || 0), 0)
+                    };
+                    customerFetchError = null;
+                } else {
+                    throw new Error(res?.error?.message || 'Failed to load customers');
+                }
+            } catch (err) {
+                console.error('[Customers API] fetchCustomers failed:', err);
+                customerFetchError = err;
+            } finally {
+                isCustomersLoading = false;
+                if (document.getElementById('customers')?.classList.contains('active')) {
+                    renderCustomersView();
+                }
+            }
+        }
+
+        function renderCustomersView() {
+            // 1. Update KPI metric cards
+            const totalEl = document.getElementById('cust-kpi-total');
+            const purchasedEl = document.getElementById('cust-kpi-purchased');
+            const walletEl = document.getElementById('cust-kpi-wallet');
+            const pointsEl = document.getElementById('cust-kpi-points');
+
+            const totalCount = customersData.length;
+            const totalPurchased = customersData.reduce((sum, c) => sum + (Number(c.total_purchased_amount) || 0), 0);
+            const totalWallet = customersData.reduce((sum, c) => sum + (Number(c.wallet_balance) || 0), 0);
+            const totalPoints = customersData.reduce((sum, c) => sum + (Number(c.points_balance) || 0), 0);
+
+            if (totalEl) totalEl.innerText = totalCount.toLocaleString('en-IN');
+            if (purchasedEl) purchasedEl.innerText = '₹' + totalPurchased.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (walletEl) walletEl.innerText = '₹' + totalWallet.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (pointsEl) pointsEl.innerText = totalPoints.toLocaleString('en-IN') + ' Pts';
+
+            // 2. Update quick filter badge counts
+            const buyersCount = customersData.filter(c => (Number(c.total_purchased_amount) || 0) > 0).length;
+            const walletCount = customersData.filter(c => (Number(c.wallet_balance) || 0) > 0).length;
+            const rewardsCount = customersData.filter(c => (Number(c.points_balance) || 0) > 0).length;
+
+            if (document.getElementById('chip-count-all')) document.getElementById('chip-count-all').innerText = totalCount;
+            if (document.getElementById('chip-count-buyers')) document.getElementById('chip-count-buyers').innerText = buyersCount;
+            if (document.getElementById('chip-count-wallet')) document.getElementById('chip-count-wallet').innerText = walletCount;
+            if (document.getElementById('chip-count-rewards')) document.getElementById('chip-count-rewards').innerText = rewardsCount;
+
+            // 3. Filter and render table
+            filterCustomersTable();
+        }
+
+        function setCustomerQuickFilter(type) {
+            activeCustomerQuickFilter = type;
+            document.querySelectorAll('.cust-chip').forEach(btn => {
+                btn.className = 'cust-chip px-3 py-1.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition';
+            });
+            const activeBtn = document.getElementById(`chip-cust-${type}`);
+            if (activeBtn) {
+                activeBtn.className = 'cust-chip px-3 py-1.5 rounded-xl font-bold bg-[#5E3435] text-white transition';
+            }
+            filterCustomersTable();
+        }
+
+        function resetCustomerFilters() {
+            if (document.getElementById('cust-search-filter')) document.getElementById('cust-search-filter').value = '';
+            if (document.getElementById('cust-spend-filter')) document.getElementById('cust-spend-filter').value = 'all';
+            if (document.getElementById('cust-wallet-filter')) document.getElementById('cust-wallet-filter').value = 'all';
+            if (document.getElementById('cust-points-filter')) document.getElementById('cust-points-filter').value = 'all';
+            if (document.getElementById('cust-sort-filter')) document.getElementById('cust-sort-filter').value = 'purchased_desc';
+            setCustomerQuickFilter('all');
+        }
+
+        function filterCustomersTable() {
+            const tbody = document.getElementById('customers-table-body');
+            if (!tbody) return;
+
+            if (isCustomersLoading && (!customersData || customersData.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">Loading Customers...</td></tr>`;
+                return;
+            }
+
+            if (customerFetchError && (!customersData || customersData.length === 0)) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500 font-medium">Unable to load customers: ${escapeHtml(customerFetchError.message || '')}</td></tr>`;
+                return;
+            }
+
+            if (!customersData || customersData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">No customers registered or recorded yet.</td></tr>`;
+                if (document.getElementById('cust-showing-count')) document.getElementById('cust-showing-count').innerText = 'Showing 0 customers';
+                return;
+            }
+
+            const query = (document.getElementById('cust-search-filter')?.value || '').toLowerCase().trim();
+            const spendFilter = document.getElementById('cust-spend-filter')?.value || 'all';
+            const walletFilter = document.getElementById('cust-wallet-filter')?.value || 'all';
+            const pointsFilter = document.getElementById('cust-points-filter')?.value || 'all';
+            const sortFilter = document.getElementById('cust-sort-filter')?.value || 'purchased_desc';
+
+            let filtered = [...customersData];
+
+            // Text search
+            if (query) {
+                filtered = filtered.filter(c => {
+                    const name = (c.customer_name || '').toLowerCase();
+                    const phone = (c.customer_phone || '').toLowerCase();
+                    const email = (c.customer_email || '').toLowerCase();
+                    const city = (c.customer_city || '').toLowerCase();
+                    return name.includes(query) || phone.includes(query) || email.includes(query) || city.includes(query);
+                });
+            }
+
+            // Quick Filter Chips
+            if (activeCustomerQuickFilter === 'buyers') {
+                filtered = filtered.filter(c => (Number(c.total_purchased_amount) || 0) > 0);
+            } else if (activeCustomerQuickFilter === 'wallet') {
+                filtered = filtered.filter(c => (Number(c.wallet_balance) || 0) > 0);
+            } else if (activeCustomerQuickFilter === 'rewards') {
+                filtered = filtered.filter(c => (Number(c.points_balance) || 0) > 0);
+            }
+
+            // Spend filter
+            if (spendFilter === 'high') {
+                filtered = filtered.filter(c => (Number(c.total_purchased_amount) || 0) >= 5000);
+            } else if (spendFilter === 'medium') {
+                filtered = filtered.filter(c => (Number(c.total_purchased_amount) || 0) >= 1000 && (Number(c.total_purchased_amount) || 0) < 5000);
+            } else if (spendFilter === 'low') {
+                filtered = filtered.filter(c => (Number(c.total_purchased_amount) || 0) > 0 && (Number(c.total_purchased_amount) || 0) < 1000);
+            } else if (spendFilter === 'zero') {
+                filtered = filtered.filter(c => (Number(c.total_purchased_amount) || 0) === 0);
+            }
+
+            // Wallet filter
+            if (walletFilter === 'has_balance') {
+                filtered = filtered.filter(c => (Number(c.wallet_balance) || 0) > 0);
+            } else if (walletFilter === 'zero_balance') {
+                filtered = filtered.filter(c => (Number(c.wallet_balance) || 0) === 0);
+            }
+
+            // Points filter
+            if (pointsFilter === 'has_points') {
+                filtered = filtered.filter(c => (Number(c.points_balance) || 0) > 0);
+            } else if (pointsFilter === 'zero_points') {
+                filtered = filtered.filter(c => (Number(c.points_balance) || 0) === 0);
+            }
+
+            // Sorting
+            if (sortFilter === 'purchased_desc') {
+                filtered.sort((a, b) => (Number(b.total_purchased_amount) || 0) - (Number(a.total_purchased_amount) || 0));
+            } else if (sortFilter === 'purchased_asc') {
+                filtered.sort((a, b) => (Number(a.total_purchased_amount) || 0) - (Number(b.total_purchased_amount) || 0));
+            } else if (sortFilter === 'wallet_desc') {
+                filtered.sort((a, b) => (Number(b.wallet_balance) || 0) - (Number(a.wallet_balance) || 0));
+            } else if (sortFilter === 'points_desc') {
+                filtered.sort((a, b) => (Number(b.points_balance) || 0) - (Number(a.points_balance) || 0));
+            } else if (sortFilter === 'name_asc') {
+                filtered.sort((a, b) => (a.customer_name || '').localeCompare(b.customer_name || ''));
+            } else if (sortFilter === 'recent') {
+                filtered.sort((a, b) => new Date(b.last_purchase_date || b.created_at || 0) - new Date(a.last_purchase_date || a.created_at || 0));
+            }
+
+            if (document.getElementById('cust-showing-count')) {
+                document.getElementById('cust-showing-count').innerText = `Showing ${filtered.length} of ${customersData.length} customers`;
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">No customers match the active filters.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            filtered.forEach(cust => {
+                const name = cust.customer_name || 'Valued Customer';
+                const initial = name.trim().charAt(0).toUpperCase() || 'C';
+                const phone = cust.customer_phone || '';
+                const email = cust.customer_email || '';
+                const purchased = Number(cust.total_purchased_amount || 0);
+                const wallet = Number(cust.wallet_balance || 0);
+                const points = Number(cust.points_balance || 0);
+                const ordersCount = cust.total_orders_count || 0;
+                const location = [cust.customer_city, cust.customer_state].filter(Boolean).join(', ') || '—';
+                const sourceBadge = cust.source === 'registered' 
+                    ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Registered</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200">POS Buyer</span>`;
+
+                const walletBadge = wallet > 0
+                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">👛 ₹${wallet.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`
+                    : `<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold text-slate-400 bg-slate-100">₹0.00</span>`;
+
+                const pointsBadge = points > 0
+                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">🎁 ${points.toLocaleString('en-IN')} Pts</span>`
+                    : `<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold text-slate-400 bg-slate-100">0 Pts</span>`;
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                        <td class="py-4 px-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#5E3435]/90 to-[#8C6D3F] text-white font-extrabold flex items-center justify-center text-sm shadow-2xs flex-shrink-0">
+                                    ${escapeHtml(initial)}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-slate-900 text-sm truncate flex items-center gap-1.5">
+                                        ${escapeHtml(name)}
+                                        ${sourceBadge}
+                                    </div>
+                                    <div class="text-[11px] text-slate-400">ID: ${escapeHtml(String(cust.id || '').substring(0, 10))}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-5">
+                            ${phone ? `
+                            <div class="flex items-center gap-1.5 font-medium text-slate-800 text-xs">
+                                <span>📞</span>
+                                <span>${escapeHtml(phone)}</span>
+                                <button type="button" onclick="copyCustomerContact('${escapeHtml(phone)}', 'Phone')" class="text-slate-400 hover:text-slate-700 p-0.5 transition" title="Copy Phone">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                </button>
+                            </div>` : `<span class="text-xs text-slate-400">—</span>`}
+                        </td>
+                        <td class="py-4 px-5">
+                            ${email ? `
+                            <div class="flex items-center gap-1.5 text-slate-700 text-xs truncate max-w-[180px]">
+                                <span>✉️</span>
+                                <a href="mailto:${escapeHtml(email)}" class="hover:text-[#5E3435] hover:underline truncate" title="${escapeHtml(email)}">${escapeHtml(email)}</a>
+                            </div>` : `<span class="text-xs text-slate-400">—</span>`}
+                        </td>
+                        <td class="py-4 px-5 text-right">
+                            <div class="font-black text-emerald-700 text-sm">
+                                ₹${purchased.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-medium">
+                                ${ordersCount} ${ordersCount === 1 ? 'purchase' : 'purchases'}
+                            </div>
+                        </td>
+                        <td class="py-4 px-5 text-center">
+                            ${walletBadge}
+                        </td>
+                        <td class="py-4 px-5 text-center">
+                            ${pointsBadge}
+                        </td>
+                        <td class="py-4 px-5 text-xs text-slate-600">
+                            ${escapeHtml(location)}
+                        </td>
+                        <td class="py-4 px-5 text-right whitespace-nowrap">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button onclick="openCustomerDetailModal('${escapeHtml(cust.id)}')"
+                                    class="p-2 border border-slate-200 hover:border-[#5E3435] hover:bg-[#5E3435]/5 text-slate-700 hover:text-[#5E3435] rounded-xl text-xs font-bold transition shadow-2xs flex items-center gap-1"
+                                    title="View Summary & Adjust Balances">
+                                    <span>🔍</span> <span class="hidden sm:inline">Details & Balances</span>
+                                </button>
+                                <button onclick="openCustomerModal('${escapeHtml(cust.id)}')"
+                                    class="p-2 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs transition"
+                                    title="Edit Profile">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function copyCustomerContact(text, label) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`${label} copied to clipboard: ${text}`);
+            }).catch(() => {
+                alert(text);
+            });
+        }
+
+        function openCustomerModal(customerId = null) {
+            currentEditingCustomerId = customerId;
+            const form = document.getElementById('customer-form');
+            if (form) form.reset();
+
+            const titleEl = document.getElementById('cust-modal-title');
+            const submitBtn = document.getElementById('cust-modal-submit-btn');
+
+            if (customerId) {
+                if (titleEl) titleEl.innerText = 'Edit Customer Profile';
+                if (submitBtn) submitBtn.innerHTML = '<span>💾</span> Update Customer';
+
+                const customer = customersData.find(c => String(c.id) === String(customerId));
+                if (customer) {
+                    if (document.getElementById('cust-form-id')) document.getElementById('cust-form-id').value = customer.id;
+                    if (document.getElementById('cust-form-name')) document.getElementById('cust-form-name').value = customer.customer_name || '';
+                    if (document.getElementById('cust-form-phone')) document.getElementById('cust-form-phone').value = customer.customer_phone || '';
+                    if (document.getElementById('cust-form-email')) document.getElementById('cust-form-email').value = customer.customer_email || '';
+                    if (document.getElementById('cust-form-city')) document.getElementById('cust-form-city').value = customer.customer_city || '';
+                    if (document.getElementById('cust-form-state')) document.getElementById('cust-form-state').value = customer.customer_state || '';
+                    if (document.getElementById('cust-form-pin')) document.getElementById('cust-form-pin').value = customer.customer_pin || '';
+                    if (document.getElementById('cust-form-country')) document.getElementById('cust-form-country').value = customer.customer_country || 'India';
+                    if (document.getElementById('cust-form-address')) document.getElementById('cust-form-address').value = customer.customer_address || '';
+                    if (document.getElementById('cust-form-wallet')) document.getElementById('cust-form-wallet').value = customer.wallet_balance || 0;
+                    if (document.getElementById('cust-form-points')) document.getElementById('cust-form-points').value = customer.points_balance || 0;
+                }
+            } else {
+                if (titleEl) titleEl.innerText = 'Add New Customer';
+                if (submitBtn) submitBtn.innerHTML = '<span>➕</span> Create Customer';
+                if (document.getElementById('cust-form-id')) document.getElementById('cust-form-id').value = '';
+                if (document.getElementById('cust-form-country')) document.getElementById('cust-form-country').value = 'India';
+                if (document.getElementById('cust-form-wallet')) document.getElementById('cust-form-wallet').value = 0;
+                if (document.getElementById('cust-form-points')) document.getElementById('cust-form-points').value = 0;
+            }
+
+            const modal = document.getElementById('customer-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeCustomerModal() {
+            const modal = document.getElementById('customer-modal');
+            if (modal) modal.classList.add('hidden');
+            currentEditingCustomerId = null;
+        }
+
+        async function handleSaveCustomer(event) {
+            event.preventDefault();
+            const id = document.getElementById('cust-form-id')?.value;
+            const payload = {
+                customer_name: document.getElementById('cust-form-name')?.value?.trim(),
+                customer_phone: document.getElementById('cust-form-phone')?.value?.trim(),
+                customer_email: document.getElementById('cust-form-email')?.value?.trim() || null,
+                customer_city: document.getElementById('cust-form-city')?.value?.trim() || null,
+                customer_state: document.getElementById('cust-form-state')?.value?.trim() || null,
+                customer_pin: document.getElementById('cust-form-pin')?.value?.trim() || null,
+                customer_country: document.getElementById('cust-form-country')?.value?.trim() || 'India',
+                customer_address: document.getElementById('cust-form-address')?.value?.trim() || null,
+                wallet_balance: parseFloat(document.getElementById('cust-form-wallet')?.value) || 0,
+                points_balance: parseFloat(document.getElementById('cust-form-points')?.value) || 0
+            };
+
+            try {
+                let res;
+                if (id) {
+                    res = await window.WishRiteAPI.updateCustomer(id, payload);
+                } else {
+                    res = await window.WishRiteAPI.createCustomer(payload);
+                }
+
+                if (res && res.success) {
+                    alert(id ? 'Customer updated successfully!' : 'Customer added successfully!');
+                    closeCustomerModal();
+                    await fetchCustomers();
+                } else {
+                    throw new Error(res?.error?.message || 'Could not save customer');
+                }
+            } catch (err) {
+                alert('Save failed: ' + err.message);
+            }
+        }
+
+        async function openCustomerDetailModal(customerId) {
+            currentDetailCustomerId = customerId;
+            const modal = document.getElementById('customer-detail-modal');
+            if (!modal) return;
+
+            setCustomerDetailSubTab('overview');
+            modal.classList.remove('hidden');
+
+            const customer = customersData.find(c => String(c.id) === String(customerId)) || {};
+
+            // Populate header and quick cards
+            const name = customer.customer_name || 'Customer';
+            const initial = name.trim().charAt(0).toUpperCase() || 'C';
+            if (document.getElementById('cust-detail-avatar')) document.getElementById('cust-detail-avatar').innerText = initial;
+            if (document.getElementById('cust-detail-name')) document.getElementById('cust-detail-name').innerText = name;
+            if (document.getElementById('cust-detail-phone')) document.getElementById('cust-detail-phone').innerText = customer.customer_phone ? `📞 ${customer.customer_phone}` : '📞 Not provided';
+            if (document.getElementById('cust-detail-email')) document.getElementById('cust-detail-email').innerText = customer.customer_email ? `✉️ ${customer.customer_email}` : '✉️ Not provided';
+            if (document.getElementById('cust-detail-city')) document.getElementById('cust-detail-city').innerText = customer.customer_city ? `📍 ${customer.customer_city}` : '📍 India';
+
+            const purchased = Number(customer.total_purchased_amount || 0);
+            const wallet = Number(customer.wallet_balance || 0);
+            const points = Number(customer.points_balance || 0);
+            const count = customer.total_orders_count || 0;
+
+            if (document.getElementById('cust-detail-total-purchased')) document.getElementById('cust-detail-total-purchased').innerText = '₹' + purchased.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            if (document.getElementById('cust-detail-order-count')) document.getElementById('cust-detail-order-count').innerText = `${count} ${count === 1 ? 'order' : 'orders'} recorded`;
+            if (document.getElementById('cust-detail-wallet')) document.getElementById('cust-detail-wallet').innerText = '₹' + wallet.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            if (document.getElementById('cust-detail-points')) document.getElementById('cust-detail-points').innerText = `${points.toLocaleString('en-IN')} Pts`;
+            if (document.getElementById('cust-detail-last-date')) {
+                document.getElementById('cust-detail-last-date').innerText = customer.last_purchase_date
+                    ? new Date(customer.last_purchase_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : 'No purchases';
+            }
+
+            const addrParts = [customer.customer_address, customer.customer_city, customer.customer_state, customer.customer_pin, customer.customer_country].filter(Boolean);
+            if (document.getElementById('cust-detail-full-address')) {
+                document.getElementById('cust-detail-full-address').innerText = addrParts.length > 0 ? addrParts.join(', ') : 'No delivery address on record.';
+            }
+
+            // Populate balance adjustment current indicators
+            if (document.getElementById('cust-adjust-current-wallet')) document.getElementById('cust-adjust-current-wallet').innerText = `Current: ₹${wallet.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            if (document.getElementById('cust-adjust-current-points')) document.getElementById('cust-adjust-current-points').innerText = `Current: ${points.toLocaleString('en-IN')} Pts`;
+
+            // Reset balance adjust form fields
+            if (document.getElementById('cust-wallet-adjust-type')) document.getElementById('cust-wallet-adjust-type').value = 'none';
+            if (document.getElementById('cust-wallet-adjust-amount')) document.getElementById('cust-wallet-adjust-amount').value = '';
+            if (document.getElementById('cust-points-adjust-type')) document.getElementById('cust-points-adjust-type').value = 'none';
+            if (document.getElementById('cust-points-adjust-amount')) document.getElementById('cust-points-adjust-amount').value = '';
+            if (document.getElementById('cust-adjust-note')) document.getElementById('cust-adjust-note').value = '';
+
+            // Fetch single customer detail to get full sales history
+            try {
+                const full = await window.WishRiteAPI.getCustomer(customerId);
+                const salesList = full?.data?.sales_history || customer.recent_orders || [];
+                renderCustomerSalesHistory(salesList);
+            } catch (err) {
+                renderCustomerSalesHistory(customer.recent_orders || []);
+            }
+        }
+
+        function renderCustomerSalesHistory(sales) {
+            const tbody = document.getElementById('cust-detail-sales-table-body');
+            const pill = document.getElementById('cust-detail-sales-count-pill');
+            if (pill) pill.innerText = `${(sales || []).length} items`;
+            if (!tbody) return;
+
+            if (!sales || sales.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">No purchases or transactions recorded yet for this customer.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            sales.forEach(sale => {
+                const itemRev = sale.amount !== undefined ? sale.amount : (((Number(sale.quantity) || 1) * (Number(sale.selling_price) || 0)) - (Number(sale.discount) || 0));
+                const dateStr = new Date(sale.sale_date || sale.date || sale.created_at || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                const prodName = sale.product_name || 'Jewellery Item';
+                const prodCode = sale.product_code || '—';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-2.5 px-4 text-slate-500">${dateStr}</td>
+                        <td class="py-2.5 px-4 font-semibold text-slate-800">
+                            ${escapeHtml(prodName)}
+                            <span class="text-[10px] text-slate-400 block">${escapeHtml(prodCode)}</span>
+                        </td>
+                        <td class="py-2.5 px-4 text-center font-bold text-slate-700">${sale.quantity || 1}</td>
+                        <td class="py-2.5 px-4 text-right font-black text-emerald-700">₹${Number(itemRev).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    </tr>`;
+            });
+        }
+
+        function setCustomerDetailSubTab(subTab) {
+            const overviewBtn = document.getElementById('cust-tab-overview');
+            const adjustBtn = document.getElementById('cust-tab-adjust');
+            const overviewView = document.getElementById('cust-subtab-overview-view');
+            const adjustView = document.getElementById('cust-subtab-adjust-view');
+
+            if (subTab === 'adjust') {
+                if (adjustBtn) adjustBtn.className = 'px-4 py-2 border-b-2 border-[#5E3435] text-[#5E3435] text-xs font-bold transition';
+                if (overviewBtn) overviewBtn.className = 'px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 text-xs font-semibold transition';
+                if (overviewView) overviewView.classList.add('hidden');
+                if (adjustView) adjustView.classList.remove('hidden');
+            } else {
+                if (overviewBtn) overviewBtn.className = 'px-4 py-2 border-b-2 border-[#5E3435] text-[#5E3435] text-xs font-bold transition';
+                if (adjustBtn) adjustBtn.className = 'px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 text-xs font-semibold transition';
+                if (adjustView) adjustView.classList.add('hidden');
+                if (overviewView) overviewView.classList.remove('hidden');
+            }
+        }
+
+        function closeCustomerDetailModal() {
+            const modal = document.getElementById('customer-detail-modal');
+            if (modal) modal.classList.add('hidden');
+            currentDetailCustomerId = null;
+        }
+
+        async function handleAdjustBalance(event) {
+            event.preventDefault();
+            if (!currentDetailCustomerId) return alert('No customer selected');
+
+            const walletType = document.getElementById('cust-wallet-adjust-type')?.value;
+            const walletRaw = parseFloat(document.getElementById('cust-wallet-adjust-amount')?.value) || 0;
+            const pointsType = document.getElementById('cust-points-adjust-type')?.value;
+            const pointsRaw = parseFloat(document.getElementById('cust-points-adjust-amount')?.value) || 0;
+            const note = document.getElementById('cust-adjust-note')?.value?.trim();
+
+            if (walletType === 'none' && pointsType === 'none') {
+                return alert('Please select a wallet or points adjustment type.');
+            }
+
+            let walletDelta = 0;
+            if (walletType === 'credit') walletDelta = walletRaw;
+            else if (walletType === 'debit') walletDelta = -walletRaw;
+
+            let pointsDelta = 0;
+            if (pointsType === 'credit') pointsDelta = pointsRaw;
+            else if (pointsType === 'debit') pointsDelta = -pointsRaw;
+
+            const adminUser = currentUser?.first_name ? `${currentUser.first_name} (${currentUser.role || 'Admin'})` : 'Admin';
+
+            try {
+                const res = await window.WishRiteAPI.adjustCustomerBalance(currentDetailCustomerId, {
+                    wallet_delta: walletDelta,
+                    points_delta: pointsDelta,
+                    note: note,
+                    admin_user: adminUser
+                });
+
+                if (res && res.success) {
+                    alert('Balances updated successfully!');
+                    await fetchCustomers();
+                    openCustomerDetailModal(currentDetailCustomerId);
+                } else {
+                    throw new Error(res?.error?.message || 'Failed to adjust balance');
+                }
+            } catch (err) {
+                alert('Adjustment failed: ' + err.message);
+            }
+        }
+
+        function exportCustomersCSV() {
+            if (!customersData || customersData.length === 0) {
+                return alert('No customer records to export.');
+            }
+
+            const headers = ['Customer Name', 'Phone Number', 'Email ID', 'Total Purchased (INR)', 'Orders Count', 'Wallet Balance (INR)', 'WishRite Points', 'City', 'State', 'PIN Code', 'Created At'];
+            const rows = customersData.map(c => [
+                `"${(c.customer_name || '').replace(/"/g, '""')}"`,
+                `"${(c.customer_phone || '').replace(/"/g, '""')}"`,
+                `"${(c.customer_email || '').replace(/"/g, '""')}"`,
+                (Number(c.total_purchased_amount) || 0).toFixed(2),
+                c.total_orders_count || 0,
+                (Number(c.wallet_balance) || 0).toFixed(2),
+                (Number(c.points_balance) || 0).toFixed(0),
+                `"${(c.customer_city || '').replace(/"/g, '""')}"`,
+                `"${(c.customer_state || '').replace(/"/g, '""')}"`,
+                `"${(c.customer_pin || '').replace(/"/g, '""')}"`,
+                `"${c.created_at || ''}"`
+            ]);
+
+            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `wishrite_customers_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function renderFullInventory() {
@@ -8985,11 +10174,19 @@
             return generateProductVectorPlaceholder(product.product_name, product.product_code, product.category);
         }
 
-        // Determine effective product status
+        // Determine canonical publication status (Draft, Active, Archived)
         function getProductStatus(product) {
-            if (product.status) return product.status;
-            if (product.stock_quantity <= 0) return 'Out of Stock';
+            if (product.status && product.status !== 'Out of Stock') return product.status;
             return 'Active';
+        }
+
+        // Determine stock availability (In Stock, Low Stock, Out of Stock)
+        function getProductAvailability(product) {
+            const stock = Number(product.stock_quantity) || 0;
+            const threshold = product.low_stock_threshold !== undefined ? Number(product.low_stock_threshold) : 3;
+            if (stock <= 0) return 'Out of Stock';
+            if (stock <= threshold) return 'Low Stock';
+            return 'In Stock';
         }
 
         // Update counts on sub-tabs and KPI counters
@@ -9005,12 +10202,15 @@
                 const threshold = p.low_stock_threshold !== undefined ? Number(p.low_stock_threshold) : 3;
                 const stock = Number(p.stock_quantity) || 0;
 
-                if (status === 'Archived') archived++;
-                else if (status === 'Draft') draft++;
-                else if (status === 'Out of Stock' || stock === 0) outofstock++;
-                else {
+                if (status === 'Archived') {
+                    archived++;
+                } else if (status === 'Draft') {
+                    draft++;
+                } else {
+                    // status is Active
                     active++;
-                    if (stock > 0 && stock <= threshold) lowstock++;
+                    if (stock === 0) outofstock++;
+                    else if (stock <= threshold) lowstock++;
                 }
 
                 if (!p.audience || p.audience === 'Unassigned') {
@@ -9150,9 +10350,9 @@
                 const threshold = item.low_stock_threshold !== undefined ? Number(item.low_stock_threshold) : 3;
 
                 // Sub-tab filter
-                if (currentProductSubTab === 'active' && (status !== 'Active' || stock <= 0)) return false;
-                if (currentProductSubTab === 'lowstock' && (status === 'Archived' || status === 'Draft' || stock <= 0 || stock > threshold)) return false;
-                if (currentProductSubTab === 'outofstock' && (status !== 'Out of Stock' && stock > 0)) return false;
+                if (currentProductSubTab === 'active' && status !== 'Active') return false;
+                if (currentProductSubTab === 'lowstock' && (status !== 'Active' || stock <= 0 || stock > threshold)) return false;
+                if (currentProductSubTab === 'outofstock' && (status !== 'Active' || stock > 0)) return false;
                 if (currentProductSubTab === 'draft' && status !== 'Draft') return false;
                 if (currentProductSubTab === 'archived' && status !== 'Archived') return false;
 
@@ -9859,6 +11059,11 @@
                 document.getElementById('pf-code-feedback').innerText = 'Must be unique across all products.';
                 document.getElementById('pf-code-feedback').className = 'text-[11px] text-slate-400 mt-1';
                 document.getElementById('pform-btn-images').classList.add('hidden');
+                document.getElementById('pf-selling-price').value = '';
+                document.getElementById('pf-purchase-price').value = '';
+                document.getElementById('pf-cost-price').value = '';
+                document.getElementById('pf-compare-price').value = '';
+                document.getElementById('pf-finish').value = '';
                 document.getElementById('pf-stock').value = '1';
                 document.getElementById('pf-threshold').value = '3';
                 document.getElementById('pf-material').value = '925 Sterling Silver';
@@ -9918,11 +11123,13 @@
                 document.getElementById('pf-short-desc').value = product.short_description || '';
                 document.getElementById('pf-desc').value = product.product_description || '';
                 document.getElementById('pf-selling-price').value = product.selling_price || 0;
-                document.getElementById('pf-cost-price').value = product.cost_price || product.purchase_price || 0;
+                document.getElementById('pf-purchase-price').value = product.purchase_price !== undefined ? product.purchase_price : '';
+                document.getElementById('pf-cost-price').value = product.cost_price !== undefined ? product.cost_price : (product.purchase_price || 0);
                 document.getElementById('pf-compare-price').value = product.compare_at_price || 0;
-                document.getElementById('pf-gst').value = product.gst !== undefined ? product.gst : 3;
+                document.getElementById('pf-gst').value = product.gst_rate !== undefined ? product.gst_rate : (product.gst !== undefined ? product.gst : 3);
                 document.getElementById('pf-material').value = product.material || '925 Sterling Silver';
                 document.getElementById('pf-purity').value = product.purity || '92.5%';
+                document.getElementById('pf-finish').value = product.finish || '';
                 document.getElementById('pf-weight').value = product.weight || '';
                 document.getElementById('pf-size').value = product.size || '';
                 document.getElementById('pf-stock').value = product.stock_quantity !== undefined ? product.stock_quantity : 0;
@@ -10144,7 +11351,9 @@
 
         function calculateMarginPreview() {
             const sell = parseFloat(document.getElementById('pf-selling-price')?.value) || 0;
-            const cost = parseFloat(document.getElementById('pf-cost-price')?.value) || 0;
+            const costInput = document.getElementById('pf-cost-price')?.value;
+            const purchInput = document.getElementById('pf-purchase-price')?.value;
+            const cost = costInput !== '' && !isNaN(parseFloat(costInput)) ? parseFloat(costInput) : (parseFloat(purchInput) || 0);
             const mrp = parseFloat(document.getElementById('pf-compare-price')?.value) || 0;
 
             const marginAmt = sell - cost;
@@ -10199,14 +11408,18 @@
             if (text) text.innerText = 'Saving to Supabase...';
 
             const weightVal = parseFloat(document.getElementById('pf-weight').value);
-            const stockVal = parseInt(document.getElementById('pf-stock').value);
-            const costVal = parseFloat(document.getElementById('pf-cost-price').value);
+            const stockVal = parseInt(document.getElementById('pf-stock').value, 10);
+            const purchInput = document.getElementById('pf-purchase-price')?.value;
+            const costInput = document.getElementById('pf-cost-price')?.value;
+            const purchaseVal = purchInput !== undefined && purchInput !== '' ? parseFloat(purchInput) : 0;
+            const costVal = costInput !== undefined && costInput !== '' ? parseFloat(costInput) : purchaseVal;
             const compareVal = parseFloat(document.getElementById('pf-compare-price').value);
             const gstVal = parseFloat(document.getElementById('pf-gst').value);
-            const thresholdVal = parseInt(document.getElementById('pf-threshold').value);
+            const thresholdVal = parseInt(document.getElementById('pf-threshold').value, 10);
+            const finishVal = document.getElementById('pf-finish')?.value.trim() || null;
 
             const statusRadio = document.querySelector('input[name="pf-status-radio"]:checked');
-            const statusVal = statusRadio ? statusRadio.value : (stockVal > 0 ? 'Active' : 'Out of Stock');
+            const statusVal = statusRadio ? statusRadio.value : 'Active';
 
             const occasionSlug = document.getElementById('pf-occasion-slug')?.value || null;
             const occasionCat = document.getElementById('pf-occasion-cat')?.value || null;
@@ -10271,7 +11484,7 @@
                 product_description: document.getElementById('pf-desc').value.trim() || null,
                 short_description: document.getElementById('pf-short-desc').value.trim() || null,
                 selling_price: sellingPrice,
-                purchase_price: isNaN(costVal) ? 0 : costVal,
+                purchase_price: isNaN(purchaseVal) ? 0 : purchaseVal,
                 cost_price: isNaN(costVal) ? 0 : costVal,
                 compare_at_price: isNaN(compareVal) ? 0 : compareVal,
                 stock_quantity: isNaN(stockVal) ? 0 : stockVal,
@@ -10279,7 +11492,9 @@
                 size: document.getElementById('pf-size').value.trim() || null,
                 material: document.getElementById('pf-material').value.trim() || '925 Sterling Silver',
                 purity: document.getElementById('pf-purity').value.trim() || '92.5%',
+                finish: finishVal,
                 gst: isNaN(gstVal) ? 3 : gstVal,
+                gst_rate: isNaN(gstVal) ? 3 : gstVal,
                 low_stock_threshold: isNaN(thresholdVal) ? 3 : thresholdVal,
                 status: statusVal,
                 seo_title: document.getElementById('pf-seo-title').value.trim() || null,
@@ -11116,6 +12331,399 @@
         }
 
         // ==============================================================================
+        // AI PRODUCT IMAGE STUDIO CONTROLLER (GEMINI 8K MASTER WORKFLOW)
+        // ==============================================================================
+
+        let aiPollingTimer = null;
+        let activeAiJob = null;
+
+        const AI_STUDIO_ROLES = [
+            { role: '01_main_ecommerce', name: 'Main E-Commerce', sort_order: 1 },
+            { role: '02_premium_hero', name: 'Premium Hero', sort_order: 2 },
+            { role: '03_angle_45', name: '45° View', sort_order: 3 },
+            { role: '04_detail_closeup', name: 'Detail Close-Up', sort_order: 4 },
+            { role: '05_luxury_lifestyle', name: 'Luxury Lifestyle', sort_order: 5 },
+            { role: '06_model_wearing', name: 'Model Wearing', sort_order: 6 },
+            { role: '07_gift_presentation', name: 'Gift Presentation', sort_order: 7 },
+            { role: '08_extreme_macro', name: 'Extreme Macro', sort_order: 8 },
+            { role: '09_reverse_view', name: 'Reverse View', sort_order: 9 },
+            { role: '10_size_reference', name: 'Size Reference', sort_order: 10 }
+        ];
+
+        async function loadAiStudioForActiveProduct() {
+            if (!activeProductForImages) return;
+            const p = activeProductForImages;
+
+            const previewImg = document.getElementById('ai-reference-img-preview');
+            const emptyIcon = document.getElementById('ai-reference-empty-icon');
+            const filenameEl = document.getElementById('ai-reference-filename');
+            const generateBtn = document.getElementById('btn-generate-10-ai-images');
+            const btnText = document.getElementById('btn-generate-ai-text');
+
+            const refUrl = p.original_source_image_url || p.image_url;
+            if (refUrl && previewImg) {
+                previewImg.src = refUrl;
+                previewImg.classList.remove('hidden');
+                if (emptyIcon) emptyIcon.classList.add('hidden');
+                if (filenameEl) {
+                    filenameEl.innerText = p.original_source_image_url 
+                        ? '✓ Master uncompressed source ready (up to 50MB)' 
+                        : 'Using current product primary photo';
+                }
+            } else {
+                if (previewImg) previewImg.classList.add('hidden');
+                if (emptyIcon) emptyIcon.classList.remove('hidden');
+                if (filenameEl) filenameEl.innerText = 'No image uploaded yet. Please upload a raw reference photo.';
+            }
+
+            // Fetch current AI job / image status from server
+            try {
+                const statusRes = await window.WishRiteAPI.getAiImagesStatus(p.product_code);
+                if (statusRes && statusRes.has_job && statusRes.job) {
+                    activeAiJob = statusRes.job;
+                    renderAiStudioJob(statusRes.job);
+
+                    if (statusRes.job.status === 'queued' || statusRes.job.status === 'processing') {
+                        startAiStudioPolling();
+                    }
+                } else {
+                    activeAiJob = null;
+                    document.getElementById('ai-progress-panel')?.classList.add('hidden');
+                    const cardsGrid = document.getElementById('ai-generated-cards-grid');
+                    if (cardsGrid) {
+                        cardsGrid.innerHTML = `
+                            <div class="col-span-full p-6 text-center text-slate-400 border border-dashed border-white/10 rounded-xl bg-black/20">
+                                <p class="text-xs font-medium">No AI images generated yet for this piece.</p>
+                                <p class="text-[11px] text-slate-500 mt-1">Click "Generate 10 AI Images" above to create 8K website-ready luxury visuals.</p>
+                            </div>
+                        `;
+                    }
+                    const countEl = document.getElementById('ai-generated-count');
+                    if (countEl) countEl.innerText = '0/10 Ready';
+                }
+            } catch (err) {
+                console.warn('[AI Studio] Status check skipped:', err.message);
+            }
+        }
+
+        function renderAiStudioJob(job) {
+            const progressPanel = document.getElementById('ai-progress-panel');
+            const statusTitle = document.getElementById('ai-progress-status-title');
+            const pctEl = document.getElementById('ai-progress-pct');
+            const barFill = document.getElementById('ai-progress-bar-fill');
+            const generateBtn = document.getElementById('btn-generate-10-ai-images');
+            const btnText = document.getElementById('btn-generate-ai-text');
+            const countBadge = document.getElementById('ai-generated-count');
+
+            if (!job) return;
+
+            const isRunning = job.status === 'queued' || job.status === 'processing';
+            const pct = job.total_images > 0 ? Math.round((job.completed_images / job.total_images) * 100) : 0;
+
+            if (progressPanel) {
+                progressPanel.classList.remove('hidden');
+            }
+
+            if (statusTitle) {
+                if (isRunning) {
+                    statusTitle.innerText = `Generating 10 AI Images (${job.completed_images}/${job.total_images} complete)...`;
+                } else if (job.status === 'completed') {
+                    statusTitle.innerText = `✓ All 10 Luxury AI Images Generated (8K Master)`;
+                } else if (job.status === 'partial') {
+                    statusTitle.innerText = `⚠️ Partial Generation (${job.completed_images} succeeded, ${job.failed_images} failed)`;
+                } else {
+                    statusTitle.innerText = `Generation Stopped: ${job.error_message || 'Errors encountered'}`;
+                }
+            }
+
+            if (pctEl) pctEl.innerText = `${pct}%`;
+            if (barFill) barFill.style.width = `${pct}%`;
+
+            if (countBadge) {
+                countBadge.innerText = `${job.completed_images}/${job.total_images} Ready`;
+            }
+
+            if (generateBtn && btnText) {
+                if (isRunning) {
+                    generateBtn.disabled = true;
+                    btnText.innerText = `Generating (${pct}%)...`;
+                } else {
+                    generateBtn.disabled = false;
+                    btnText.innerText = job.completed_images > 0 ? '✨ Regenerate All 10 Images' : '✨ Generate 10 AI Images';
+                }
+            }
+
+            // Render Checklist
+            renderAiRolesChecklist(job);
+
+            // Render Generated Cards
+            renderAiStudioCards(job.images || []);
+        }
+
+        function renderAiRolesChecklist(job) {
+            const container = document.getElementById('ai-roles-checklist');
+            if (!container) return;
+
+            const images = job.images || [];
+
+            container.innerHTML = AI_STUDIO_ROLES.map(role => {
+                const found = images.find(img => img.image_role === role.role);
+                const status = found ? found.generation_status : (job.status === 'queued' ? 'queued' : 'pending');
+
+                let badge = '';
+                let borderClass = 'border-white/10 bg-white/5 text-slate-400';
+
+                if (status === 'completed') {
+                    badge = '<span class="text-emerald-400 font-bold">✓</span>';
+                    borderClass = 'border-emerald-500/30 bg-emerald-950/30 text-emerald-300';
+                } else if (status === 'processing') {
+                    badge = '<span class="inline-block animate-spin text-amber-400">⟳</span>';
+                    borderClass = 'border-amber-500/40 bg-amber-950/40 text-amber-300 font-bold';
+                } else if (status === 'failed') {
+                    badge = '<span class="text-rose-400 font-bold">✕</span>';
+                    borderClass = 'border-rose-500/30 bg-rose-950/30 text-rose-300';
+                } else {
+                    badge = '<span class="text-slate-500">○</span>';
+                }
+
+                return `
+                    <div class="p-2 rounded-lg border ${borderClass} flex items-center justify-between gap-1">
+                        <span class="truncate">${role.name}</span>
+                        <span class="shrink-0 text-xs">${badge}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAiStudioCards(images) {
+            const container = document.getElementById('ai-generated-cards-grid');
+            if (!container) return;
+
+            if (!images || images.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full p-6 text-center text-slate-400 border border-dashed border-white/10 rounded-xl bg-black/20">
+                        <p class="text-xs font-medium">Click "Generate 10 AI Images" to populate high-resolution master assets.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = images.map((img, idx) => {
+                const isCompleted = img.generation_status === 'completed';
+                const isProcessing = img.generation_status === 'processing';
+                const isFailed = img.generation_status === 'failed';
+                const roleName = img.role_name || (AI_STUDIO_ROLES.find(r => r.role === img.image_role)?.name) || img.image_role;
+                const displayUrl = img.image_url || img.master_8k_url;
+
+                return `
+                    <div class="bg-slate-900/90 rounded-xl border ${isCompleted ? 'border-amber-500/30 ring-1 ring-amber-500/10' : 'border-white/10'} overflow-hidden flex flex-col justify-between shadow-lg">
+                        <div class="aspect-square bg-black/50 relative overflow-hidden flex items-center justify-center">
+                            ${isCompleted && displayUrl ? `
+                                <img src="${displayUrl}" alt="${escapeHtml(roleName)}" class="w-full h-full object-cover">
+                                <div class="absolute top-2 left-2 flex flex-wrap items-center gap-1">
+                                    <span class="bg-amber-400 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded shadow">✨ AI Generated</span>
+                                    <span class="bg-black/75 text-white font-mono text-[9px] px-1.5 py-0.5 rounded backdrop-blur-xs">${img.resolution || '8K Master'}</span>
+                                </div>
+                                <div class="absolute top-2 right-2 flex items-center gap-1">
+                                    ${img.is_primary ? '<span class="bg-[#5E3435] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">★ Primary</span>' : ''}
+                                </div>
+                            ` : isProcessing ? `
+                                <div class="text-center p-4 space-y-2">
+                                    <div class="w-8 h-8 mx-auto border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                                    <p class="text-xs text-amber-300 font-bold">Generating & Upscaling...</p>
+                                    <p class="text-[10px] text-slate-400">Gemini 4K ➔ 8K Master</p>
+                                </div>
+                            ` : isFailed ? `
+                                <div class="text-center p-4 space-y-2 text-rose-300">
+                                    <span class="text-2xl">⚠️</span>
+                                    <p class="text-xs font-bold">Generation Failed</p>
+                                    <p class="text-[10px] text-slate-400 truncate max-w-[200px]" title="${escapeHtml(img.error_message || '')}">${escapeHtml(img.error_message || 'API error')}</p>
+                                    <button type="button" onclick="regenerateAiImageRole('${img.image_role}')" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] shadow">
+                                        Retry
+                                    </button>
+                                </div>
+                            ` : `
+                                <div class="text-center p-4 text-slate-500 space-y-1">
+                                    <span class="text-2xl opacity-40">⏳</span>
+                                    <p class="text-xs">Queued</p>
+                                </div>
+                            `}
+                        </div>
+
+                        <!-- Card Info & Actions -->
+                        <div class="p-3 bg-slate-950/80 space-y-2 border-t border-white/5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-extrabold text-white truncate">${roleName}</span>
+                                <span class="text-[10px] text-amber-300 font-mono">${img.image_role?.split('_')[0] || ''}</span>
+                            </div>
+
+                            ${isCompleted ? `
+                                <div class="flex items-center justify-between gap-1 pt-1 border-t border-white/5">
+                                    <button type="button" onclick="regenerateAiImageRole('${img.image_role}')" 
+                                        class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold flex items-center gap-1 transition-colors">
+                                        <span>⟳</span> Regenerate
+                                    </button>
+
+                                    <div class="flex items-center gap-1">
+                                        ${!img.is_primary ? `
+                                            <button type="button" onclick="setAiImageAsPrimary('${img.image_url}')" 
+                                                class="px-2 py-1 rounded bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 text-[10px] font-bold transition-colors">
+                                                ★ Set Main
+                                            </button>
+                                        ` : ''}
+
+                                        ${img.master_8k_url ? `
+                                            <a href="${img.master_8k_url}" target="_blank" rel="noopener noreferrer" 
+                                                class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold transition-colors" title="View 8K Master (~8192px)">
+                                                🔍 8K
+                                            </a>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleOriginalFileInputChange(e) {
+            const file = e.target.files?.[0];
+            if (!file || !activeProductForImages) return;
+
+            if (file.size > 50 * 1024 * 1024) {
+                alert(`File '${file.name}' is larger than 50MB (${(file.size / (1024 * 1024)).toFixed(1)}MB). Please choose an image under 50MB.`);
+                e.target.value = '';
+                return;
+            }
+
+            const p = activeProductForImages;
+            const filenameEl = document.getElementById('ai-reference-filename');
+            if (filenameEl) filenameEl.innerText = `Uploading raw master: ${file.name}...`;
+
+            try {
+                const res = await window.WishRiteAPI.uploadOriginalReferenceImage(p.product_code, file);
+                if (res && res.success && res.data) {
+                    p.original_source_image_url = res.data.source_image_url;
+                    const previewImg = document.getElementById('ai-reference-img-preview');
+                    const emptyIcon = document.getElementById('ai-reference-empty-icon');
+                    if (previewImg) {
+                        previewImg.src = res.data.source_image_url;
+                        previewImg.classList.remove('hidden');
+                    }
+                    if (emptyIcon) emptyIcon.classList.add('hidden');
+                    if (filenameEl) filenameEl.innerText = `✓ Master ready: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)}MB uncompressed)`;
+                } else {
+                    throw new Error(res?.error?.message || 'Failed to upload original image');
+                }
+            } catch (err) {
+                alert(`Upload failed: ${err.message}`);
+                if (filenameEl) filenameEl.innerText = 'Upload failed. Please try again.';
+            }
+
+            e.target.value = '';
+        }
+
+        async function triggerAiGeneration10() {
+            if (!activeProductForImages) return;
+            const p = activeProductForImages;
+
+            const btn = document.getElementById('btn-generate-10-ai-images');
+            const btnText = document.getElementById('btn-generate-ai-text');
+
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.innerText = 'Queuing generation...';
+
+            try {
+                const res = await window.WishRiteAPI.generateAiImages(p.product_code, p.original_source_image_url || p.image_url);
+                if (res && res.success) {
+                    document.getElementById('ai-progress-panel')?.classList.remove('hidden');
+                    startAiStudioPolling();
+                } else {
+                    throw new Error(res?.error?.message || 'Failed to start AI generation job');
+                }
+            } catch (err) {
+                alert(`AI Generation Notice: ${err.message}`);
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.innerText = '✨ Generate 10 AI Images';
+            }
+        }
+
+        function startAiStudioPolling() {
+            if (aiPollingTimer) clearInterval(aiPollingTimer);
+            pollAiStudioStatus();
+            aiPollingTimer = setInterval(pollAiStudioStatus, 2500);
+        }
+
+        async function pollAiStudioStatus() {
+            if (!activeProductForImages) {
+                if (aiPollingTimer) clearInterval(aiPollingTimer);
+                return;
+            }
+            const p = activeProductForImages;
+
+            try {
+                const statusRes = await window.WishRiteAPI.getAiImagesStatus(p.product_code);
+                if (statusRes && statusRes.has_job && statusRes.job) {
+                    activeAiJob = statusRes.job;
+                    renderAiStudioJob(statusRes.job);
+
+                    if (statusRes.job.status === 'completed' || statusRes.job.status === 'partial' || statusRes.job.status === 'failed') {
+                        if (aiPollingTimer) {
+                            clearInterval(aiPollingTimer);
+                            aiPollingTimer = null;
+                        }
+                        // Refresh main product images gallery as well
+                        await loadImagesForActiveProduct();
+                    }
+                }
+            } catch (e) {
+                console.warn('[AI Studio Poll Error]:', e.message);
+            }
+        }
+
+        async function regenerateAiImageRole(role) {
+            if (!activeProductForImages) return;
+            const p = activeProductForImages;
+
+            const roleCfg = AI_STUDIO_ROLES.find(r => r.role === role);
+            const roleName = roleCfg ? roleCfg.name : role;
+
+            if (!confirm(`Regenerate individual image for "${roleName}"?\n\nThe existing product consistency rules will be preserved and a new 8K master will be produced.`)) {
+                return;
+            }
+
+            try {
+                const res = await window.WishRiteAPI.regenerateAiImage(p.product_code, role);
+                if (res && res.success) {
+                    alert(`✓ Successfully regenerated "${roleName}" in 8K resolution!`);
+                    await pollAiStudioStatus();
+                    await loadImagesForActiveProduct();
+                } else {
+                    throw new Error(res?.error?.message || 'Regeneration failed');
+                }
+            } catch (err) {
+                alert(`Regeneration failed: ${err.message}`);
+            }
+        }
+
+        async function setAiImageAsPrimary(imageUrl) {
+            if (!activeProductForImages || !imageUrl) return;
+            const p = activeProductForImages;
+
+            p.image_url = imageUrl;
+            try {
+                await window.WishRiteAPI.saveProduct({ image_url: imageUrl }, 'update', p.product_code);
+                alert('✓ Primary image updated for website and inventory display.');
+                await loadImagesForActiveProduct();
+                await pollAiStudioStatus();
+                renderProductsView();
+            } catch (err) {
+                alert(`Failed to set primary image: ${err.message}`);
+            }
+        }
+
+        // ==============================================================================
         // PRODUCT IMAGE MANAGEMENT SYSTEM (HIGH PRIORITY - UPLOAD / STORAGE / DB)
         // ==============================================================================
 
@@ -11133,11 +12741,16 @@
 
             // Check bucket existence and load images
             await loadImagesForActiveProduct();
+            await loadAiStudioForActiveProduct();
         }
 
         function closeProductImageManagerModal() {
             document.getElementById('product-image-manager-modal')?.classList.add('hidden');
             document.body.style.overflow = '';
+            if (aiPollingTimer) {
+                clearInterval(aiPollingTimer);
+                aiPollingTimer = null;
+            }
             activeProductForImages = null;
             activeProductImagesList = [];
             // Re-render product view to update thumbnails
@@ -11471,9 +13084,9 @@ create policy "Product images can be deleted" on storage.objects for delete to a
                     continue;
                 }
 
-                // Validation: Max file size (5 MB bucket limit)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert(`File '${file.name}' exceeds the 5 MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please choose a file under 5 MB.`);
+                // Validation: Max file size (50 MB limit)
+                if (file.size > 50 * 1024 * 1024) {
+                    alert(`File '${file.name}' exceeds the 50 MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please choose a file under 50 MB.`);
                     continue;
                 }
 
