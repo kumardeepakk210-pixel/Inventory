@@ -1,11 +1,11 @@
 {
-  "isLive": false,
-  "activeOccasion": null,
-  "selectedOccasion": "valentines-day",
-  "festive_mode_enabled": false,
-  "active_occasion_slug": null,
-  "active_occasion_name": null,
-  "selected_occasion_slug": "valentines-day",
-  "selected_occasion_name": "Valentine's Day",
-  "updated_at": "2026-09-29T19:08:49.443Z"
+  "isLive": true,
+  "activeOccasion": "durga-puja",
+  "selectedOccasion": "durga-puja",
+  "festive_mode_enabled": true,
+  "active_occasion_slug": "durga-puja",
+  "active_occasion_name": "Durga Puja",
+  "selected_occasion_slug": "durga-puja",
+  "selected_occasion_name": "Durga Puja",
+  "updated_at": "2026-10-16T20:17:43.435Z"
 }
