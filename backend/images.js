@@ -6,7 +6,7 @@
 
 import multer from 'multer';
 import crypto from 'crypto';
-import { storageUpload, storageDelete, storageList, getStoragePublicUrl, dbQuery, dbInsert, dbDelete } from './supabase-client.js';
+import { storageUpload, storageDelete, storageList, getStoragePublicUrl, dbQuery, dbInsert, dbUpdate, dbDelete } from './supabase-client.js';
 
 // Configure in-memory upload (files are immediately streamed to Supabase Storage)
 const storage = multer.memoryStorage();
@@ -54,10 +54,16 @@ export async function handleGetProductImages(req, res) {
         // 2. Fallback: inspect Supabase Storage folder directly
         try {
             const files = await storageList(BUCKET, cleanSku);
-            const mapped = (files || []).map((f, idx) => ({
+            const validFiles = (files || []).filter(f =>
+                f && f.name &&
+                !f.name.startsWith('.') &&
+                /\.(jpe?g|png|webp|gif|svg|avif)$/i.test(f.name)
+            );
+            const mapped = validFiles.map((f, idx) => ({
                 id: f.id || `${cleanSku}_${idx}`,
                 product_code: cleanSku,
                 image_url: getStoragePublicUrl(BUCKET, `${cleanSku}/${f.name}`),
+                public_url: getStoragePublicUrl(BUCKET, `${cleanSku}/${f.name}`),
                 is_primary: idx === 0,
                 sort_order: idx
             }));
@@ -98,12 +104,26 @@ export async function handleUploadProductImage(req, res) {
         // Upload to Supabase Storage
         const publicUrl = await storageUpload(BUCKET, storagePath, file.buffer, file.mimetype);
 
-        // Look up product_id from public.inventory
+        const isPrimary = req.body.is_primary === 'true' || req.body.is_primary === true;
+
+        // Look up product_id and sync image to public.inventory table
         let productId = null;
         try {
             const list = await dbQuery('inventory', `product_code=eq.${encodeURIComponent(cleanSku)}&limit=1`);
-            if (list && list[0]) productId = list[0].id;
-        } catch (e) {}
+            if (list && list[0]) {
+                productId = list[0].id;
+                const shouldUpdatePrimary = isPrimary || !list[0].image_url;
+                const existingMedia = Array.isArray(list[0].product_media_urls) ? list[0].product_media_urls : [];
+                const updatedMedia = existingMedia.includes(publicUrl) ? existingMedia : [...existingMedia, publicUrl];
+                const updatePayload = { product_media_urls: updatedMedia };
+                if (shouldUpdatePrimary) {
+                    updatePayload.image_url = publicUrl;
+                }
+                await dbUpdate('inventory', 'product_code', cleanSku, updatePayload, { useAdmin: true });
+            }
+        } catch (e) {
+            console.warn('[Images API] Failed to update inventory record with uploaded image:', e.message);
+        }
 
         // Record metadata in product_images table if available
         let newRecord = {
@@ -111,13 +131,15 @@ export async function handleUploadProductImage(req, res) {
             product_id: productId,
             product_code: cleanSku,
             image_url: publicUrl,
+            public_url: publicUrl,
+            publicUrl: publicUrl,
             file_name: fileName,
             storage_path: storagePath,
-            image_type: req.body.is_primary === 'true' ? 'Main' : 'Gallery',
+            image_type: isPrimary ? 'Main' : 'Gallery',
             image_role: req.body.image_role || 'manual_upload',
             sort_order: parseInt(req.body.sort_order, 10) || 0,
             alt_text: req.body.alt_text || `${cleanSku} jewellery photograph`,
-            is_primary: req.body.is_primary === 'true' || false,
+            is_primary: isPrimary,
             generation_source: 'manual',
             generation_status: 'completed',
             is_ai_generated: false,
@@ -137,7 +159,9 @@ export async function handleUploadProductImage(req, res) {
             message: 'Image uploaded successfully.',
             data: {
                 ...newRecord,
-                image_url: publicUrl
+                image_url: publicUrl,
+                public_url: publicUrl,
+                publicUrl: publicUrl
             }
         });
     } catch (err) {

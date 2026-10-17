@@ -290,7 +290,7 @@
                             <!-- Thumbnail / Upload Dropzone Preview -->
                             <div class="sm:col-span-5 flex items-center gap-3">
                                 <div id="pf-primary-img-box" class="w-20 h-20 rounded-xl bg-white border-2 border-dashed border-amber-300 overflow-hidden flex items-center justify-center shrink-0 relative group shadow-2xs">
-                                    <img id="pf-primary-img-preview" src="" alt="Primary Preview" class="w-full h-full object-cover hidden">
+                                    <img id="pf-primary-img-preview" src="" alt="Primary Preview" class="w-full h-full object-cover hidden" onerror="this.onerror=null; this.classList.add('hidden'); document.getElementById('pf-primary-img-placeholder')?.classList.remove('hidden');">
                                     <div id="pf-primary-img-placeholder" class="text-center p-1 text-slate-400">
                                         <span class="text-2xl block">💍</span>
                                         <span class="text-[9px] font-bold block text-slate-500">No Image</span>
@@ -10200,19 +10200,25 @@
         function getProductPrimaryImageUrl(product) {
             if (!product) return '';
 
+            const isBadUrl = (u) => !u || typeof u !== 'string' || u.includes('.emptyFolderPlaceholder') || u.endsWith('/original') || u === 'undefined' || u === 'null';
+
             // Check direct image_url property
-            if (product.image_url) return product.image_url;
+            if (!isBadUrl(product.image_url)) return product.image_url;
 
             // Check product_media_urls array
             if (Array.isArray(product.product_media_urls) && product.product_media_urls.length > 0) {
-                return product.product_media_urls[0];
+                const validMedia = product.product_media_urls.find(u => !isBadUrl(u));
+                if (validMedia) return validMedia;
             }
 
             // Check cached images from product_images table
             const cached = productImagesCache.get(product.id);
             if (cached && cached.length > 0) {
-                const primary = cached.find(img => img.is_primary) || cached[0];
-                if (primary?.image_url) return primary.image_url;
+                const validCached = cached.filter(img => !isBadUrl(img?.image_url));
+                if (validCached.length > 0) {
+                    const primary = validCached.find(img => img.is_primary) || validCached[0];
+                    if (primary?.image_url) return primary.image_url;
+                }
             }
 
             // Check localStorage registry (shared with Website)
@@ -10221,11 +10227,9 @@
                 if (rawRegistry) {
                     const reg = JSON.parse(rawRegistry);
                     const sku = product.product_code;
-                    if (sku && reg[sku] && reg[sku].length > 0) {
-                        return reg[sku][0].url;
-                    }
-                    if (product.id && reg[product.id] && reg[product.id].length > 0) {
-                        return reg[product.id][0].url;
+                    const skuImgs = (reg[sku] || reg[product.id] || []).filter(item => !isBadUrl(item?.url));
+                    if (skuImgs.length > 0) {
+                        return skuImgs[0].url;
                     }
                 }
             } catch (e) { }
@@ -10598,7 +10602,7 @@
                         <tr class="hover:bg-slate-50/80 transition-colors">
                             <td class="py-3 px-4 text-center">
                                 <div class="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden mx-auto cursor-pointer hover:ring-2 hover:ring-[#5E3435]/30 transition-all" onclick="openProductImageManager('${escapeHtml(item.product_code)}')">
-                                    <img src="${imgUrl}" alt="${escapeHtml(item.product_name)}" class="w-full h-full object-cover" loading="lazy">
+                                    <img src="${imgUrl}" alt="${escapeHtml(item.product_name)}" class="w-full h-full object-cover" loading="lazy" onerror="this.onerror=null; this.src=generateProductVectorPlaceholder('${escapeHtml(item.product_name)}', '${escapeHtml(item.product_code)}', '${escapeHtml(item.category || '')}');">
                                 </div>
                             </td>
                             <td class="py-3 px-4">
@@ -10672,7 +10676,7 @@
                     return `
                         <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
                             <div class="aspect-square bg-slate-100 relative group overflow-hidden cursor-pointer" onclick="openProductImageManager('${escapeHtml(item.product_code)}')">
-                                <img src="${imgUrl}" alt="${escapeHtml(item.product_name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <img src="${imgUrl}" alt="${escapeHtml(item.product_name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src=generateProductVectorPlaceholder('${escapeHtml(item.product_name)}', '${escapeHtml(item.product_code)}', '${escapeHtml(item.category || '')}');">
                                 <span class="absolute top-2 left-2 bg-black/60 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">${escapeHtml(item.product_code)}</span>
                                 <span class="absolute bottom-2 right-2 bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded shadow">${formatInr(sellingPrice)}</span>
                             </div>
@@ -11396,14 +11400,16 @@
                 currentProductFormPrimaryFile = null;
                 if (document.getElementById('pf-primary-image-file')) document.getElementById('pf-primary-image-file').value = '';
 
-                let existingImgUrl = product.image_url;
+                const isBadUrl = (u) => !u || typeof u !== 'string' || u.includes('.emptyFolderPlaceholder') || u.endsWith('/original') || u === 'undefined' || u === 'null';
+                let existingImgUrl = !isBadUrl(product.image_url) ? product.image_url : null;
                 if (!existingImgUrl && Array.isArray(product.product_media_urls) && product.product_media_urls.length > 0) {
-                    existingImgUrl = product.product_media_urls[0];
+                    existingImgUrl = product.product_media_urls.find(u => !isBadUrl(u)) || null;
                 }
                 if (!existingImgUrl && typeof productImagesCache !== 'undefined' && product.id) {
                     const cachedImgs = productImagesCache.get(product.id);
-                    if (Array.isArray(cachedImgs) && cachedImgs[0]?.image_url) {
-                        existingImgUrl = cachedImgs[0].image_url;
+                    if (Array.isArray(cachedImgs)) {
+                        const validCached = cachedImgs.find(img => !isBadUrl(img?.image_url));
+                        if (validCached) existingImgUrl = validCached.image_url;
                     }
                 }
 
@@ -13095,9 +13101,35 @@
             const p = activeProductForImages;
             activeProductImagesList = [];
 
-            // 1. Try querying product_images table in Supabase
-            let fetchedFromTable = false;
-            if (supaClient) {
+            const isBadUrl = (u) => !u || typeof u !== 'string' || u.includes('.emptyFolderPlaceholder') || u.endsWith('/original') || u === 'undefined' || u === 'null';
+
+            // 1. First attempt: fetch through server API (reads product_images table and scans Supabase storage with service credentials)
+            let fetchedFromSource = false;
+            if (window.WishRiteAPI?.getProductImages) {
+                try {
+                    const apiRes = await window.WishRiteAPI.getProductImages(p.product_code);
+                    const serverImgs = apiRes?.data || (Array.isArray(apiRes) ? apiRes : []);
+                    const validServerImgs = serverImgs.filter(img => !isBadUrl(img?.image_url));
+                    if (validServerImgs.length > 0) {
+                        activeProductImagesList = validServerImgs.map((img, i) => ({
+                            id: img.id || `${p.product_code}_${i}`,
+                            product_id: p.id,
+                            image_url: img.image_url,
+                            image_type: img.is_primary ? 'Main' : (img.image_type || 'Gallery'),
+                            sort_order: i,
+                            alt_text: img.alt_text || `${p.product_name} image ${i + 1}`,
+                            is_primary: i === 0 || img.is_primary
+                        }));
+                        fetchedFromSource = true;
+                        productImagesCache.set(p.id, [...activeProductImagesList]);
+                    }
+                } catch (apiErr) {
+                    console.warn("[Images] WishRiteAPI.getProductImages notice:", apiErr.message);
+                }
+            }
+
+            // 2. Fallback: try querying product_images table directly via supaClient
+            if (!fetchedFromSource && supaClient) {
                 try {
                     const { data, error } = await supaClient
                         .from('product_images')
@@ -13105,20 +13137,21 @@
                         .eq('product_id', p.id)
                         .order('sort_order', { ascending: true });
 
-                    if (!error && Array.isArray(data) && data.length > 0) {
-                        activeProductImagesList = data;
-                        fetchedFromTable = true;
-                        productImagesCache.set(p.id, data);
+                    const valid = (data || []).filter(img => !isBadUrl(img?.image_url));
+                    if (!error && valid.length > 0) {
+                        activeProductImagesList = valid;
+                        fetchedFromSource = true;
+                        productImagesCache.set(p.id, valid);
                     }
                 } catch (e) {
                     console.warn("product_images table query skipped:", e.message);
                 }
             }
 
-            // 2. If no records from product_images table, check product_media_urls & image_url
-            if (!fetchedFromTable) {
+            // 3. Fallback: check product_media_urls & image_url & localStorage
+            if (!fetchedFromSource) {
                 const list = [];
-                if (p.image_url) {
+                if (!isBadUrl(p.image_url)) {
                     list.push({
                         image_url: p.image_url,
                         image_type: 'Main',
@@ -13129,7 +13162,7 @@
                 }
                 if (Array.isArray(p.product_media_urls)) {
                     p.product_media_urls.forEach((url, i) => {
-                        if (url !== p.image_url) {
+                        if (!isBadUrl(url) && url !== p.image_url) {
                             list.push({
                                 image_url: url,
                                 image_type: 'Gallery',
@@ -13146,7 +13179,7 @@
                     const rawReg = localStorage.getItem('wishrite_custom_product_images');
                     if (rawReg) {
                         const reg = JSON.parse(rawReg);
-                        const skuImages = reg[p.product_code] || reg[p.id] || [];
+                        const skuImages = (reg[p.product_code] || reg[p.id] || []).filter(item => !isBadUrl(item?.url));
                         skuImages.forEach(img => {
                             if (!list.some(item => item.image_url === img.url)) {
                                 list.push({
@@ -13264,7 +13297,7 @@ create policy "Product images can be deleted" on storage.objects for delete to a
                         <div class="bg-white rounded-xl border ${isPrimary ? 'border-[#5E3435] ring-2 ring-[#5E3435]/20 shadow-md' : 'border-slate-200 shadow-sm'} overflow-hidden flex flex-col group">
                             <!-- Image Wrap with Badges -->
                             <div class="aspect-square bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                                <img src="${img.image_url}" alt="${escapeHtml(img.alt_text || 'Product image')}" class="w-full h-full object-cover">
+                                <img src="${img.image_url}" alt="${escapeHtml(img.alt_text || 'Product image')}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=generateProductVectorPlaceholder('${escapeHtml(activeProductForImages?.product_name || 'Jewellery')}', '${escapeHtml(activeProductForImages?.product_code || '')}', '${escapeHtml(activeProductForImages?.category || '')}');">
                                 
                                 <div class="absolute top-2 left-2 flex items-center gap-1.5">
                                     ${isPrimary ? '<span class="bg-[#5E3435] text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow">★ Primary</span>' : ''}
@@ -13433,7 +13466,7 @@ create policy "Product images can be deleted" on storage.objects for delete to a
                         throw new Error(uploadRes?.error?.message || 'Server upload failed');
                     }
 
-                    const uploadedUrl = uploadRes.data.public_url;
+                    const uploadedUrl = uploadRes.data.image_url || uploadRes.data.public_url || uploadRes.data.publicUrl;
                     const storagePath = uploadRes.data.storage_path;
 
                     const imageRecord = {
