@@ -25,7 +25,7 @@ import {
     dbDelete,
     SUPABASE_URL,
     SUPABASE_KEY
-} from '../api/supabase-client.js';
+} from '../backend/supabase-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
 // API Controllers
-import { handleHealthCheck, handleDatabaseHealthCheck } from './api/health.js';
+import { handleHealthCheck, handleDatabaseHealthCheck } from './backend/health.js';
 import { 
     handleGetProducts, 
     handleGetProductById, 
@@ -19,11 +19,11 @@ import {
     handleUpdateProduct, 
     handleDeleteProduct,
     handleBatchBackfillAudience
-} from './api/products.js';
+} from './backend/products.js';
 import { 
     handleGetOccasionSettings, 
     handleUpdateOccasionSettings 
-} from './api/settings.js';
+} from './backend/settings.js';
 import { 
     handleGetOccasions, 
     handleGetActiveOccasion, 
@@ -33,23 +33,23 @@ import {
     handleUpdateOccasionProduct,
     handleDeleteOccasionProduct,
     handleGetOccasionCounts
-} from './api/occasions.js';
+} from './backend/occasions.js';
 import { 
     handleGetOffers, 
     handleCreateOffer, 
     handleDeleteOffer 
-} from './api/offers.js';
+} from './backend/offers.js';
 import { 
     handleGetDashboardSummary, 
     handleGetDashboardInsights, 
     handleGetDashboardCategories 
-} from './api/dashboard.js';
+} from './backend/dashboard.js';
 import { 
     handleGetProductImages, 
     handleUploadProductImage, 
     handleDeleteProductImage,
     uploadMiddleware 
-} from './api/images.js';
+} from './backend/images.js';
 import {
     handleUploadOriginalImage,
     handleGenerateAiImages,
@@ -57,22 +57,22 @@ import {
     handleRegenerateAiImage,
     handleDeleteAiImage,
     uploadOriginalMiddleware
-} from './api/ai-images.js';
+} from './backend/ai-images.js';
 import { 
     handleLogin,
     handleCheckSetup,
     handleInitialSetup,
     handleGetEmployees,
     handleCreateEmployee
-} from './api/auth.js';
-import { handleGetSales, handleCreateSale } from './api/sales.js';
+} from './backend/auth.js';
+import { handleGetSales, handleCreateSale } from './backend/sales.js';
 import { 
     handleGetCustomers, 
     handleGetCustomerById, 
     handleCreateCustomer, 
     handleUpdateCustomer, 
     handleAdjustCustomerBalance 
-} from './api/customers.js';
+} from './backend/customers.js';
 import { 
     SUPABASE_URL,
     dbQuery, 
@@ -82,7 +82,7 @@ import {
     hasServerAdminCredential, 
     getAdminCredentialType, 
     isPublishableKeyConfigured 
-} from './api/supabase-client.js';
+} from './backend/supabase-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tableColumnsCache } from '../api/supabase-client.js';
-import { validateProductData, enrichProduct } from '../api/products.js';
+import { tableColumnsCache } from '../backend/supabase-client.js';
+import { validateProductData, enrichProduct } from '../backend/products.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -165,7 +165,7 @@ test('Inventory Database Schema Mapping Tests', async (t) => {
     });
 
     await t.test('6. handleUpdateProduct safely handles null variant_type, variant_value, and product_slug', async () => {
-        const { handleUpdateProduct } = await import('../api/products.js');
+        const { handleUpdateProduct } = await import('../backend/products.js');
         const req = {
             params: { id: 'MISC' },
             body: {

@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { SUPABASE_URL, SUPABASE_KEY, dbQuery } from '../api/supabase-client.js';
+import { SUPABASE_URL, SUPABASE_KEY, dbQuery } from '../backend/supabase-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CANONICAL_AUDIENCES, AUDIENCE_VALUES, normalizeAudience } from '../api/products.js';
+import { CANONICAL_AUDIENCES, AUDIENCE_VALUES, normalizeAudience } from '../backend/products.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -108,8 +108,8 @@ describe('Canonical Audience System Tests', () => {
     });
 
     it('4. Supabase client tableColumnsCache includes audience column', async () => {
-        const clientFile = fs.readFileSync(path.join(rootDir, 'api', 'supabase-client.js'), 'utf-8');
-        assert.match(clientFile, /'audience'/, "api/supabase-client.js must include 'audience' in tableColumnsCache");
+        const clientFile = fs.readFileSync(path.join(rootDir, 'backend', 'supabase-client.js'), 'utf-8');
+        assert.match(clientFile, /'audience'/, "backend/supabase-client.js must include 'audience' in tableColumnsCache");
     });
 
     it('5. Database migration script contains strict CHECK constraint and index', () => {
@@ -122,10 +122,10 @@ describe('Canonical Audience System Tests', () => {
     });
 
     it('6. Products API endpoint validates audience and handles backfill', async () => {
-        const productsApiFile = fs.readFileSync(path.join(rootDir, 'api', 'products.js'), 'utf-8');
-        assert.match(productsApiFile, /CANONICAL_AUDIENCES/, "api/products.js must declare CANONICAL_AUDIENCES");
-        assert.match(productsApiFile, /handleBatchBackfillAudience/, "api/products.js must export handleBatchBackfillAudience");
-        assert.match(productsApiFile, /normalizeAudience/, "api/products.js must normalize audience inputs");
+        const productsApiFile = fs.readFileSync(path.join(rootDir, 'backend', 'products.js'), 'utf-8');
+        assert.match(productsApiFile, /CANONICAL_AUDIENCES/, "backend/products.js must declare CANONICAL_AUDIENCES");
+        assert.match(productsApiFile, /handleBatchBackfillAudience/, "backend/products.js must export handleBatchBackfillAudience");
+        assert.match(productsApiFile, /normalizeAudience/, "backend/products.js must normalize audience inputs");
     });
 
     it('7. Frontend index.html implements audience selector, badges, and backfill controller', () => {

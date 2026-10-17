@@ -49,10 +49,10 @@ const rawPublishableKey = (
 let adminKey = '';
 let adminCredentialType = 'none';
 
-if (rawSecretKey && !rawSecretKey.startsWith('sb_publishable_')) {
+if (rawSecretKey) {
     adminKey = rawSecretKey;
-    adminCredentialType = 'secret';
-} else if (rawServiceRoleKey && !rawServiceRoleKey.startsWith('sb_publishable_')) {
+    adminCredentialType = rawSecretKey.startsWith('sb_secret_') ? 'secret' : 'service_role';
+} else if (rawServiceRoleKey) {
     adminKey = rawServiceRoleKey;
     adminCredentialType = rawServiceRoleKey.startsWith('sb_secret_') ? 'secret' : 'service_role';
 }
@@ -63,10 +63,8 @@ if (rawAnonKey) {
     publishableKey = rawAnonKey;
 } else if (rawPublishableKey) {
     publishableKey = rawPublishableKey;
-} else if (rawServiceRoleKey && rawServiceRoleKey.startsWith('sb_publishable_')) {
-    publishableKey = rawServiceRoleKey;
-} else if (rawSecretKey && rawSecretKey.startsWith('sb_publishable_')) {
-    publishableKey = rawSecretKey;
+} else if (adminKey) {
+    publishableKey = adminKey;
 }
 
 // Default key for normal public/read-only database operations
@@ -96,12 +94,12 @@ export function isPublishableKeyConfigured() {
 }
 
 /**
- * Require a valid server admin credential or throw clean error (STEP 1, 5)
+ * Require a valid server admin credential or throw clean error
  */
-export function requireServerAdminCredential() {
+export function requireServerAdminCredential(customMessage) {
     if (!hasServerAdminCredential()) {
         const err = new Error(
-            'A server-side Supabase secret/service-role credential is required for administrative occasion updates.'
+            customMessage || 'A server-side Supabase secret/service-role credential is required for administrative database mutations.'
         );
         err.code = 'SERVER_ADMIN_CREDENTIAL_MISSING';
         err.status = 403;
@@ -113,8 +111,8 @@ export function requireServerAdminCredential() {
 export const requireAdminWriteCredentials = requireServerAdminCredential;
 
 // STEP 2 — Safe Environment Startup Logging (NEVER print actual keys!)
-const hasSecret = Boolean(rawSecretKey && !rawSecretKey.startsWith('sb_publishable_'));
-const hasLegacyServiceRole = Boolean(rawServiceRoleKey && !rawServiceRoleKey.startsWith('sb_publishable_'));
+const hasSecret = Boolean(rawSecretKey);
+const hasLegacyServiceRole = Boolean(rawServiceRoleKey);
 
 console.log('[Supabase Config]');
 console.log(`URL configured: ${Boolean(SUPABASE_URL) ? 'YES' : 'NO'}`);
@@ -174,7 +172,9 @@ export const getHeaders = (extraHeaders = {}) => ({
 });
 
 export const getAdminHeaders = (extraHeaders = {}) => {
-    if (!adminKey) return getHeaders(extraHeaders);
+    if (!adminKey) {
+        requireServerAdminCredential('A server-side Supabase secret/service-role credential is required for administrative operations.');
+    }
     return {
         'apikey': adminKey,
         'Authorization': `Bearer ${adminKey}`,
@@ -361,6 +361,9 @@ export async function dbInsert(table, payload, options = {}) {
     const omittedColumns = Array.from(new Set(processed.flatMap(p => p.omittedColumns)));
 
     const useAdmin = Boolean(options.useAdmin);
+    if (useAdmin && !hasServerAdminCredential()) {
+        requireServerAdminCredential(`A server-side Supabase secret/service-role credential is required to insert into table '${table}'.`);
+    }
     const headers = useAdmin ? getAdminHeaders() : getHeaders();
 
     const url = `${SUPABASE_URL}/rest/v1/${table}`;
@@ -391,7 +394,6 @@ export async function dbInsert(table, payload, options = {}) {
                                  errMsg.match(/column "?([^"\s]+)"? does not exist/i);
             if (missingMatch && missingMatch[1]) {
                 const col = missingMatch[1];
-                if (tableColumnsCache[table]) tableColumnsCache[table].delete(col);
                 if (isArray) {
                     validItems.forEach(item => delete item[col]);
                 } else {
@@ -437,7 +439,10 @@ export async function dbUpdate(table, filterKey, filterVal, payload, options = {
         return { data: null, omittedColumns };
     }
 
-    const useAdmin = Boolean(options.useAdmin) && hasServerAdminCredential();
+    const useAdmin = Boolean(options.useAdmin);
+    if (useAdmin && !hasServerAdminCredential()) {
+        requireServerAdminCredential(`A server-side Supabase secret/service-role credential is required to update table '${table}'.`);
+    }
     const headers = useAdmin ? getAdminHeaders() : getHeaders();
 
     const url = `${SUPABASE_URL}/rest/v1/${table}?${filterKey}=eq.${encodeURIComponent(filterVal)}`;
@@ -468,7 +473,6 @@ export async function dbUpdate(table, filterKey, filterVal, payload, options = {
                                  errMsg.match(/column "?([^"\s]+)"? does not exist/i);
             if (missingMatch && missingMatch[1]) {
                 const col = missingMatch[1];
-                if (tableColumnsCache[table]) tableColumnsCache[table].delete(col);
                 delete validPayload[col];
                 omittedColumns.push(col);
                 if (Object.keys(validPayload).length === 0) {
@@ -508,6 +512,9 @@ export async function dbAdminUpdate(table, filterKey, filterVal, payload) {
  */
 export async function dbDelete(table, filterKey, filterVal, options = {}) {
     const useAdmin = Boolean(options.useAdmin);
+    if (useAdmin && !hasServerAdminCredential()) {
+        requireServerAdminCredential(`A server-side Supabase secret/service-role credential is required to delete from table '${table}'.`);
+    }
     const headers = useAdmin ? getAdminHeaders() : getHeaders();
     const url = `${SUPABASE_URL}/rest/v1/${table}?${filterKey}=eq.${encodeURIComponent(filterVal)}`;
     const res = await fetch(url, {

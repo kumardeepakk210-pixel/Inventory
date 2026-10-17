@@ -441,9 +441,46 @@ export async function handleCreateProduct(req, res) {
             updated_at: new Date().toISOString()
         };
 
-        const result = await dbInsert('inventory', payload);
+        const result = await dbInsert('inventory', payload, { useAdmin: true });
 
-        // Save extended metadata locally as secondary cache/fallback
+        // Post-creation verification: read back the product from the database
+        const freshList = await dbQuery('inventory', `product_code=eq.${encodeURIComponent(code)}&limit=1`, { useAdmin: true });
+        if (!freshList || freshList.length === 0) {
+            const err = new Error(`Database verification failed: Product '${code}' was not found after insert.`);
+            err.code = 'DATABASE_VERIFICATION_FAILED';
+            err.status = 500;
+            throw err;
+        }
+
+        const savedRecord = freshList[0];
+
+        // Compare-at price verification
+        if (payload.compare_at_price !== undefined && payload.compare_at_price !== null) {
+            const submittedCompare = parseFloat(payload.compare_at_price) || 0;
+            const savedCompare = savedRecord.compare_at_price !== undefined && savedRecord.compare_at_price !== null
+                ? (parseFloat(savedRecord.compare_at_price) || 0)
+                : null;
+            if (savedCompare !== submittedCompare) {
+                const err = new Error(`Database verification failed for compare_at_price: submitted ${submittedCompare}, but database returned ${savedCompare}.`);
+                err.code = 'DATABASE_VERIFICATION_FAILED';
+                err.status = 500;
+                throw err;
+            }
+        }
+
+        // Selling price verification
+        if (payload.selling_price !== undefined && payload.selling_price !== null) {
+            const submittedSelling = parseFloat(payload.selling_price) || 0;
+            const savedSelling = parseFloat(savedRecord.selling_price) || 0;
+            if (savedSelling !== submittedSelling) {
+                const err = new Error(`Database verification failed for selling_price: submitted ${submittedSelling}, but database returned ${savedSelling}.`);
+                err.code = 'DATABASE_VERIFICATION_FAILED';
+                err.status = 500;
+                throw err;
+            }
+        }
+
+        // ONLY after database verification succeeds, save to local metadata cache
         const extendedMeta = {
             audience: normalizedAudience,
             design_group: payload.design_group,
@@ -481,7 +518,7 @@ export async function handleCreateProduct(req, res) {
         };
         saveProductMeta(code, extendedMeta);
 
-        const createdItem = enrichProduct(result.data || payload, { [code]: extendedMeta });
+        const createdItem = enrichProduct(savedRecord, { [code]: extendedMeta });
 
         return res.status(201).json({
             success: true,
@@ -491,9 +528,10 @@ export async function handleCreateProduct(req, res) {
         });
     } catch (err) {
         console.error('[API Product POST Error]:', err);
-        return res.status(500).json({
+        const statusCode = err.status || (err.code === 'SERVER_ADMIN_CREDENTIAL_MISSING' ? 403 : 500);
+        return res.status(statusCode).json({
             success: false,
-            error: { code: 'PRODUCT_CREATE_FAILED', message: err.message || 'Unable to create product' }
+            error: { code: err.code || 'PRODUCT_CREATE_FAILED', message: err.message || 'Unable to create product' }
         });
     }
 }
@@ -605,10 +643,47 @@ export async function handleUpdateProduct(req, res) {
             });
         }
 
-        // Execute database update
-        const result = await dbUpdate('inventory', filterKey, id, dbPayload);
+        // Execute database update using server-side admin credentials
+        const result = await dbUpdate('inventory', filterKey, id, dbPayload, { useAdmin: true });
 
-        // Update persistent extended metadata
+        // Post-update verification: read back the product from the database
+        const freshList = await dbQuery('inventory', `${filterKey}=eq.${encodeURIComponent(id)}&limit=1`, { useAdmin: true });
+        if (!freshList || freshList.length === 0) {
+            const err = new Error(`Database verification failed: Product '${id}' was not found after update.`);
+            err.code = 'DATABASE_VERIFICATION_FAILED';
+            err.status = 500;
+            throw err;
+        }
+
+        const savedRecord = freshList[0];
+
+        // Strict verification: saved.compare_at_price === submitted.compare_at_price
+        if (raw.compare_at_price !== undefined && raw.compare_at_price !== null && raw.compare_at_price !== '') {
+            const submittedCompare = parseFloat(raw.compare_at_price) || 0;
+            const savedCompare = savedRecord.compare_at_price !== undefined && savedRecord.compare_at_price !== null
+                ? (parseFloat(savedRecord.compare_at_price) || 0)
+                : null;
+            if (savedCompare !== submittedCompare) {
+                const err = new Error(`Database verification failed for compare_at_price: submitted ${submittedCompare}, but database returned ${savedCompare}.`);
+                err.code = 'DATABASE_VERIFICATION_FAILED';
+                err.status = 500;
+                throw err;
+            }
+        }
+
+        // Strict verification: saved.selling_price === submitted.selling_price
+        if (raw.selling_price !== undefined && raw.selling_price !== null && raw.selling_price !== '') {
+            const submittedSelling = parseFloat(raw.selling_price) || 0;
+            const savedSelling = parseFloat(savedRecord.selling_price) || 0;
+            if (savedSelling !== submittedSelling) {
+                const err = new Error(`Database verification failed for selling_price: submitted ${submittedSelling}, but database returned ${savedSelling}.`);
+                err.code = 'DATABASE_VERIFICATION_FAILED';
+                err.status = 500;
+                throw err;
+            }
+        }
+
+        // ONLY after database verification succeeds, update persistent extended metadata cache
         if (productCode) {
             const metaUpdate = {};
             if (raw.audience !== undefined) {
@@ -646,10 +721,8 @@ export async function handleUpdateProduct(req, res) {
             saveProductMeta(productCode, metaUpdate);
         }
 
-        // Fetch fresh product from database to verify persistence
-        const freshList = await dbQuery('inventory', `${filterKey}=eq.${encodeURIComponent(id)}&limit=1`).catch(() => []);
         const metaMap = loadAllProductMeta();
-        const enriched = enrichProduct(freshList[0] || result.data || { ...raw, product_code: productCode }, metaMap);
+        const enriched = enrichProduct(savedRecord, metaMap);
 
         return res.json({
             success: true,
@@ -659,9 +732,10 @@ export async function handleUpdateProduct(req, res) {
         });
     } catch (err) {
         console.error('[API Product PATCH Error]:', err);
-        return res.status(500).json({
+        const statusCode = err.status || (err.code === 'SERVER_ADMIN_CREDENTIAL_MISSING' ? 403 : 500);
+        return res.status(statusCode).json({
             success: false,
-            error: { code: 'PRODUCT_UPDATE_FAILED', message: err.message || 'Unable to update product' }
+            error: { code: err.code || 'PRODUCT_UPDATE_FAILED', message: err.message || 'Unable to update product' }
         });
     }
 }
@@ -695,7 +769,7 @@ export async function handleBatchBackfillAudience(req, res) {
                 await dbUpdate('inventory', 'product_code', code, {
                     audience: normAud,
                     updated_at: new Date().toISOString()
-                });
+                }, { useAdmin: true });
                 saveProductMeta(code, { audience: normAud });
                 results.push({ product_code: code, success: true, audience: normAud });
             } catch (err) {
@@ -710,7 +784,8 @@ export async function handleBatchBackfillAudience(req, res) {
         });
     } catch (err) {
         console.error('[API Batch Backfill Audience Error]:', err);
-        return res.status(500).json({ success: false, error: { message: err.message } });
+        const statusCode = err.status || (err.code === 'SERVER_ADMIN_CREDENTIAL_MISSING' ? 403 : 500);
+        return res.status(statusCode).json({ success: false, error: { code: err.code || 'BACKFILL_FAILED', message: err.message } });
     }
 }
 
@@ -730,19 +805,24 @@ export async function handleDeleteProduct(req, res) {
         const filterKey = isUuid ? 'id' : 'product_code';
 
         if (hardDelete === 'true') {
-            await dbDelete('inventory', filterKey, id);
+            await dbDelete('inventory', filterKey, id, { useAdmin: true });
             return res.json({ success: true, message: `Product '${id}' permanently deleted.` });
         } else {
             // Default soft archive
+            await dbUpdate('inventory', filterKey, id, {
+                status: 'Archived',
+                updated_at: new Date().toISOString()
+            }, { useAdmin: true });
             const metaMap = loadAllProductMeta();
             saveProductMeta(id, { status: 'Archived' });
             return res.json({ success: true, message: `Product '${id}' archived successfully.` });
         }
     } catch (err) {
         console.error('[API Product DELETE Error]:', err);
-        return res.status(500).json({
+        const statusCode = err.status || (err.code === 'SERVER_ADMIN_CREDENTIAL_MISSING' ? 403 : 500);
+        return res.status(statusCode).json({
             success: false,
-            error: { code: 'PRODUCT_DELETE_FAILED', message: err.message || 'Unable to delete product' }
+            error: { code: err.code || 'PRODUCT_DELETE_FAILED', message: err.message || 'Unable to delete product' }
         });
     }
 }

@@ -11519,18 +11519,27 @@
                 updated_at: new Date().toISOString()
             };
 
-            // Always save a full copy to local storage cache so NO user data is ever lost
-            saveProductExtendedMeta(code, fullPayload);
-
             try {
                 const prodId = document.getElementById('pf-id').value;
                 const result = await window.WishRiteAPI.saveProduct(fullPayload, mode, prodId || code);
 
                 if (!result || !result.success) {
-                    const errDetail = result?.error?.message || 'Could not save product.';
-                    alert(`Save Failed: ${errDetail}`);
+                    const errCode = result?.error?.code ? `[${result.error.code}] ` : '';
+                    const errDetail = result?.error?.message || result?.message || 'Could not save product.';
+                    alert(`Save Failed: ${errCode}${errDetail}`);
                     return;
                 }
+
+                // Verify saved compare_at_price returned from API
+                const submittedCompare = parseFloat(fullPayload.compare_at_price) || 0;
+                const savedCompare = result.data?.compare_at_price !== undefined ? (parseFloat(result.data.compare_at_price) || 0) : null;
+                if (savedCompare !== null && savedCompare !== submittedCompare) {
+                    alert(`Save Verification Failed: Database returned compare-at price ₹${savedCompare}, expected ₹${submittedCompare}.`);
+                    return;
+                }
+
+                // ONLY update local metadata cache after successful database save and verification
+                saveProductExtendedMeta(code, fullPayload);
 
                 alert(`✓ Product '${name}' (${code}) successfully saved!`);
                 closeProductFormModal();
@@ -11541,7 +11550,8 @@
                 }
 
             } catch (err) {
-                alert(`Unexpected error saving product: ${err.message}`);
+                const errCode = err?.code ? `[${err.code}] ` : '';
+                alert(`Save Failed: ${errCode}${err.message}`);
             } finally {
                 if (btn) btn.disabled = false;
                 if (icon) icon.innerText = '💾';
