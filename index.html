@@ -273,6 +273,57 @@
                         </div>
                     </div>
 
+                    <!-- Primary Product Image & AI SEO Assistant Card -->
+                    <div class="bg-gradient-to-r from-amber-50/80 via-white to-amber-50/60 border border-amber-200/80 rounded-2xl p-4 shadow-sm space-y-3 mb-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">📸</span>
+                                    <h4 class="text-xs font-black uppercase tracking-wider text-amber-950">Primary Product Image & AI SEO Auto-Generator</h4>
+                                    <span class="bg-amber-100/90 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">Gemini Powered</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600 mt-0.5">Upload a product photo to automatically analyze visual characteristics, draft luxury copy, and optimize SEO fields.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center pt-1">
+                            <!-- Thumbnail / Upload Dropzone Preview -->
+                            <div class="sm:col-span-5 flex items-center gap-3">
+                                <div id="pf-primary-img-box" class="w-20 h-20 rounded-xl bg-white border-2 border-dashed border-amber-300 overflow-hidden flex items-center justify-center shrink-0 relative group shadow-2xs">
+                                    <img id="pf-primary-img-preview" src="" alt="Primary Preview" class="w-full h-full object-cover hidden">
+                                    <div id="pf-primary-img-placeholder" class="text-center p-1 text-slate-400">
+                                        <span class="text-2xl block">💍</span>
+                                        <span class="text-[9px] font-bold block text-slate-500">No Image</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-1.5 flex-1">
+                                    <input type="file" id="pf-primary-image-file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleProductFormPrimaryImageSelected(event)">
+                                    <input type="hidden" id="pf-primary-image-url" value="">
+                                    <button type="button" onclick="document.getElementById('pf-primary-image-file').click()"
+                                        class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold transition shadow-2xs flex items-center gap-1.5 cursor-pointer">
+                                        <span>📤</span>
+                                        <span id="pf-primary-upload-btn-text">Upload Image</span>
+                                    </button>
+                                    <p id="pf-primary-img-name" class="text-[10px] text-slate-500 truncate max-w-[180px]">JPG, PNG, or WebP</p>
+                                </div>
+                            </div>
+
+                            <!-- AI Action Button & Live Status -->
+                            <div class="sm:col-span-7 flex flex-col justify-center sm:items-end gap-1.5">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <button type="button" id="btn-generate-product-ai" onclick="triggerProductFormAiContentGeneration()"
+                                        class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 via-rose-700 to-[#5E3435] hover:from-amber-500 hover:to-[#482728] text-white font-extrabold text-xs shadow-md transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+                                        <span class="text-sm" id="btn-generate-ai-icon">✨</span>
+                                        <span id="btn-generate-product-ai-text">Generate AI Product Content</span>
+                                    </button>
+                                </div>
+                                <div id="pf-ai-content-status" class="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5 min-h-[18px]">
+                                    <span class="text-slate-400">Upload primary image, then click Generate to auto-draft details & SEO.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <h3
                         class="text-sm font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">
                         Basic Product Details</h3>
@@ -790,6 +841,15 @@
                             <textarea id="pf-seo-desc" rows="2"
                                 placeholder="Brief search preview for Google and social media sharing..."
                                 class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]"></textarea>
+                        </div>
+
+                        <!-- SEO Keywords -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">SEO Keywords (seo_keywords)</label>
+                            <input type="text" id="pf-seo-keywords"
+                                placeholder="e.g. 925 sterling silver bracelet, heart charm bracelet, silver jewellery"
+                                class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm outline-none focus:bg-white focus:border-[#5E3435]">
+                            <p class="text-[11px] text-slate-400 mt-1">Comma-separated search phrases relevant to the jewellery item.</p>
                         </div>
                     </div>
                 </div>
@@ -11040,6 +11100,171 @@
             }
         }
 
+        let currentProductFormPrimaryFile = null;
+        let isAiContentGenerating = false;
+
+        function handleProductFormPrimaryImageSelected(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+            if (!validTypes.includes((file.type || '').toLowerCase())) {
+                alert('Please select a valid JPG, PNG, or WebP image.');
+                event.target.value = '';
+                return;
+            }
+            if (file.size > 50 * 1024 * 1024) {
+                alert('Image exceeds 50MB maximum size limit.');
+                event.target.value = '';
+                return;
+            }
+
+            currentProductFormPrimaryFile = file;
+            const previewUrl = URL.createObjectURL(file);
+            const previewImg = document.getElementById('pf-primary-img-preview');
+            const placeholder = document.getElementById('pf-primary-img-placeholder');
+            if (previewImg) {
+                previewImg.src = previewUrl;
+                previewImg.classList.remove('hidden');
+            }
+            if (placeholder) placeholder.classList.add('hidden');
+
+            const nameEl = document.getElementById('pf-primary-img-name');
+            if (nameEl) nameEl.innerText = file.name;
+
+            const btnText = document.getElementById('pf-primary-upload-btn-text');
+            if (btnText) btnText.innerText = 'Change Image';
+
+            const statusEl = document.getElementById('pf-ai-content-status');
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="text-amber-800 font-semibold">📸 Image selected. Click "✨ Generate AI Product Content" to analyze.</span>';
+            }
+        }
+
+        async function triggerProductFormAiContentGeneration() {
+            if (isAiContentGenerating) return;
+
+            const file = currentProductFormPrimaryFile;
+            const existingUrl = document.getElementById('pf-primary-image-url')?.value;
+
+            if (!file && !existingUrl) {
+                alert('Please upload or select a primary product image before generating AI content.');
+                document.getElementById('pf-primary-image-file')?.click();
+                return;
+            }
+
+            const btn = document.getElementById('btn-generate-product-ai');
+            const btnText = document.getElementById('btn-generate-product-ai-text');
+            const btnIcon = document.getElementById('btn-generate-ai-icon');
+            const statusEl = document.getElementById('pf-ai-content-status');
+
+            isAiContentGenerating = true;
+            if (btn) btn.disabled = true;
+            if (btnIcon) {
+                btnIcon.className = 'inline-block animate-spin text-sm';
+                btnIcon.innerText = '⏳';
+            }
+            if (btnText) btnText.innerText = 'Analyzing Image...';
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="text-amber-700 animate-pulse font-bold">Analyzing product image...</span>';
+            }
+
+            try {
+                const productContext = {
+                    product_code: document.getElementById('pf-code')?.value.trim() || undefined,
+                    category: document.getElementById('pf-category')?.value.trim() || undefined,
+                    audience: document.getElementById('pf-audience')?.value.trim() || undefined,
+                    material: document.getElementById('pf-material')?.value.trim() || undefined,
+                    purity: document.getElementById('pf-purity')?.value.trim() || undefined,
+                    finish: document.getElementById('pf-finish')?.value.trim() || undefined,
+                    weight: document.getElementById('pf-weight')?.value.trim() || undefined,
+                    size: document.getElementById('pf-size')?.value.trim() || undefined,
+                    design: document.getElementById('pf-design')?.value.trim() || undefined,
+                    occasion_slug: document.getElementById('pf-occasion-slug')?.value.trim() || undefined
+                };
+
+                let result;
+                if (window.WishRiteAPI?.generateProductContent) {
+                    result = await window.WishRiteAPI.generateProductContent({
+                        file: file || null,
+                        imageUrl: !file ? existingUrl : null,
+                        productContext
+                    });
+                } else {
+                    const formData = new FormData();
+                    if (file) formData.append('image', file);
+                    if (!file && existingUrl) formData.append('imageUrl', existingUrl);
+                    Object.entries(productContext).forEach(([k, v]) => {
+                        if (v !== undefined && v !== null && v !== '') formData.append(k, v);
+                    });
+                    const resp = await fetch('/api/generate-product-content', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    result = await resp.json();
+                }
+
+                if (!result || !result.success || !result.data) {
+                    const msg = result?.error?.message || result?.message || 'AI generation failed. Please try again.';
+                    throw new Error(msg);
+                }
+
+                const data = result.data;
+
+                // Populate form fields for user review and editing
+                if (data.product_name) {
+                    const nameEl = document.getElementById('pf-name');
+                    if (nameEl) {
+                        nameEl.value = data.product_name;
+                        autoGenerateSlugFromName();
+                    }
+                }
+                if (data.short_description) {
+                    const sDescEl = document.getElementById('pf-short-desc');
+                    if (sDescEl) sDescEl.value = data.short_description;
+                }
+                if (data.product_description) {
+                    const descEl = document.getElementById('pf-desc');
+                    if (descEl) descEl.value = data.product_description;
+                }
+                if (data.seo_title) {
+                    const sTitleEl = document.getElementById('pf-seo-title');
+                    if (sTitleEl) sTitleEl.value = data.seo_title;
+                }
+                if (data.seo_description) {
+                    const sDescEl = document.getElementById('pf-seo-desc');
+                    if (sDescEl) sDescEl.value = data.seo_description;
+                }
+                if (data.seo_keywords) {
+                    const sKwEl = document.getElementById('pf-seo-keywords');
+                    if (sKwEl) sKwEl.value = data.seo_keywords;
+                }
+
+                if (statusEl) {
+                    statusEl.innerHTML = '<span class="text-emerald-700 font-bold">✓ AI content generated</span>';
+                }
+                if (btnText) btnText.innerText = 'Regenerate AI Content';
+                if (btnIcon) {
+                    btnIcon.className = 'text-sm';
+                    btnIcon.innerText = '🔄';
+                }
+            } catch (err) {
+                console.error('[AI Content Generation Error]:', err);
+                if (statusEl) {
+                    statusEl.innerHTML = '<span class="text-rose-600 font-bold">AI generation failed. Please try again.</span>';
+                }
+                alert(`AI generation failed. Please try again.\n\nDetail: ${err.message || 'Server error'}`);
+                if (btnText) btnText.innerText = 'Generate AI Product Content';
+                if (btnIcon) {
+                    btnIcon.className = 'text-sm';
+                    btnIcon.innerText = '✨';
+                }
+            } finally {
+                isAiContentGenerating = false;
+                if (btn) btn.disabled = false;
+            }
+        }
+
         function openProductFormModal(mode, productCode = null) {
             populateProductCategoriesDropdown();
             const modal = document.getElementById('product-form-modal');
@@ -11101,6 +11326,29 @@
                     if (el) el.value = '';
                 });
 
+                // Reset Primary Image & AI State in create mode
+                currentProductFormPrimaryFile = null;
+                if (document.getElementById('pf-primary-image-file')) document.getElementById('pf-primary-image-file').value = '';
+                if (document.getElementById('pf-primary-image-url')) document.getElementById('pf-primary-image-url').value = '';
+                if (document.getElementById('pf-primary-img-preview')) {
+                    document.getElementById('pf-primary-img-preview').src = '';
+                    document.getElementById('pf-primary-img-preview').classList.add('hidden');
+                }
+                if (document.getElementById('pf-primary-img-placeholder')) {
+                    document.getElementById('pf-primary-img-placeholder').classList.remove('hidden');
+                }
+                if (document.getElementById('pf-primary-img-name')) document.getElementById('pf-primary-img-name').innerText = 'JPG, PNG, or WebP';
+                if (document.getElementById('pf-primary-upload-btn-text')) document.getElementById('pf-primary-upload-btn-text').innerText = 'Upload Image';
+                if (document.getElementById('btn-generate-product-ai-text')) document.getElementById('btn-generate-product-ai-text').innerText = 'Generate AI Product Content';
+                if (document.getElementById('btn-generate-ai-icon')) {
+                    document.getElementById('btn-generate-ai-icon').className = 'text-sm';
+                    document.getElementById('btn-generate-ai-icon').innerText = '✨';
+                }
+                if (document.getElementById('pf-ai-content-status')) {
+                    document.getElementById('pf-ai-content-status').innerHTML = '<span class="text-slate-400">Upload primary image, then click Generate to auto-draft details & SEO.</span>';
+                }
+                if (document.getElementById('pf-seo-keywords')) document.getElementById('pf-seo-keywords').value = '';
+
                 // Auto-suggest next code
                 autoGenerateProductCode();
             } else {
@@ -11140,6 +11388,69 @@
                 document.getElementById('pf-slug').value = product.product_slug || product.slug || '';
                 document.getElementById('pf-seo-title').value = product.seo_title || '';
                 document.getElementById('pf-seo-desc').value = product.seo_description || '';
+                if (document.getElementById('pf-seo-keywords')) {
+                    document.getElementById('pf-seo-keywords').value = product.seo_keywords || '';
+                }
+
+                // Populate Primary Image & AI State in edit mode
+                currentProductFormPrimaryFile = null;
+                if (document.getElementById('pf-primary-image-file')) document.getElementById('pf-primary-image-file').value = '';
+
+                let existingImgUrl = product.image_url;
+                if (!existingImgUrl && Array.isArray(product.product_media_urls) && product.product_media_urls.length > 0) {
+                    existingImgUrl = product.product_media_urls[0];
+                }
+                if (!existingImgUrl && typeof productImagesCache !== 'undefined' && product.id) {
+                    const cachedImgs = productImagesCache.get(product.id);
+                    if (Array.isArray(cachedImgs) && cachedImgs[0]?.image_url) {
+                        existingImgUrl = cachedImgs[0].image_url;
+                    }
+                }
+
+                const previewImg = document.getElementById('pf-primary-img-preview');
+                const placeholder = document.getElementById('pf-primary-img-placeholder');
+                const nameEl = document.getElementById('pf-primary-img-name');
+                const uploadBtnText = document.getElementById('pf-primary-upload-btn-text');
+                const urlInput = document.getElementById('pf-primary-image-url');
+                const statusEl = document.getElementById('pf-ai-content-status');
+                const btnAiText = document.getElementById('btn-generate-product-ai-text');
+                const btnAiIcon = document.getElementById('btn-generate-ai-icon');
+
+                if (existingImgUrl) {
+                    if (urlInput) urlInput.value = existingImgUrl;
+                    if (previewImg) {
+                        previewImg.src = existingImgUrl;
+                        previewImg.classList.remove('hidden');
+                    }
+                    if (placeholder) placeholder.classList.add('hidden');
+                    if (nameEl) nameEl.innerText = 'Existing primary photo';
+                    if (uploadBtnText) uploadBtnText.innerText = 'Replace Image';
+                    if (btnAiText) btnAiText.innerText = 'Regenerate AI Content';
+                    if (btnAiIcon) {
+                        btnAiIcon.className = 'text-sm';
+                        btnAiIcon.innerText = '🔄';
+                    }
+                    if (statusEl) {
+                        statusEl.innerHTML = '<span class="text-emerald-700 font-semibold">✓ Primary photo loaded. Click to generate or refresh copy.</span>';
+                    }
+                } else {
+                    if (urlInput) urlInput.value = '';
+                    if (previewImg) {
+                        previewImg.src = '';
+                        previewImg.classList.add('hidden');
+                    }
+                    if (placeholder) placeholder.classList.remove('hidden');
+                    if (nameEl) nameEl.innerText = 'JPG, PNG, or WebP';
+                    if (uploadBtnText) uploadBtnText.innerText = 'Upload Image';
+                    if (btnAiText) btnAiText.innerText = 'Generate AI Product Content';
+                    if (btnAiIcon) {
+                        btnAiIcon.className = 'text-sm';
+                        btnAiIcon.innerText = '✨';
+                    }
+                    if (statusEl) {
+                        statusEl.innerHTML = '<span class="text-slate-400">Upload primary image, then click Generate to auto-draft details & SEO.</span>';
+                    }
+                }
 
                 // Map public.inventory design group, variant & storage folder
                 if (document.getElementById('pf-design-group')) document.getElementById('pf-design-group').value = product.design_group || '';
@@ -11499,6 +11810,7 @@
                 status: statusVal,
                 seo_title: document.getElementById('pf-seo-title').value.trim() || null,
                 seo_description: document.getElementById('pf-seo-desc').value.trim() || null,
+                seo_keywords: document.getElementById('pf-seo-keywords')?.value.trim() || null,
                 shop_name: document.getElementById('pf-shop-name').value.trim() || 'WishRite',
                 shop_address: document.getElementById('pf-shop-address').value.trim() || null,
                 purchase_date: document.getElementById('pf-purchase-date').value || null,
@@ -11528,6 +11840,16 @@
                     const errDetail = result?.error?.message || result?.message || 'Could not save product.';
                     alert(`Save Failed: ${errCode}${errDetail}`);
                     return;
+                }
+
+                // If user selected a new primary image during this session, upload it now
+                if (currentProductFormPrimaryFile) {
+                    try {
+                        await window.WishRiteAPI.uploadProductImage(code, currentProductFormPrimaryFile, true);
+                        currentProductFormPrimaryFile = null;
+                    } catch (uploadErr) {
+                        console.warn('[ProductForm] Primary image upload failed post-save:', uploadErr);
+                    }
                 }
 
                 // Verify saved compare_at_price returned from API

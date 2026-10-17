@@ -58,7 +58,11 @@ import {
     handleDeleteAiImage,
     uploadOriginalMiddleware
 } from './backend/ai-images.js';
-import { 
+import {
+    handleGenerateProductContent,
+    productContentUploadMiddleware
+} from './backend/ai-product-content.js';
+import {
     handleLogin,
     handleCheckSetup,
     handleInitialSetup,
@@ -222,6 +226,9 @@ app.post('/api/products/:productId/ai-images/generate', handleGenerateAiImages);
 app.get('/api/products/:productId/ai-images/status', handleGetAiImagesStatus);
 app.post('/api/products/:productId/ai-images/:imageId/regenerate', handleRegenerateAiImage);
 app.delete('/api/products/:productId/ai-images/:imageId', handleDeleteAiImage);
+
+// AI Product Content & SEO Auto-Generation Endpoint
+app.post('/api/generate-product-content', productContentUploadMiddleware, handleGenerateProductContent);
 
 // Occasions & Festive Settings
 app.get('/api/settings/occasion', handleGetOccasionSettings);

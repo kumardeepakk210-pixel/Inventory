@@ -186,6 +186,28 @@
             return await this.delete(`/products/${encodeURIComponent(skuOrId)}/ai-images/${encodeURIComponent(imageId)}`);
         }
 
+        async generateProductContent({ file, imageUrl, imageBase64, productContext = {} } = {}) {
+            if (file) {
+                const formData = new FormData();
+                formData.append('image', file);
+                Object.entries(productContext).forEach(([k, v]) => {
+                    if (v !== undefined && v !== null && v !== '') {
+                        formData.append(k, v);
+                    }
+                });
+                return await this.request('/generate-product-content', {
+                    method: 'POST',
+                    body: formData
+                });
+            } else {
+                return await this.post('/generate-product-content', {
+                    imageUrl,
+                    imageBase64,
+                    ...productContext
+                });
+            }
+        }
+
         // ==============================================================================
         // OCCASIONS & FESTIVE SETTINGS
         // ==============================================================================
