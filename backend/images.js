@@ -1,12 +1,26 @@
 // ==============================================================================
 // WISHRITE INVENTORY — IMAGES API CONTROLLER
-// Manages product image uploads and metadata using Supabase Storage server-side.
+// Manages product image uploads, 8K enhancement pipeline, and metadata using Supabase.
 // Credentials and storage policies remain strictly isolated on the server.
 // ==============================================================================
 
 import multer from 'multer';
 import crypto from 'crypto';
-import { storageUpload, storageDelete, storageList, getStoragePublicUrl, dbQuery, dbInsert, dbUpdate, dbDelete } from './supabase-client.js';
+import {
+    storageUpload,
+    storageDelete,
+    storageList,
+    getStoragePublicUrl,
+    dbQuery,
+    dbInsert,
+    dbUpdate,
+    dbDelete
+} from './supabase-client.js';
+import {
+    enhanceImageTo8K,
+    getEnhancementStatus,
+    fetchImageBuffer
+} from '../services/imageUpscaleService.js';
 
 // Configure in-memory upload (files are immediately streamed to Supabase Storage)
 const storage = multer.memoryStorage();
@@ -83,6 +97,9 @@ export async function handleGetProductImages(req, res) {
 
 /**
  * POST /api/products/:sku/images
+ * NORMAL UPLOAD WORKFLOW:
+ * 1. Preserves source image in Supabase storage & DB (generation_source = 'upload')
+ * 2. Automatically routes to COMMON 8K ENHANCEMENT PIPELINE
  */
 export async function handleUploadProductImage(req, res) {
     try {
@@ -101,12 +118,13 @@ export async function handleUploadProductImage(req, res) {
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
         const storagePath = `${cleanSku}/${fileName}`;
 
-        // Upload to Supabase Storage
+        // 1. Upload source image to Supabase Storage (Preserving exact original)
         const publicUrl = await storageUpload(BUCKET, storagePath, file.buffer, file.mimetype);
 
         const isPrimary = req.body.is_primary === 'true' || req.body.is_primary === true;
+        const imageRole = req.body.image_role || '01_main_ecommerce';
 
-        // Look up product_id and sync image to public.inventory table
+        // 2. Look up product_id and sync image to public.inventory table
         let productId = null;
         try {
             const list = await dbQuery('inventory', `product_code=eq.${encodeURIComponent(cleanSku)}&limit=1`);
@@ -125,9 +143,10 @@ export async function handleUploadProductImage(req, res) {
             console.warn('[Images API] Failed to update inventory record with uploaded image:', e.message);
         }
 
-        // Record metadata in product_images table if available
+        // 3. Record source image in canonical public.product_images
+        const sourceImageId = crypto.randomUUID();
         let newRecord = {
-            id: crypto.randomUUID(),
+            id: sourceImageId,
             product_id: productId,
             product_code: cleanSku,
             image_url: publicUrl,
@@ -136,39 +155,190 @@ export async function handleUploadProductImage(req, res) {
             file_name: fileName,
             storage_path: storagePath,
             image_type: isPrimary ? 'Main' : 'Gallery',
-            image_role: req.body.image_role || 'manual_upload',
+            image_role: imageRole,
             sort_order: parseInt(req.body.sort_order, 10) || 0,
             alt_text: req.body.alt_text || `${cleanSku} jewellery photograph`,
             is_primary: isPrimary,
-            generation_source: 'manual',
+            generation_source: 'upload', // Section 12 Lineage
             generation_status: 'completed',
             is_ai_generated: false,
+            parent_image_id: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
 
         try {
-            const inserted = await dbInsert('product_images', newRecord);
+            const inserted = await dbInsert('product_images', newRecord, { useAdmin: true });
             if (inserted.data) newRecord = inserted.data;
         } catch (dbErr) {
             console.warn('[Images API] Metadata insert to product_images skipped:', dbErr.message);
         }
 
-        return res.status(201).json({
-            success: true,
-            message: 'Image uploaded successfully.',
-            data: {
-                ...newRecord,
-                image_url: publicUrl,
-                public_url: publicUrl,
-                publicUrl: publicUrl
-            }
-        });
+        // 4. COMMON 8K ENHANCEMENT PIPELINE EXECUTION
+        // Supports synchronous execution if requested (?sync=true) or async execution for non-blocking UI
+        const isSync = req.query.sync === 'true' || req.body.sync === 'true';
+        const enhancementMetadata = {
+            productId,
+            productCode: cleanSku,
+            sourceImageId: newRecord.id,
+            sourceImageUrl: publicUrl,
+            fileName,
+            imageRole,
+            imageType: newRecord.image_type,
+            sortOrder: newRecord.sort_order,
+            altText: newRecord.alt_text,
+            isPrimary,
+            sourceType: 'upload',
+            isAiGenerated: false
+        };
+
+        if (isSync) {
+            // Await enhancement synchronously
+            const enhancement = await enhanceImageTo8K(file.buffer, enhancementMetadata);
+            return res.status(201).json({
+                success: true,
+                message: 'Image uploaded and 8K enhancement completed successfully.',
+                data: {
+                    ...newRecord,
+                    image_url: publicUrl,
+                    master_8k_url: enhancement.master_8k_url,
+                    derivative_urls: enhancement.derivative_urls,
+                    enhancement_status: enhancement.success ? 'completed' : 'failed',
+                    enhancement
+                }
+            });
+        } else {
+            // Asynchronous non-blocking background enhancement execution
+            setImmediate(async () => {
+                try {
+                    await enhanceImageTo8K(file.buffer, enhancementMetadata);
+                } catch (e) {
+                    console.error(`[Images API] Background 8K enhancement error for ${cleanSku}:`, e.message);
+                }
+            });
+
+            return res.status(201).json({
+                success: true,
+                message: 'Image uploaded successfully. 8K enhancement queued in background.',
+                data: {
+                    ...newRecord,
+                    image_url: publicUrl,
+                    enhancement_status: 'processing'
+                }
+            });
+        }
+
     } catch (err) {
         console.error('[Upload Image Error]:', err);
         return res.status(500).json({
             success: false,
             error: { code: 'IMAGE_UPLOAD_FAILED', message: err.message || 'Image upload failed' }
+        });
+    }
+}
+
+/**
+ * GET /api/products/:sku/images/:imageId/enhancement-status
+ * Polls status of 8K enhancement for a specific image
+ */
+export async function handleGetImageEnhancementStatus(req, res) {
+    try {
+        const { sku, imageId } = req.params;
+        if (!sku || !imageId) {
+            return res.status(400).json({ success: false, error: { message: 'SKU and image ID are required' } });
+        }
+
+        const status = await getEnhancementStatus(imageId);
+        if (status) {
+            return res.json({ success: true, data: status });
+        }
+
+        return res.json({
+            success: true,
+            data: {
+                id: imageId,
+                status: 'completed',
+                message: 'Status resolved or ready'
+            }
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: { code: 'ENHANCEMENT_STATUS_FAILED', message: err.message }
+        });
+    }
+}
+
+/**
+ * POST /api/products/:sku/images/:imageId/retry-enhancement
+ * Retries 8K enhancement for an existing source image WITHOUT regenerating/re-uploading
+ */
+export async function handleRetryImageEnhancement(req, res) {
+    try {
+        const { sku, imageId } = req.params;
+        if (!sku || !imageId) {
+            return res.status(400).json({ success: false, error: { message: 'SKU and image ID are required' } });
+        }
+
+        const cleanSku = sku.toUpperCase().trim();
+
+        // 1. Locate source image record in product_images
+        let sourceImage = null;
+        try {
+            const rows = await dbQuery('product_images', `id=eq.${encodeURIComponent(imageId)}&limit=1`);
+            if (rows && rows.length > 0) sourceImage = rows[0];
+        } catch (e) {}
+
+        if (!sourceImage) {
+            return res.status(404).json({ success: false, error: { message: `Image record '${imageId}' not found` } });
+        }
+
+        if (!sourceImage.image_url) {
+            return res.status(400).json({ success: false, error: { message: 'Source image has no accessible image URL to enhance' } });
+        }
+
+        console.log(`[8K PIPELINE] Retrying 8K enhancement for ${cleanSku} (Image: ${imageId})`);
+
+        // 2. Download preserved source image
+        const { buffer } = await fetchImageBuffer(sourceImage.image_url);
+
+        // 3. Dispatch to COMMON 8K ENHANCEMENT PIPELINE with forceRetry = true
+        const enhancement = await enhanceImageTo8K(buffer, {
+            productId: sourceImage.product_id,
+            productCode: cleanSku,
+            sourceImageId: sourceImage.id,
+            sourceImageUrl: sourceImage.image_url,
+            fileName: sourceImage.file_name || `source_${Date.now()}`,
+            imageRole: sourceImage.image_role || '01_main_ecommerce',
+            imageType: sourceImage.image_type || 'Gallery',
+            sortOrder: sourceImage.sort_order || 0,
+            altText: sourceImage.alt_text,
+            isPrimary: sourceImage.is_primary,
+            sourceType: sourceImage.generation_source || 'upload',
+            isAiGenerated: sourceImage.is_ai_generated || false,
+            forceRetry: true
+        });
+
+        if (!enhancement.success) {
+            return res.status(500).json({
+                success: false,
+                error: { message: enhancement.error || '8K enhancement retry failed' },
+                can_retry: true
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: '8K enhancement completed successfully.',
+            data: enhancement
+        });
+
+    } catch (err) {
+        console.error('[Retry Enhancement Error]:', err);
+        return res.status(500).json({
+            success: false,
+            error: { code: 'RETRY_ENHANCEMENT_FAILED', message: err.message },
+            can_retry: true
         });
     }
 }
@@ -209,7 +379,7 @@ export async function handleDeleteProductImage(req, res) {
     }
 }
 
-// Vercel Serverless Function entry point (dynamic import prevents circular ESM dependencies)
+// Vercel Serverless Function entry point
 export default async function handler(req, res) {
     const { app } = await import('../server.js');
     return app(req, res);

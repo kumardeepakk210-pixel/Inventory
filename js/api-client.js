@@ -153,6 +153,15 @@
             return await this.delete(`/products/${encodeURIComponent(sku)}/images/${encodeURIComponent(fileName)}`);
         }
 
+        async getImageEnhancementStatus(sku, imageId) {
+            const res = await this.get(`/products/${encodeURIComponent(sku)}/images/${encodeURIComponent(imageId)}/enhancement-status`);
+            return res.data;
+        }
+
+        async retryImageEnhancement(sku, imageId) {
+            return await this.post(`/products/${encodeURIComponent(sku)}/images/${encodeURIComponent(imageId)}/retry-enhancement`, {});
+        }
+
         // ==============================================================================
         // AI PRODUCT IMAGE STUDIO (GEMINI 8K MASTER WORKFLOW)
         // ==============================================================================

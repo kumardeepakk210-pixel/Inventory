@@ -13293,15 +13293,34 @@ create policy "Product images can be deleted" on storage.objects for delete to a
                         `<option value="${t}" ${img.image_type === t ? 'selected' : ''}>${t}</option>`
                     ).join('');
 
+                    const is8kReady = Boolean(img.master_8k_url);
+                    const is8kProcessing = img.enhancement_status === 'processing' || img.generation_status === 'processing';
+                    const is8kFailed = img.enhancement_status === 'failed';
+
                     return `
                         <div class="bg-white rounded-xl border ${isPrimary ? 'border-[#5E3435] ring-2 ring-[#5E3435]/20 shadow-md' : 'border-slate-200 shadow-sm'} overflow-hidden flex flex-col group">
                             <!-- Image Wrap with Badges -->
                             <div class="aspect-square bg-slate-100 relative overflow-hidden flex items-center justify-center">
                                 <img src="${img.image_url}" alt="${escapeHtml(img.alt_text || 'Product image')}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=generateProductVectorPlaceholder('${escapeHtml(activeProductForImages?.product_name || 'Jewellery')}', '${escapeHtml(activeProductForImages?.product_code || '')}', '${escapeHtml(activeProductForImages?.category || '')}');">
                                 
-                                <div class="absolute top-2 left-2 flex items-center gap-1.5">
-                                    ${isPrimary ? '<span class="bg-[#5E3435] text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow">★ Primary</span>' : ''}
-                                    <span class="bg-black/60 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">#${idx + 1}</span>
+                                <div class="absolute top-2 left-2 flex flex-col gap-1 items-start">
+                                    <div class="flex items-center gap-1.5">
+                                        ${isPrimary ? '<span class="bg-[#5E3435] text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow">★ Primary</span>' : ''}
+                                        <span class="bg-black/60 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">#${idx + 1}</span>
+                                    </div>
+                                    ${is8kReady ? `
+                                        <span class="bg-emerald-600 text-white font-mono text-[9px] font-bold px-1.5 py-0.5 rounded shadow flex items-center gap-1" title="8K Master Ready (~7680px)">
+                                            <span>✓</span> 8K Ready
+                                        </span>
+                                    ` : is8kProcessing ? `
+                                        <span class="bg-amber-500 text-slate-950 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded shadow flex items-center gap-1 animate-pulse">
+                                            <span class="animate-spin text-[8px]">⟳</span> 8K Enhancing...
+                                        </span>
+                                    ` : is8kFailed ? `
+                                        <span class="bg-rose-600 text-white font-mono text-[9px] font-bold px-1.5 py-0.5 rounded shadow flex items-center gap-1">
+                                            <span>✕</span> 8K Failed
+                                        </span>
+                                    ` : ''}
                                 </div>
 
                                 <button type="button" onclick="deleteProductImage(${idx})" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity" title="Delete image">
@@ -13325,12 +13344,24 @@ create policy "Product images can be deleted" on storage.objects for delete to a
                                 </div>
 
                                 <!-- Action Buttons -->
-                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-1">
-                                    ${!isPrimary ? `
-                                        <button type="button" onclick="setProductPrimaryImage(${idx})" class="text-[11px] font-bold text-[#5E3435] hover:underline flex items-center gap-1">
-                                            ★ Set as Main
-                                        </button>
-                                    ` : '<span class="text-[11px] text-slate-400 font-medium">Primary Image</span>'}
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-1 flex-wrap">
+                                    <div class="flex items-center gap-1">
+                                        ${!isPrimary ? `
+                                            <button type="button" onclick="setProductPrimaryImage(${idx})" class="text-[11px] font-bold text-[#5E3435] hover:underline flex items-center gap-1">
+                                                ★ Set Main
+                                            </button>
+                                        ` : '<span class="text-[11px] text-slate-400 font-medium">Primary</span>'}
+
+                                        ${img.master_8k_url ? `
+                                            <a href="${img.master_8k_url}" target="_blank" rel="noopener noreferrer" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-mono text-[9px] font-bold shadow" title="Open 8K Master (~7680px)">
+                                                🔍 8K
+                                            </a>
+                                        ` : img.id ? `
+                                            <button type="button" onclick="retryProductImageEnhancement('${img.id}')" class="text-[9px] font-bold text-amber-700 hover:underline">
+                                                ⚡ 8K Enhance
+                                            </button>
+                                        ` : ''}
+                                    </div>
 
                                     <div class="flex items-center gap-1">
                                         <button type="button" onclick="moveProductImage(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold" title="Move left">←</button>
@@ -13469,10 +13500,15 @@ create policy "Product images can be deleted" on storage.objects for delete to a
                     const uploadedUrl = uploadRes.data.image_url || uploadRes.data.public_url || uploadRes.data.publicUrl;
                     const storagePath = uploadRes.data.storage_path;
 
+                    if (statusText) statusText.innerText = `Upload complete. Enhancing to 8K...`;
+
                     const imageRecord = {
+                        id: uploadRes.data.id || `${cleanSku}_${Date.now()}`,
                         product_id: p.id,
                         image_url: uploadedUrl,
                         storage_path: storagePath,
+                        master_8k_url: uploadRes.data.master_8k_url || null,
+                        enhancement_status: uploadRes.data.enhancement_status || 'processing',
                         image_type: isFirstImage ? 'Main' : 'Gallery',
                         sort_order: activeProductImagesList.length + newImagesToAdd.length,
                         alt_text: `${p.product_name} — WishRite 925 Silver Jewellery`,
@@ -13481,17 +13517,43 @@ create policy "Product images can be deleted" on storage.objects for delete to a
 
                     newImagesToAdd.push(imageRecord);
 
+                    if (statusText) statusText.innerText = `8K Ready ✓ (${file.name})`;
+
                 } catch (err) {
                     alert(`Error processing '${file.name}': ${err.message}`);
                 }
             }
 
-            if (progressContainer) progressContainer.classList.add('hidden');
+            if (progressContainer) {
+                setTimeout(() => { progressContainer.classList.add('hidden'); }, 1500);
+            }
 
             if (newImagesToAdd.length > 0) {
                 activeProductImagesList = [...activeProductImagesList, ...newImagesToAdd];
                 await syncProductImagesToSupabase();
                 renderImageManagerGallery();
+
+                // Poll for background 8K completion
+                setTimeout(async () => {
+                    await loadImagesForActiveProduct();
+                }, 3000);
+            }
+        }
+
+        // Retry 8K enhancement without re-uploading
+        async function retryProductImageEnhancement(imageId) {
+            if (!activeProductForImages || !imageId) return;
+            const p = activeProductForImages;
+            try {
+                const res = await window.WishRiteAPI.retryImageEnhancement(p.product_code, imageId);
+                if (res && res.success) {
+                    alert('✓ 8K Enhancement completed successfully! 8K Master is ready.');
+                    await loadImagesForActiveProduct();
+                } else {
+                    throw new Error(res?.error?.message || 'Enhancement failed');
+                }
+            } catch (err) {
+                alert(`8K Enhancement Failed: ${err.message}`);
             }
         }
 

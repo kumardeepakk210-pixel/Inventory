@@ -48,6 +48,8 @@ import {
     handleGetProductImages, 
     handleUploadProductImage, 
     handleDeleteProductImage,
+    handleGetImageEnhancementStatus,
+    handleRetryImageEnhancement,
     uploadMiddleware 
 } from './backend/images.js';
 import {
@@ -219,6 +221,8 @@ app.delete('/api/products/:id', handleDeleteProduct);
 app.get('/api/products/:sku/images', handleGetProductImages);
 app.post('/api/products/:sku/images', uploadMiddleware, handleUploadProductImage);
 app.delete('/api/products/:sku/images/:fileName', handleDeleteProductImage);
+app.get('/api/products/:sku/images/:imageId/enhancement-status', handleGetImageEnhancementStatus);
+app.post('/api/products/:sku/images/:imageId/retry-enhancement', handleRetryImageEnhancement);
 
 // AI Product Image Generator (Studio) Endpoints
 app.post('/api/products/:productId/original-image', uploadOriginalMiddleware, handleUploadOriginalImage);

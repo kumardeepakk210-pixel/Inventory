@@ -139,25 +139,34 @@ test('▶ AI Product Image Generator Technical Audit Suite', async (t) => {
     // AUDIT 5: Verify Actual 8K Dimensions & Aspect Ratio Preservation
     // --------------------------------------------------------------------------
     await t.test('5. Verify Actual 8K Dimensions & Aspect Ratio Preservation', () => {
-        // Square 1:1 -> 8192 x 8192
+        // Square 1:1 -> 7680 x 7680
         const square = calculate8KDimensions(4096, 4096);
-        assert.equal(square.targetWidth, 8192);
-        assert.equal(square.targetHeight, 8192);
+        assert.equal(square.targetWidth, 7680);
+        assert.equal(square.targetHeight, 7680);
         assert.equal(square.isSquare, true);
 
-        // Portrait 2:3 -> 5461 x 8192 (never stretched or forced to square)
-        const portrait = calculate8KDimensions(2000, 3000);
-        assert.equal(portrait.targetHeight, 8192);
-        assert.equal(portrait.targetWidth, Math.round(8192 * (2000 / 3000)));
-        assert.equal(portrait.targetWidth, 5461);
-        assert.equal(portrait.isSquare, false);
+        // Portrait 2:3 -> 5120 x 7680 (never stretched or forced to square)
+        const portrait23 = calculate8KDimensions(2000, 3000);
+        assert.equal(portrait23.targetHeight, 7680);
+        assert.equal(portrait23.targetWidth, 5120);
+        assert.equal(portrait23.isSquare, false);
 
-        // Landscape 16:9 -> 8192 x 4608
+        // Portrait 4:5 -> 6144 x 7680
+        const portrait45 = calculate8KDimensions(4000, 5000);
+        assert.equal(portrait45.targetHeight, 7680);
+        assert.equal(portrait45.targetWidth, 6144);
+        assert.equal(portrait45.isSquare, false);
+
+        // Landscape 16:9 -> 7680 x 4320
         const landscape = calculate8KDimensions(1920, 1080);
-        assert.equal(landscape.targetWidth, 8192);
-        assert.equal(landscape.targetHeight, Math.round(8192 / (1920 / 1080)));
-        assert.equal(landscape.targetHeight, 4608);
+        assert.equal(landscape.targetWidth, 7680);
+        assert.equal(landscape.targetHeight, 4320);
         assert.equal(landscape.isSquare, false);
+
+        // If source already exceeds 7680 on long edge, do not downscale
+        const largeSource = calculate8KDimensions(8000, 8000);
+        assert.equal(largeSource.targetWidth, 8000);
+        assert.equal(largeSource.targetHeight, 8000);
     });
 
     // --------------------------------------------------------------------------

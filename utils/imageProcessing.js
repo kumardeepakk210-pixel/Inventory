@@ -26,41 +26,59 @@ export async function getImageMetadata(buffer) {
 
 /**
  * Calculate target 8K dimensions preserving exact aspect ratio without stretching
- * Target: ~8192px on the primary axis (8192x8192 for 1:1 square)
+ * 8K Definition: 7680 pixels on the LONG EDGE.
+ * Examples:
+ * - 1:1  -> 7680 x 7680
+ * - 2:3  -> 5120 x 7680
+ * - 4:5  -> 6144 x 7680
+ * - 16:9 -> 7680 x 4320
+ * If the source already exceeds 7680 pixels on the long edge, do not unnecessarily downscale it.
  */
-export function calculate8KDimensions(originalWidth, originalHeight) {
-    const TARGET_MAX_DIMENSION = 8192;
-    const width = Number(originalWidth) || TARGET_MAX_DIMENSION;
-    const height = Number(originalHeight) || TARGET_MAX_DIMENSION;
+export function calculate8KDimensions(originalWidth, originalHeight, targetLongEdge = 7680) {
+    const TARGET_LONG_EDGE = Number(targetLongEdge) || 7680;
+    const width = Number(originalWidth) || TARGET_LONG_EDGE;
+    const height = Number(originalHeight) || TARGET_LONG_EDGE;
 
     if (width <= 0 || height <= 0) {
-        return { targetWidth: TARGET_MAX_DIMENSION, targetHeight: TARGET_MAX_DIMENSION, aspectRatio: 1.0 };
+        return { targetWidth: TARGET_LONG_EDGE, targetHeight: TARGET_LONG_EDGE, aspectRatio: 1.0, isSquare: true };
     }
 
+    const currentLongEdge = Math.max(width, height);
     const aspectRatio = width / height;
+    const isSquare = Math.abs(aspectRatio - 1.0) < 0.05;
+
+    // If the source already exceeds or equals 7680 pixels on the long edge, do not downscale it
+    if (currentLongEdge >= TARGET_LONG_EDGE) {
+        return {
+            targetWidth: width,
+            targetHeight: height,
+            aspectRatio: Number(aspectRatio.toFixed(4)),
+            isSquare
+        };
+    }
 
     let targetWidth;
     let targetHeight;
 
-    if (Math.abs(aspectRatio - 1.0) < 0.05) {
+    if (isSquare) {
         // Square (1:1)
-        targetWidth = TARGET_MAX_DIMENSION;
-        targetHeight = TARGET_MAX_DIMENSION;
+        targetWidth = TARGET_LONG_EDGE;
+        targetHeight = TARGET_LONG_EDGE;
     } else if (aspectRatio > 1.0) {
-        // Landscape (e.g. 3:2, 4:3, 16:9)
-        targetWidth = TARGET_MAX_DIMENSION;
-        targetHeight = Math.round(TARGET_MAX_DIMENSION / aspectRatio);
+        // Landscape (e.g. 16:9, 3:2, 4:3)
+        targetWidth = TARGET_LONG_EDGE;
+        targetHeight = Math.round(TARGET_LONG_EDGE / aspectRatio);
     } else {
-        // Portrait (e.g. 2:3, 3:4, 9:16)
-        targetHeight = TARGET_MAX_DIMENSION;
-        targetWidth = Math.round(TARGET_MAX_DIMENSION * aspectRatio);
+        // Portrait (e.g. 2:3, 4:5, 9:16)
+        targetHeight = TARGET_LONG_EDGE;
+        targetWidth = Math.round(TARGET_LONG_EDGE * aspectRatio);
     }
 
     return {
         targetWidth,
         targetHeight,
         aspectRatio: Number(aspectRatio.toFixed(4)),
-        isSquare: Math.abs(aspectRatio - 1.0) < 0.05
+        isSquare
     };
 }
 

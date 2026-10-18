@@ -14,7 +14,8 @@ import {
     generateGeminiProductImage,
     buildCompositePrompt
 } from './geminiImageService.js';
-import { upscaleImageTo8K } from './imageUpscaleService.js';
+import { upscaleImageTo8K, enhanceImageTo8K } from './imageUpscaleService.js';
+export { enhanceImageTo8K };
 import { generateWebsiteDerivatives, getImageMetadata } from '../utils/imageProcessing.js';
 import { 
     storageUpload, 
@@ -324,94 +325,87 @@ async function executeJobPipeline(jobId, product, sourceImageUrl) {
             });
             console.log(`[AI IMAGE] Gemini completed: ${roleConfig.role} (${geminiResult.nativeResolution})`);
 
-            // STEP 2: 8K Upscaling / Enhancement
-            const upscaleResult = await upscaleImageTo8K(geminiResult.imageBuffer, {
-                provider: process.env.UPSCALE_PROVIDER
-            });
-            console.log(`[AI IMAGE] Upscaling completed: ${upscaleResult.targetResolution}`);
-
-            // STEP 3: Generate Website Derivatives (2400px, 1200px, 600px, 4096px)
-            const derivatives = await generateWebsiteDerivatives(upscaleResult.buffer);
-
-            // STEP 4: Store in Supabase Storage with clean hierarchy
-            // product-images/<sku>/ai/<role>/...
+            // STEP 1b: Preserve AI-generated native source image (master_4k) in storage & database
             const roleSlug = roleConfig.role;
             const basePath = `${job.product_code}/ai/${roleSlug}`;
-
-            // Upload 8K Master
-            const master8kPath = `${basePath}/master_8k.webp`;
-            const master8kUrl = await storageUpload(BUCKET, master8kPath, upscaleResult.buffer, 'image/webp');
-
-            // Upload Native 4K Master
             const master4kPath = `${basePath}/master_4k.webp`;
             const master4kUrl = await storageUpload(BUCKET, master4kPath, geminiResult.imageBuffer, 'image/webp');
 
-            // Upload Website Derivatives
-            const derivativeUrls = {};
-            for (const [key, d] of Object.entries(derivatives)) {
-                const dPath = `${basePath}/${d.fileName}`;
-                derivativeUrls[key] = await storageUpload(BUCKET, dPath, d.buffer, 'image/webp');
+            // Record native source image in product_images (Section 12: generation_source = gemini)
+            const sourceRecord = {
+                id: imageRecord.id,
+                product_id: job.product_id,
+                product_code: job.product_code,
+                image_url: master4kUrl,
+                storage_path: master4kPath,
+                image_type: roleConfig.sort_order === 1 ? 'Main' : 'Gallery',
+                image_role: roleConfig.role,
+                sort_order: roleConfig.sort_order,
+                alt_text: `${product.product_name || 'WishRite'} - ${roleConfig.name} - Gemini 4K Source`,
+                is_primary: (roleConfig.sort_order === 1),
+                generation_source: 'gemini',
+                generation_model: geminiResult.model,
+                generation_prompt: roleConfig.prompt,
+                resolution: `${geminiResult.width}x${geminiResult.height}`,
+                width: geminiResult.width,
+                height: geminiResult.height,
+                generation_resolution: geminiResult.generationResolution || 'native_4k',
+                is_native_4k: geminiResult.isNative4K ?? true,
+                generation_status: 'completed',
+                generation_job_id: jobId,
+                is_ai_generated: true,
+                parent_image_id: null,
+                master_4k_url: master4kUrl,
+                version: 1,
+                created_at: new Date().toISOString()
+            };
+            try {
+                await dbInsert('product_images', sourceRecord, { useAdmin: true });
+            } catch (dbErr) {
+                console.warn(`[AI IMAGE] product_images source insert note for ${roleConfig.role}:`, dbErr.message);
             }
 
-            // Standard website image URL defaults to desktop 2400px derivative
-            const websiteImageUrl = derivativeUrls.desktop || master8kUrl;
+            // STEP 2: COMMON 8K ENHANCEMENT PIPELINE (Single implementation for Upload + AI)
+            const enhancement = await enhanceImageTo8K(geminiResult.imageBuffer, {
+                productId: job.product_id,
+                productCode: job.product_code,
+                sourceImageId: imageRecord.id,
+                sourceImageUrl: master4kUrl,
+                master4kUrl: master4kUrl,
+                imageRole: roleConfig.role,
+                imageType: roleConfig.sort_order === 1 ? 'Main' : 'Gallery',
+                sortOrder: roleConfig.sort_order,
+                altText: `${product.product_name || 'WishRite'} - ${roleConfig.name} - 8K Master`,
+                isPrimary: (roleConfig.sort_order === 1),
+                sourceType: 'gemini',
+                isAiGenerated: true,
+                jobId: jobId
+            });
 
-            // STEP 5: Record in product_images
+            if (!enhancement.success) {
+                throw new Error(enhancement.error || '8K enhancement failed');
+            }
+
+            // STEP 3: Update imageRecord in job tracking registry
             imageRecord.generation_status = 'completed';
-            imageRecord.image_url = websiteImageUrl;
-            imageRecord.master_8k_url = master8kUrl;
+            imageRecord.image_url = enhancement.image_url;
+            imageRecord.master_8k_url = enhancement.master_8k_url;
             imageRecord.master_4k_url = master4kUrl;
-            imageRecord.derivative_urls = derivativeUrls;
-            imageRecord.storage_path = master8kPath;
-            imageRecord.width = upscaleResult.width;
-            imageRecord.height = upscaleResult.height;
-            imageRecord.resolution = `${upscaleResult.width}x${upscaleResult.height} (8K)`;
+            imageRecord.derivative_urls = enhancement.derivative_urls;
+            imageRecord.storage_path = `${basePath}/master_8k.webp`;
+            imageRecord.width = enhancement.width;
+            imageRecord.height = enhancement.height;
+            imageRecord.resolution = enhancement.resolution;
             imageRecord.generation_resolution = geminiResult.generationResolution || 'native_4k';
             imageRecord.is_native_4k = geminiResult.isNative4K ?? true;
-            imageRecord.upscale_provider = upscaleResult.upscale_provider || 'sharp';
-            imageRecord.upscale_method = upscaleResult.upscale_method || 'lanczos3_unsharp';
-            imageRecord.upscale_quality = upscaleResult.upscale_quality || 'resampled_lanczos_8k';
-            imageRecord.final_resolution = upscaleResult.final_resolution || '8K';
+            imageRecord.upscale_provider = enhancement.upscale_provider || 'sharp';
+            imageRecord.upscale_method = enhancement.upscale_method || 'lanczos3_unsharp';
+            imageRecord.upscale_quality = enhancement.upscale_quality || 'resampled_lanczos_8k';
+            imageRecord.final_resolution = '8K';
             imageRecord.is_primary = (roleConfig.sort_order === 1);
 
             job.completed_images += 1;
             saveLocalJob(job);
-
-            // Persist to Supabase product_images table
-            try {
-                await dbInsert('product_images', {
-                    id: imageRecord.id,
-                    product_id: job.product_id,
-                    product_code: job.product_code,
-                    image_url: websiteImageUrl,
-                    storage_path: master8kPath,
-                    image_type: roleConfig.sort_order === 1 ? 'Main' : 'Gallery',
-                    sort_order: roleConfig.sort_order,
-                    alt_text: `${product.product_name || 'WishRite'} - ${roleConfig.name} - 8K AI Generated`,
-                    is_primary: imageRecord.is_primary,
-                    generation_source: 'gemini-ai',
-                    generation_model: geminiResult.model,
-                    generation_prompt: roleConfig.prompt,
-                    resolution: imageRecord.resolution,
-                    width: imageRecord.width,
-                    height: imageRecord.height,
-                    generation_resolution: imageRecord.generation_resolution,
-                    is_native_4k: imageRecord.is_native_4k,
-                    upscale_provider: imageRecord.upscale_provider,
-                    upscale_method: imageRecord.upscale_method,
-                    upscale_quality: imageRecord.upscale_quality,
-                    generation_status: 'completed',
-                    generation_job_id: jobId,
-                    is_ai_generated: true,
-                    image_role: roleConfig.role,
-                    master_8k_url: master8kUrl,
-                    master_4k_url: master4kUrl,
-                    derivative_urls: derivativeUrls,
-                    created_at: new Date().toISOString()
-                });
-            } catch (dbErr) {
-                console.warn(`[AI Image Service] product_images insert skipped for ${roleConfig.role}:`, dbErr.message);
-            }
 
             console.log(`[AI IMAGE] Image completed: ${roleConfig.role} (${job.completed_images}/${job.total_images})`);
 
@@ -504,28 +498,29 @@ export async function regenerateSingleImage(productIdOrSku, imageIdOrRole, optio
         product
     });
 
-    // Step 2: 8K Upscaling
-    const upscaleResult = await upscaleImageTo8K(geminiResult.imageBuffer, {
-        provider: process.env.UPSCALE_PROVIDER
-    });
-
-    // Step 3: Derivatives
-    const derivatives = await generateWebsiteDerivatives(upscaleResult.buffer);
-
-    // Step 4: Storage
     const basePath = `${productCode}/ai/${roleConfig.role}`;
-    const master8kPath = `${basePath}/master_8k.webp`;
-    const master8kUrl = await storageUpload(BUCKET, master8kPath, upscaleResult.buffer, 'image/webp');
     const master4kPath = `${basePath}/master_4k.webp`;
     const master4kUrl = await storageUpload(BUCKET, master4kPath, geminiResult.imageBuffer, 'image/webp');
 
-    const derivativeUrls = {};
-    for (const [key, d] of Object.entries(derivatives)) {
-        const dPath = `${basePath}/${d.fileName}`;
-        derivativeUrls[key] = await storageUpload(BUCKET, dPath, d.buffer, 'image/webp');
-    }
+    // Step 2: COMMON 8K ENHANCEMENT PIPELINE
+    const enhancement = await enhanceImageTo8K(geminiResult.imageBuffer, {
+        productId: product.id || productCode,
+        productCode: productCode,
+        sourceImageUrl: master4kUrl,
+        master4kUrl: master4kUrl,
+        imageRole: roleConfig.role,
+        imageType: roleConfig.sort_order === 1 ? 'Main' : 'Gallery',
+        sortOrder: roleConfig.sort_order,
+        altText: `${product.product_name || 'WishRite'} - ${roleConfig.name} - 8K Regenerated`,
+        isPrimary: (roleConfig.sort_order === 1),
+        sourceType: 'gemini',
+        isAiGenerated: true,
+        forceRetry: true
+    });
 
-    const websiteImageUrl = derivativeUrls.desktop || master8kUrl;
+    if (!enhancement.success) {
+        throw new Error(enhancement.error || '8K enhancement failed');
+    }
 
     const updatedImage = {
         product_id: product.id || productCode,
@@ -533,14 +528,14 @@ export async function regenerateSingleImage(productIdOrSku, imageIdOrRole, optio
         image_role: roleConfig.role,
         role_name: roleConfig.name,
         sort_order: roleConfig.sort_order,
-        image_url: websiteImageUrl,
-        master_8k_url: master8kUrl,
+        image_url: enhancement.image_url,
+        master_8k_url: enhancement.master_8k_url,
         master_4k_url: master4kUrl,
-        derivative_urls: derivativeUrls,
-        storage_path: master8kPath,
-        width: upscaleResult.width,
-        height: upscaleResult.height,
-        resolution: `${upscaleResult.width}x${upscaleResult.height} (8K)`,
+        derivative_urls: enhancement.derivative_urls,
+        storage_path: `${basePath}/master_8k.webp`,
+        width: enhancement.width,
+        height: enhancement.height,
+        resolution: enhancement.resolution,
         generation_resolution: geminiResult.generationResolution || 'native_4k',
         is_native_4k: geminiResult.isNative4K ?? true,
         upscale_provider: upscaleResult.upscale_provider || 'sharp',
