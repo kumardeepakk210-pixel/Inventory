@@ -156,22 +156,24 @@ export function verifyPassword(password, storedHash) {
  * Reads local JSON backup store safely
  */
 function readLocalStore() {
-    try {
-        if (fs.existsSync(INFLUENCERS_STORE_PATH)) {
-            const raw = fs.readFileSync(INFLUENCERS_STORE_PATH, 'utf-8');
-            const data = JSON.parse(raw);
-            return {
-                influencers: data.influencers || [],
-                accounts: data.accounts || [],
-                links: data.links || [],
-                stats: data.stats || [],
-                clicks: data.clicks || [],
-                attributions: data.attributions || [],
-                order_attributions: data.order_attributions || []
-            };
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            if (fs.existsSync(INFLUENCERS_STORE_PATH)) {
+                const raw = fs.readFileSync(INFLUENCERS_STORE_PATH, 'utf-8');
+                const data = JSON.parse(raw);
+                return {
+                    influencers: data.influencers || [],
+                    accounts: data.accounts || [],
+                    links: data.links || [],
+                    stats: data.stats || [],
+                    clicks: data.clicks || [],
+                    attributions: data.attributions || [],
+                    order_attributions: data.order_attributions || []
+                };
+            }
+        } catch (e) {
+            console.warn('[Creator API] Could not read influencers_store.json:', e.message);
         }
-    } catch (e) {
-        console.warn('[Creator API] Could not read influencers_store.json:', e.message);
     }
     return {
         influencers: [],
@@ -185,9 +187,10 @@ function readLocalStore() {
 }
 
 /**
- * Writes to local JSON backup store safely
+ * Writes to local JSON backup store safely (test only)
  */
 function writeLocalStore(store) {
+    if (process.env.NODE_ENV !== 'test') return;
     try {
         fs.writeFileSync(INFLUENCERS_STORE_PATH, JSON.stringify(store, null, 2), 'utf-8');
     } catch (e) {

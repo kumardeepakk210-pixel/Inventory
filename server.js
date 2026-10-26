@@ -439,7 +439,30 @@ app.post('/api/webhooks/razorpay-payouts', handleRazorpayPayoutWebhook);
 // Categories
 app.get('/api/categories', async (req, res) => {
     try {
-        const rows = await dbQuery('categories', 'order=category_name.asc').catch(() => []);
+        let rows = await dbQuery('categories', 'order=category_name.asc').catch(() => []);
+        if (!rows || rows.length === 0) {
+            // Live catalog source of truth: derive distinct categories directly from public.inventory
+            const products = await dbQuery('inventory', 'select=category,product_code').catch(() => []);
+            if (Array.isArray(products) && products.length > 0) {
+                const categoryMap = new Map();
+                for (const p of products) {
+                    const cat = (p.category || '').trim();
+                    if (!cat) continue;
+                    if (!categoryMap.has(cat)) {
+                        const prefix = (p.product_code || '').split('-')[0] || 'MISC';
+                        categoryMap.set(cat, {
+                            id: cat.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                            category_name: cat,
+                            code_prefix: prefix,
+                            count: 1
+                        });
+                    } else {
+                        categoryMap.get(cat).count++;
+                    }
+                }
+                rows = Array.from(categoryMap.values()).sort((a, b) => a.category_name.localeCompare(b.category_name));
+            }
+        }
         return res.json({ success: true, data: rows });
     } catch (e) {
         return res.status(500).json({ success: false, error: { message: e.message } });

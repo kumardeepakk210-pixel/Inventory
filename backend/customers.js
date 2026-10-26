@@ -24,29 +24,32 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 /**
- * Load persisted customer metadata (wallet balances, points, notes, adjustments)
+ * Load persisted customer metadata (wallet balances, points, notes, adjustments) - test only
  */
 function loadCustomersMeta() {
-    try {
-        if (fs.existsSync(CUSTOMERS_META_PATH)) {
-            const raw = fs.readFileSync(CUSTOMERS_META_PATH, 'utf-8');
-            return JSON.parse(raw) || {};
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            if (fs.existsSync(CUSTOMERS_META_PATH)) {
+                const raw = fs.readFileSync(CUSTOMERS_META_PATH, 'utf-8');
+                return JSON.parse(raw) || {};
+            }
+        } catch (e) {
+            console.warn('Could not read customers_meta.json in test:', e.message);
         }
-    } catch (e) {
-        console.warn('Could not read customers_meta.json:', e.message);
     }
     return {};
 }
 
 /**
- * Save customer metadata
+ * Save customer metadata - test only
  */
 function saveCustomersMeta(data) {
+    if (process.env.NODE_ENV !== 'test') return false;
     try {
         fs.writeFileSync(CUSTOMERS_META_PATH, JSON.stringify(data, null, 2), 'utf-8');
         return true;
     } catch (e) {
-        console.error('Could not save customers_meta.json:', e.message);
+        console.error('Could not save customers_meta.json in test:', e.message);
         return false;
     }
 }
@@ -442,7 +445,7 @@ export async function handleUpdateCustomer(req, res) {
         const allowedFields = [
             'customer_name', 'customer_phone', 'customer_email',
             'customer_address', 'customer_city', 'customer_state',
-            'customer_pin', 'customer_country'
+            'customer_pin', 'customer_country', 'wallet_balance', 'points_balance'
         ];
 
         const payload = {};
@@ -459,7 +462,7 @@ export async function handleUpdateCustomer(req, res) {
             updatedData = dbRes?.data;
         }
 
-        // Update balances in meta store if passed
+        // Update balances in meta store if in test mode
         const metaStore = loadCustomersMeta();
         const normPhone = updates.customer_phone ? normalizePhone(updates.customer_phone) : null;
         const currentMeta = metaStore[id] || (normPhone ? metaStore[normPhone] : {}) || {};
@@ -472,17 +475,19 @@ export async function handleUpdateCustomer(req, res) {
         }
         currentMeta.updated_at = new Date().toISOString();
 
-        metaStore[id] = currentMeta;
-        if (normPhone) metaStore[normPhone] = currentMeta;
-        saveCustomersMeta(metaStore);
+        if (process.env.NODE_ENV === 'test') {
+            metaStore[id] = currentMeta;
+            if (normPhone) metaStore[normPhone] = currentMeta;
+            saveCustomersMeta(metaStore);
+        }
 
         return res.json({
             success: true,
             data: {
                 ...(updatedData || payload),
                 id,
-                wallet_balance: currentMeta.wallet_balance ?? 0,
-                points_balance: currentMeta.points_balance ?? 0
+                wallet_balance: payload.wallet_balance ?? currentMeta.wallet_balance ?? 0,
+                points_balance: payload.points_balance ?? currentMeta.points_balance ?? 0
             }
         });
     } catch (e) {
@@ -500,11 +505,18 @@ export async function handleAdjustCustomerBalance(req, res) {
         const { id } = req.params;
         const { wallet_delta, points_delta, note, admin_user } = req.body || {};
 
-        const metaStore = loadCustomersMeta();
-        const currentMeta = metaStore[id] || {};
-
-        const currentWallet = Number(currentMeta.wallet_balance || 0);
-        const currentPoints = Number(currentMeta.points_balance || 0);
+        // 1. Fetch current balances directly from Supabase customers table
+        let currentWallet = 0;
+        let currentPoints = 0;
+        try {
+            const dbCust = await dbQuery('customers', `id=eq.${encodeURIComponent(id)}&limit=1`);
+            if (dbCust && dbCust[0]) {
+                currentWallet = Number(dbCust[0].wallet_balance || 0);
+                currentPoints = Number(dbCust[0].points_balance || 0);
+            }
+        } catch (dbErr) {
+            console.warn('[Customers API] dbQuery customers notice:', dbErr.message);
+        }
 
         const newWallet = Math.max(0, currentWallet + Number(wallet_delta || 0));
         const newPoints = Math.max(0, currentPoints + Number(points_delta || 0));
@@ -519,26 +531,28 @@ export async function handleAdjustCustomerBalance(req, res) {
             admin_user: admin_user || 'Admin'
         };
 
-        const auditTrail = currentMeta.audit_trail || [];
-        auditTrail.unshift(auditItem);
-
-        metaStore[id] = {
-            ...currentMeta,
-            wallet_balance: newWallet,
-            points_balance: newPoints,
-            audit_trail: auditTrail.slice(0, 50),
-            updated_at: new Date().toISOString()
-        };
-
-        saveCustomersMeta(metaStore);
-
-        // Also try updating customer row if columns exist in DB
+        // 2. Persist directly to Supabase customers table
         await dbUpdate('customers', 'id', id, {
             wallet_balance: newWallet,
-            points_balance: newPoints
-        }).catch(() => {
-            // Columns might not exist yet; safe to ignore
+            points_balance: newPoints,
+            updated_at: new Date().toISOString()
         });
+
+        // 3. Keep test meta store updated if running in test environment
+        if (process.env.NODE_ENV === 'test') {
+            const metaStore = loadCustomersMeta();
+            const currentMeta = metaStore[id] || {};
+            const auditTrail = currentMeta.audit_trail || [];
+            auditTrail.unshift(auditItem);
+            metaStore[id] = {
+                ...currentMeta,
+                wallet_balance: newWallet,
+                points_balance: newPoints,
+                audit_trail: auditTrail.slice(0, 50),
+                updated_at: new Date().toISOString()
+            };
+            saveCustomersMeta(metaStore);
+        }
 
         return res.json({
             success: true,

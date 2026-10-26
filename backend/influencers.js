@@ -98,23 +98,25 @@ export function buildInstagramUrl(instagramId) {
  * Reads local JSON backup store
  */
 function readLocalStore() {
-    try {
-        if (fs.existsSync(INFLUENCERS_STORE_PATH)) {
-            const raw = fs.readFileSync(INFLUENCERS_STORE_PATH, 'utf-8');
-            const data = JSON.parse(raw);
-            return {
-                ...data,
-                influencers: data.influencers || [],
-                accounts: data.accounts || [],
-                links: data.links || [],
-                stats: data.stats || [],
-                clicks: data.clicks || [],
-                attributions: data.attributions || [],
-                order_attributions: data.order_attributions || []
-            };
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            if (fs.existsSync(INFLUENCERS_STORE_PATH)) {
+                const raw = fs.readFileSync(INFLUENCERS_STORE_PATH, 'utf-8');
+                const data = JSON.parse(raw);
+                return {
+                    ...data,
+                    influencers: data.influencers || [],
+                    accounts: data.accounts || [],
+                    links: data.links || [],
+                    stats: data.stats || [],
+                    clicks: data.clicks || [],
+                    attributions: data.attributions || [],
+                    order_attributions: data.order_attributions || []
+                };
+            }
+        } catch (e) {
+            console.warn('[Influencers API] Could not read influencers_store.json:', e.message);
         }
-    } catch (e) {
-        console.warn('[Influencers API] Could not read influencers_store.json:', e.message);
     }
     return {
         influencers: [],
@@ -128,9 +130,10 @@ function readLocalStore() {
 }
 
 /**
- * Writes to local JSON backup store
+ * Writes to local JSON backup store (test only)
  */
 function writeLocalStore(store) {
+    if (process.env.NODE_ENV !== 'test') return;
     try {
         fs.writeFileSync(INFLUENCERS_STORE_PATH, JSON.stringify(store, null, 2), 'utf-8');
     } catch (e) {
@@ -1418,20 +1421,12 @@ export async function handleGetPublicInfluencerProducts(req, res) {
         const local = readLocalStore();
         const productLinks = (local.links || []).filter(l => l.influencer_id === creator.id && l.link_type === 'product');
 
-        // Fetch live active inventory items
+        // Fetch live active inventory items directly from Supabase
         let activeInventory = [];
         try {
             const rows = await dbQuery('inventory', 'status=eq.Active&order=created_at.desc&limit=50');
             if (Array.isArray(rows) && rows.length > 0) activeInventory = rows;
         } catch (e) {}
-
-        if (activeInventory.length === 0) {
-            try {
-                const rawMeta = fs.readFileSync(path.join(DATA_DIR, 'product_meta.json'), 'utf-8');
-                const meta = JSON.parse(rawMeta);
-                activeInventory = Object.values(meta).filter(p => p.status === 'Active' || !p.status);
-            } catch (e) {}
-        }
 
         let curated = [];
         let isFallback = false;

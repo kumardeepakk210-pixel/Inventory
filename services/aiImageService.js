@@ -85,22 +85,6 @@ export async function findProduct(idOrSku) {
         if (byId && byId.length > 0) return byId[0];
     } catch (e) {}
 
-    // 3. Fallback: check product_meta.json
-    try {
-        const metaPath = path.join(__dirname, '../data/product_meta.json');
-        if (fs.existsSync(metaPath)) {
-            const allMeta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-            if (allMeta[clean]) {
-                return {
-                    id: clean,
-                    product_code: clean,
-                    product_name: allMeta[clean].product_name || clean,
-                    ...allMeta[clean]
-                };
-            }
-        }
-    } catch (e) {}
-
     return null;
 }
 
@@ -244,12 +228,14 @@ export async function startGenerationJob(productIdOrSku, options = {}) {
         console.warn('[AI Image Service] ai_image_jobs table insert skipped:', dbErr.message);
     }
 
-    // Trigger non-blocking asynchronous generation execution
-    setImmediate(() => {
-        executeJobPipeline(jobId, product, sourceImageUrl).catch(err => {
-            console.error(`[AI Image Service] Pipeline failure on job ${jobId}:`, err);
+    // Trigger non-blocking asynchronous generation execution (skip in test or if explicitly requested)
+    if (!options.skipExecution && process.env.NODE_ENV !== 'test') {
+        setImmediate(() => {
+            executeJobPipeline(jobId, product, sourceImageUrl).catch(err => {
+                console.error(`[AI Image Service] Pipeline failure on job ${jobId}:`, err);
+            });
         });
-    });
+    }
 
     console.log(`[AI IMAGE] Job created: ${jobId} for product ${productCode}`);
 

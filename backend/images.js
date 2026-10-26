@@ -366,6 +366,22 @@ export async function handleDeleteProductImage(req, res) {
             await dbDelete('product_images', 'file_name', fileName);
         } catch (e) {}
 
+        // Keep public.inventory in sync with remaining images
+        try {
+            const list = await dbQuery('inventory', `product_code=eq.${encodeURIComponent(cleanSku)}&limit=1`);
+            if (list && list[0]) {
+                const existingMedia = Array.isArray(list[0].product_media_urls) ? list[0].product_media_urls : [];
+                const updatedMedia = existingMedia.filter(u => typeof u === 'string' && !u.includes(fileName));
+                const payload = { product_media_urls: updatedMedia };
+                if (list[0].image_url && typeof list[0].image_url === 'string' && list[0].image_url.includes(fileName)) {
+                    payload.image_url = updatedMedia[0] || null;
+                }
+                await dbUpdate('inventory', 'product_code', cleanSku, payload, { useAdmin: true });
+            }
+        } catch (syncErr) {
+            console.warn('[Images API] Sync deletion note:', syncErr.message);
+        }
+
         return res.json({
             success: true,
             message: 'Image deleted successfully.'

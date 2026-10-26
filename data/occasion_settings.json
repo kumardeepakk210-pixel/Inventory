@@ -1,11 +1,12 @@
 {
-  "isLive": true,
-  "activeOccasion": "durga-puja",
+  "isLive": false,
+  "is_active": false,
+  "festive_mode_enabled": false,
+  "activeOccasion": null,
+  "active_occasion_slug": null,
+  "active_occasion_name": null,
   "selectedOccasion": "durga-puja",
-  "festive_mode_enabled": true,
-  "active_occasion_slug": "durga-puja",
-  "active_occasion_name": "Durga Puja",
   "selected_occasion_slug": "durga-puja",
   "selected_occasion_name": "Durga Puja",
-  "updated_at": "2026-10-16T20:17:43.435Z"
+  "updated_at": "2026-10-26T22:30:00.000Z"
 }

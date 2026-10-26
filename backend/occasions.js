@@ -148,16 +148,19 @@ export const DEFAULT_OCCASIONS = [
 ];
 
 function loadLocalOccasions() {
-    try {
-        if (fs.existsSync(OCCASIONS_STORE_PATH)) {
-            const raw = fs.readFileSync(OCCASIONS_STORE_PATH, 'utf-8');
-            return JSON.parse(raw);
-        }
-    } catch (e) {}
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            if (fs.existsSync(OCCASIONS_STORE_PATH)) {
+                const raw = fs.readFileSync(OCCASIONS_STORE_PATH, 'utf-8');
+                return JSON.parse(raw);
+            }
+        } catch (e) {}
+    }
     return [...DEFAULT_OCCASIONS];
 }
 
 function saveLocalOccasions(list) {
+    if (process.env.NODE_ENV !== 'test') return;
     try {
         const dir = path.dirname(OCCASIONS_STORE_PATH);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -168,16 +171,19 @@ function saveLocalOccasions(list) {
 }
 
 function loadLocalOccasionProducts() {
-    try {
-        if (fs.existsSync(OCCASION_PRODUCTS_STORE_PATH)) {
-            const raw = fs.readFileSync(OCCASION_PRODUCTS_STORE_PATH, 'utf-8');
-            return JSON.parse(raw);
-        }
-    } catch (e) {}
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            if (fs.existsSync(OCCASION_PRODUCTS_STORE_PATH)) {
+                const raw = fs.readFileSync(OCCASION_PRODUCTS_STORE_PATH, 'utf-8');
+                return JSON.parse(raw);
+            }
+        } catch (e) {}
+    }
     return [];
 }
 
 function saveLocalOccasionProducts(list) {
+    if (process.env.NODE_ENV !== 'test') return;
     try {
         const dir = path.dirname(OCCASION_PRODUCTS_STORE_PATH);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -208,44 +214,67 @@ export async function handleGetOccasions(req, res) {
 
 /**
  * GET /api/occasions/active
+ * Supabase public.occasion_settings is the single authoritative source of truth.
+ * Returns clean inactive/empty state when no occasion is active.
+ * Never defaults to hardcoded durga-puja.
  */
 export async function handleGetActiveOccasion(req, res) {
     try {
-        let activeSlug = 'durga-puja';
-        let isLive = false;
+        let activeRow = null;
 
         try {
             const rows = await dbQuery('occasion_settings', 'is_active=eq.true&limit=1');
             if (rows && rows[0]) {
-                activeSlug = rows[0].occasion_slug || activeSlug;
-                isLive = true;
-            } else {
+                activeRow = rows[0];
+            } else if (process.env.NODE_ENV === 'test') {
                 const localSettings = loadLocalOccasionSettings();
-                if (localSettings && localSettings.festive_mode_enabled) {
-                    activeSlug = localSettings.active_occasion_slug || localSettings.selected_occasion_slug || activeSlug;
-                    isLive = true;
-                } else if (localSettings && localSettings.selected_occasion_slug) {
-                    activeSlug = localSettings.selected_occasion_slug;
+                if (localSettings && (localSettings.festive_mode_enabled || localSettings.is_active)) {
+                    activeRow = {
+                        occasion_slug: localSettings.active_occasion_slug || localSettings.selected_occasion_slug,
+                        occasion_name: localSettings.active_occasion_name,
+                        is_active: true
+                    };
                 }
             }
         } catch (e) {
-            const localSettings = loadLocalOccasionSettings();
-            if (localSettings && localSettings.festive_mode_enabled) {
-                activeSlug = localSettings.active_occasion_slug || localSettings.selected_occasion_slug || activeSlug;
-                isLive = true;
-            } else if (localSettings && localSettings.selected_occasion_slug) {
-                activeSlug = localSettings.selected_occasion_slug;
+            if (process.env.NODE_ENV === 'test') {
+                const localSettings = loadLocalOccasionSettings();
+                if (localSettings && (localSettings.festive_mode_enabled || localSettings.is_active)) {
+                    activeRow = {
+                        occasion_slug: localSettings.active_occasion_slug || localSettings.selected_occasion_slug,
+                        occasion_name: localSettings.active_occasion_name,
+                        is_active: true
+                    };
+                }
             }
         }
 
+        if (!activeRow || !activeRow.occasion_slug) {
+            return res.json({
+                success: true,
+                is_live: false,
+                isLive: false,
+                activeOccasion: null,
+                data: null
+            });
+        }
+
+        const activeSlug = activeRow.occasion_slug;
         const occasions = loadLocalOccasions();
-        const active = occasions.find(o => o.slug === activeSlug) || occasions[0];
+        const activeMeta = occasions.find(o => o.slug === activeSlug) || {
+            slug: activeSlug,
+            name: activeRow.occasion_name || activeSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        };
 
         return res.json({
             success: true,
+            is_live: true,
+            isLive: true,
+            activeOccasion: activeSlug,
             data: {
-                ...active,
-                is_live: isLive
+                ...activeMeta,
+                ...activeRow,
+                is_live: true
             }
         });
     } catch (err) {
@@ -331,8 +360,20 @@ export async function handleGetOccasionProducts(req, res) {
             console.warn('[Occasion Products API] DB read notice:', dbErr.message);
         }
 
-        // Merge with local persistent store if DB has 0 items
-        const localProducts = loadLocalOccasionProducts();
+        // If occasion_inventory table has 0 rows, check public.inventory where occasion_slug is assigned
+        if (!dbProducts || dbProducts.length === 0) {
+            try {
+                const invRows = await dbQuery('inventory', 'occasion_slug.not.is.null&order=created_at.desc');
+                if (Array.isArray(invRows) && invRows.length > 0) {
+                    dbProducts = invRows;
+                }
+            } catch (invErr) {
+                console.warn('[Occasion Products API] Inventory occasion read notice:', invErr.message);
+            }
+        }
+
+        // Only use local test store if in test environment
+        const localProducts = process.env.NODE_ENV === 'test' ? loadLocalOccasionProducts() : [];
         const combined = Array.isArray(dbProducts) && dbProducts.length > 0 ? dbProducts : localProducts;
 
         let filtered = combined;
@@ -395,7 +436,16 @@ export async function handleGetOccasionCounts(req, res) {
             dbProducts = await dbQuery('occasion_inventory', '');
         } catch (e) {}
 
-        const localProducts = loadLocalOccasionProducts();
+        if (!dbProducts || dbProducts.length === 0) {
+            try {
+                const invRows = await dbQuery('inventory', 'occasion_slug.not.is.null');
+                if (Array.isArray(invRows) && invRows.length > 0) {
+                    dbProducts = invRows;
+                }
+            } catch (e) {}
+        }
+
+        const localProducts = process.env.NODE_ENV === 'test' ? loadLocalOccasionProducts() : [];
         const items = Array.isArray(dbProducts) && dbProducts.length > 0 ? dbProducts : localProducts;
 
         const counts = {
@@ -458,7 +508,7 @@ export async function handleCreateOccasionProduct(req, res) {
             purchase_price: parseFloat(raw.cost_price || raw.purchase_price) || 0,
             discount: parseFloat(raw.discount) || 0,
             stock_quantity: parseInt(raw.stock_quantity, 10) || 0,
-            occasion_slug: raw.occasion_slug || 'durga-puja',
+            occasion_slug: raw.occasion_slug || null,
             status: raw.status || ((parseInt(raw.stock_quantity, 10) || 0) > 0 ? 'Active' : 'Out of Stock'),
             is_featured: Boolean(raw.is_featured),
             purchase_date: raw.purchase_date || null,
@@ -473,10 +523,11 @@ export async function handleCreateOccasionProduct(req, res) {
             console.warn('[Occasion Product POST] DB insert notice:', dbErr.message);
         }
 
-        // Always save to local store as backup
-        const list = loadLocalOccasionProducts();
-        list.unshift(result?.data || payload);
-        saveLocalOccasionProducts(list);
+        if (process.env.NODE_ENV === 'test') {
+            const list = loadLocalOccasionProducts();
+            list.unshift(result?.data || payload);
+            saveLocalOccasionProducts(list);
+        }
 
         return res.status(201).json({
             success: true,
@@ -519,12 +570,13 @@ export async function handleUpdateOccasionProduct(req, res) {
             console.warn('[Occasion Product PATCH] DB update notice:', dbErr.message);
         }
 
-        // Update local store
-        const list = loadLocalOccasionProducts();
-        const idx = list.findIndex(p => p.id === id || p.product_code === id);
-        if (idx >= 0) {
-            list[idx] = { ...list[idx], ...updatePayload };
-            saveLocalOccasionProducts(list);
+        if (process.env.NODE_ENV === 'test') {
+            const list = loadLocalOccasionProducts();
+            const idx = list.findIndex(p => p.id === id || p.product_code === id);
+            if (idx >= 0) {
+                list[idx] = { ...list[idx], ...updatePayload };
+                saveLocalOccasionProducts(list);
+            }
         }
 
         return res.json({
@@ -555,9 +607,11 @@ export async function handleDeleteOccasionProduct(req, res) {
             console.warn('[Occasion Product DELETE] DB notice:', dbErr.message);
         }
 
-        const list = loadLocalOccasionProducts();
-        const filtered = list.filter(p => p.id !== id && p.product_code !== id);
-        saveLocalOccasionProducts(filtered);
+        if (process.env.NODE_ENV === 'test') {
+            const list = loadLocalOccasionProducts();
+            const filtered = list.filter(p => p.id !== id && p.product_code !== id);
+            saveLocalOccasionProducts(filtered);
+        }
 
         return res.json({ success: true, message: `Occasion product '${id}' deleted successfully.` });
     } catch (err) {

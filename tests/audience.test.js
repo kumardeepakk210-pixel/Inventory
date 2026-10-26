@@ -11,34 +11,34 @@ const rootDir = path.resolve(__dirname, '..');
 
 describe('Canonical Audience System Tests', () => {
 
-    it('1. Canonical values list contains only Female, Men, Kids-Boy, Kids-Girl and NEVER Kids', () => {
+    it('1. Canonical values list contains only Female, Male, Boys, Girls and NEVER Kids', () => {
         assert.equal(CANONICAL_AUDIENCES.length, 4);
-        assert.deepEqual(CANONICAL_AUDIENCES, ['Female', 'Men', 'Kids-Boy', 'Kids-Girl']);
+        assert.deepEqual(CANONICAL_AUDIENCES, ['Female', 'Male', 'Boys', 'Girls']);
         assert.equal(CANONICAL_AUDIENCES.includes('Kids'), false, "CANONICAL_AUDIENCES must NEVER contain 'Kids'");
         assert.equal(CANONICAL_AUDIENCES.includes('Unassigned'), false, "CANONICAL_AUDIENCES must not contain 'Unassigned' as a persisted value");
     });
 
     it('2. Audience normalization handles case variations and rejects invalid values including "Kids"', () => {
         // Valid mappings to database constraint
-        assert.equal(normalizeAudience('Male'), 'Men');
-        assert.equal(normalizeAudience('male'), 'Men');
-        assert.equal(normalizeAudience('MEN'), 'Men');
-        assert.equal(normalizeAudience('mens'), 'Men');
+        assert.equal(normalizeAudience('Male'), 'Male');
+        assert.equal(normalizeAudience('male'), 'Male');
+        assert.equal(normalizeAudience('MEN'), 'Male');
+        assert.equal(normalizeAudience('mens'), 'Male');
 
         assert.equal(normalizeAudience('Female'), 'Female');
         assert.equal(normalizeAudience('female'), 'Female');
         assert.equal(normalizeAudience('WOMEN'), 'Female');
         assert.equal(normalizeAudience('womens'), 'Female');
 
-        assert.equal(normalizeAudience('Boys'), 'Kids-Boy');
-        assert.equal(normalizeAudience('boy'), 'Kids-Boy');
-        assert.equal(normalizeAudience('BOYS'), 'Kids-Boy');
-        assert.equal(normalizeAudience('Kids-Boy'), 'Kids-Boy');
+        assert.equal(normalizeAudience('Boys'), 'Boys');
+        assert.equal(normalizeAudience('boy'), 'Boys');
+        assert.equal(normalizeAudience('BOYS'), 'Boys');
+        assert.equal(normalizeAudience('Kids-Boy'), 'Boys');
 
-        assert.equal(normalizeAudience('Girls'), 'Kids-Girl');
-        assert.equal(normalizeAudience('girl'), 'Kids-Girl');
-        assert.equal(normalizeAudience('GIRLS'), 'Kids-Girl');
-        assert.equal(normalizeAudience('Kids-Girl'), 'Kids-Girl');
+        assert.equal(normalizeAudience('Girls'), 'Girls');
+        assert.equal(normalizeAudience('girl'), 'Girls');
+        assert.equal(normalizeAudience('GIRLS'), 'Girls');
+        assert.equal(normalizeAudience('Kids-Girl'), 'Girls');
 
         // Rejections (Must return null)
         assert.equal(normalizeAudience('Kids'), null, "'Kids' must normalize to null (never persisted directly)");

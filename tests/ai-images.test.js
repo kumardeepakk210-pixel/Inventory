@@ -62,6 +62,8 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+process.env.GEMINI_MOCK_MODE = 'true';
+
 test('▶ AI Product Image Generator Technical Audit Suite', async (t) => {
 
     // --------------------------------------------------------------------------
@@ -348,6 +350,7 @@ test('▶ AI Product Image Generator Technical Audit Suite', async (t) => {
     // AUDIT 13: Duplicate Generation Prevention
     // --------------------------------------------------------------------------
     await t.test('13. Duplicate Generation Prevention Blocks Concurrent Jobs', async () => {
+        process.env.GEMINI_MOCK_MODE = 'true';
         const sampleProduct = {
             id: 'test-dup-01',
             product_code: 'WR-DUP-01',
@@ -358,7 +361,8 @@ test('▶ AI Product Image Generator Technical Audit Suite', async (t) => {
         // First job queued
         const job1 = await startGenerationJob('WR-DUP-01', {
             product: sampleProduct,
-            source_image_url: sampleProduct.image_url
+            source_image_url: sampleProduct.image_url,
+            skipExecution: true
         });
         assert.ok(job1.success);
 
@@ -367,7 +371,8 @@ test('▶ AI Product Image Generator Technical Audit Suite', async (t) => {
             async () => {
                 await startGenerationJob('WR-DUP-01', {
                     product: sampleProduct,
-                    source_image_url: sampleProduct.image_url
+                    source_image_url: sampleProduct.image_url,
+                    skipExecution: true
                 });
             },
             (err) => {
@@ -376,6 +381,7 @@ test('▶ AI Product Image Generator Technical Audit Suite', async (t) => {
                 return true;
             }
         );
+        delete process.env.GEMINI_MOCK_MODE;
     });
 
     // --------------------------------------------------------------------------

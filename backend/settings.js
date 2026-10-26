@@ -38,18 +38,20 @@ export function formatOccasionTitle(slug) {
 }
 
 /**
- * Safely load local occasion settings backup
+ * Safely load local occasion settings backup - test only
  */
 export function loadLocalOccasionSettings() {
-    try {
-        if (fs.existsSync(SETTINGS_STORE_PATH)) {
-            const raw = fs.readFileSync(SETTINGS_STORE_PATH, 'utf-8');
-            return JSON.parse(raw);
-        }
-    } catch (e) {}
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            if (fs.existsSync(SETTINGS_STORE_PATH)) {
+                const raw = fs.readFileSync(SETTINGS_STORE_PATH, 'utf-8');
+                return JSON.parse(raw);
+            }
+        } catch (e) {}
+    }
     return {
-        selected_occasion_slug: 'durga-puja',
-        selected_occasion_name: 'Durga Puja',
+        selected_occasion_slug: null,
+        selected_occasion_name: null,
         active_occasion_slug: null,
         active_occasion_name: null,
         festive_mode_enabled: false,
@@ -58,15 +60,16 @@ export function loadLocalOccasionSettings() {
 }
 
 /**
- * Safely save local occasion settings backup
+ * Safely save local occasion settings backup - test only
  */
 export function saveLocalOccasionSettings(settings) {
+    if (process.env.NODE_ENV !== 'test') return;
     try {
         const dir = path.dirname(SETTINGS_STORE_PATH);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(SETTINGS_STORE_PATH, JSON.stringify(settings, null, 2), 'utf-8');
     } catch (e) {
-        console.error('[Occasion Settings Store Error]:', e.message);
+        console.error('[Occasion Settings Store Error in test]:', e.message);
     }
 }
 
@@ -122,39 +125,38 @@ export async function verifyAdminAuth(req) {
 /**
  * GET /api/settings/occasion
  * Single Source of Truth: public.occasion_settings in Supabase queried via server admin client.
- * Seamlessly falls back to authoritative local store if cloud table is unseeded or RLS-restricted.
+ * Returns clean inactive state when no occasion is active.
  */
 export async function handleGetOccasionSettings(req, res) {
     try {
-        let rows = await dbQuery('occasion_settings', 'select=id,occasion_slug,occasion_name,is_selected,is_active,updated_at', { useAdmin: true }).catch(() => []);
+        let rows = await dbQuery('occasion_settings', 'select=id,occasion_slug,occasion_name,is_selected,is_active,page_title,banner_image,start_date,end_date,updated_at', { useAdmin: true }).catch(() => []);
         if (!Array.isArray(rows)) rows = [];
 
         // If table is completely empty, attempt baseline initialization
         if (rows.length === 0) {
             const now = new Date().toISOString();
             for (const m of MASTER_OCCASIONS) {
-                const isDurga = (m.occasion_slug === 'durga-puja');
                 try {
                     await dbInsert('occasion_settings', {
                         occasion_slug: m.occasion_slug,
                         occasion_name: m.occasion_name,
-                        is_selected: isDurga,
+                        is_selected: false,
                         is_active: false,
                         created_at: now,
                         updated_at: now
                     }, { useAdmin: true });
                 } catch (e) {}
             }
-            rows = await dbQuery('occasion_settings', 'select=id,occasion_slug,occasion_name,is_selected,is_active,updated_at', { useAdmin: true }).catch(() => []);
+            rows = await dbQuery('occasion_settings', 'select=id,occasion_slug,occasion_name,is_selected,is_active,page_title,banner_image,start_date,end_date,updated_at', { useAdmin: true }).catch(() => []);
             if (!Array.isArray(rows)) rows = [];
         }
 
-        const local = loadLocalOccasionSettings();
+        // In test mode, allow test fixture fallback
+        const local = (process.env.NODE_ENV === 'test') ? loadLocalOccasionSettings() : null;
 
-        // If cloud table has 0 records (e.g. unseeded / RLS policy blocking insert), serve from local persistent store
-        if (rows.length === 0) {
-            const selectedSlug = local.selected_occasion_slug || 'durga-puja';
-            const selectedName = local.selected_occasion_name || formatOccasionTitle(selectedSlug);
+        if (rows.length === 0 && local) {
+            const selectedSlug = local.selected_occasion_slug || null;
+            const selectedName = local.selected_occasion_name || (selectedSlug ? formatOccasionTitle(selectedSlug) : null);
             const isLive = Boolean(local.festive_mode_enabled);
             const activeSlug = isLive ? (local.active_occasion_slug || selectedSlug) : null;
             const activeName = isLive ? (local.active_occasion_name || formatOccasionTitle(activeSlug)) : null;
@@ -188,11 +190,11 @@ export async function handleGetOccasionSettings(req, res) {
         const selectedRow = rows.find(r => r.is_selected === true);
         const activeRow = rows.find(r => r.is_active === true);
 
-        const selectedSlug = selectedRow?.occasion_slug || local.selected_occasion_slug || 'durga-puja';
-        const selectedName = selectedRow?.occasion_name || local.selected_occasion_name || formatOccasionTitle(selectedSlug);
         const isLive = Boolean(activeRow && activeRow.is_active === true);
-        const activeSlug = isLive ? (activeRow.occasion_slug || selectedSlug) : null;
+        const activeSlug = isLive ? activeRow.occasion_slug : null;
         const activeName = isLive ? (activeRow.occasion_name || formatOccasionTitle(activeSlug)) : null;
+        const selectedSlug = selectedRow?.occasion_slug || null;
+        const selectedName = selectedRow?.occasion_name || (selectedSlug ? formatOccasionTitle(selectedSlug) : null);
 
         const settings = {
             isLive,
@@ -210,10 +212,12 @@ export async function handleGetOccasionSettings(req, res) {
             selected_occasion_name: selectedName,
             active_occasion_slug: activeSlug,
             active_occasion_name: activeName,
-            updated_at: (activeRow && activeRow.updated_at) || (selectedRow && selectedRow.updated_at) || local.updated_at || new Date().toISOString()
+            updated_at: (activeRow && activeRow.updated_at) || (selectedRow && selectedRow.updated_at) || new Date().toISOString()
         };
 
-        saveLocalOccasionSettings(settings);
+        if (process.env.NODE_ENV === 'test') {
+            saveLocalOccasionSettings(settings);
+        }
 
         return res.json({
             success: true,

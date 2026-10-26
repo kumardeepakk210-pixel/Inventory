@@ -13,22 +13,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const META_FILE_PATH = path.join(__dirname, '../data/product_meta.json');
 
-// Helper to safely load extended metadata
+// Helper to safely load extended metadata (isolated for tests only)
 function loadAllProductMeta() {
-    try {
-        if (fs.existsSync(META_FILE_PATH)) {
-            const raw = fs.readFileSync(META_FILE_PATH, 'utf-8');
-            return JSON.parse(raw);
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            if (fs.existsSync(META_FILE_PATH)) {
+                const raw = fs.readFileSync(META_FILE_PATH, 'utf-8');
+                return JSON.parse(raw);
+            }
+        } catch (e) {
+            console.warn('[Product Meta] Failed to read meta file in test:', e.message);
         }
-    } catch (e) {
-        console.warn('[Product Meta] Failed to read meta file:', e.message);
     }
     return {};
 }
 
-// Helper to safely save extended metadata
+// Helper to safely save extended metadata (isolated for tests only)
 function saveProductMeta(productCode, meta) {
-    if (!productCode) return;
+    if (process.env.NODE_ENV !== 'test' || !productCode) return;
     try {
         const dir = path.dirname(META_FILE_PATH);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -41,7 +43,7 @@ function saveProductMeta(productCode, meta) {
         };
         fs.writeFileSync(META_FILE_PATH, JSON.stringify(all, null, 2), 'utf-8');
     } catch (e) {
-        console.error('[Product Meta] Failed to save meta file:', e.message);
+        console.error('[Product Meta] Failed to save meta file in test:', e.message);
     }
 }
 
@@ -78,15 +80,27 @@ export function normalizeAudience(val) {
 export function enrichProduct(item, metaMap = {}) {
     if (!item) return item;
     const meta = metaMap[item.product_code] || {};
-    const stock = Number(item.stock_quantity) || 0;
+    const stockQty = Number(item.stock_quantity) || 0;
+    const lowStockThreshold = item.low_stock_threshold !== undefined && item.low_stock_threshold !== null 
+        ? Number(item.low_stock_threshold) 
+        : (meta.low_stock_threshold !== undefined ? Number(meta.low_stock_threshold) : 3);
+
+    let stockState = 'In Stock';
+    if (stockQty <= 0) {
+        stockState = 'Out of Stock';
+    } else if (stockQty <= lowStockThreshold) {
+        stockState = 'Low Stock';
+    }
 
     return {
         ...item,
         audience: item.audience !== undefined && item.audience !== null ? item.audience : (meta.audience || null),
         cost_price: item.cost_price !== undefined && item.cost_price !== null ? Number(item.cost_price) : (meta.cost_price !== undefined ? Number(meta.cost_price) : Number(item.purchase_price) || 0),
         compare_at_price: item.compare_at_price !== undefined && item.compare_at_price !== null ? Number(item.compare_at_price) : (meta.compare_at_price !== undefined ? Number(meta.compare_at_price) : 0),
-        low_stock_threshold: item.low_stock_threshold !== undefined && item.low_stock_threshold !== null ? Number(item.low_stock_threshold) : (meta.low_stock_threshold !== undefined ? Number(meta.low_stock_threshold) : 3),
+        low_stock_threshold: lowStockThreshold,
         status: item.status || meta.status || 'Active',
+        stock_status: stockState,
+        stock_state: stockState,
         short_description: item.short_description || meta.short_description || item.product_description || '',
         material: item.material || meta.material || '925 Sterling Silver',
         purity: item.purity || meta.purity || '92.5%',
@@ -518,7 +532,7 @@ export async function handleCreateProduct(req, res) {
         };
         saveProductMeta(code, extendedMeta);
 
-        const createdItem = enrichProduct(savedRecord, { [code]: extendedMeta });
+        const createdItem = enrichProduct(savedRecord);
 
         return res.status(201).json({
             success: true,
