@@ -79,6 +79,68 @@ import {
     handleUpdateCustomer, 
     handleAdjustCustomerBalance 
 } from './backend/customers.js';
+import {
+    handleGetInfluencers,
+    handleGetInfluencerById,
+    handleCreateInfluencer,
+    handleUpdateInfluencer,
+    handleUpdateInfluencerStatus,
+    handleDeleteInfluencer,
+    handleRegenerateProfileUrl,
+    handleGetPublicInfluencer,
+    handleGetPublicInfluencerProducts,
+    handleTrackClick,
+    handleGetInfluencerLinksEndpoint,
+    handleCreateInfluencerLinkEndpoint,
+    handleGetInfluencerStatsEndpoint,
+    handleGetInfluencerOrdersEndpoint,
+    handleGetInfluencerEarningsEndpoint,
+    handleCreateOrder,
+    handleUpdateOrderStatus
+} from './backend/influencers.js';
+import {
+    requireCreatorAuth,
+    handleCreatorLogin,
+    handleCreatorLogout,
+    handleGetCreatorMe,
+    handleGetCreatorStats,
+    handleGetCreatorPerformance,
+    handleGetCreatorOrders,
+    handleGetCreatorLinks,
+    handleCreateCreatorProductLink,
+    handleGetCreatorProfile,
+    handleUpdateCreatorProfile
+} from './backend/creator.js';
+import {
+    handleGetCreatorWallet,
+    handleGetCreatorWalletTransactions,
+    handleGetCreatorWalletSummary,
+    handleGetPayoutMethods,
+    handleCreatePayoutMethod,
+    handleDeletePayoutMethod,
+    handleSetDefaultPayoutMethod,
+    handleCreateWithdrawal,
+    handleGetCreatorWithdrawals,
+    handleGetCreatorPoints,
+    handleGetCreatorPointsTransactions,
+    handleGetCreatorRewards,
+    handleGetCreatorRewardById,
+    handleRedeemReward,
+    handleGetCreatorRedemptions,
+    requireAdminAuth,
+    handleAdminGetWallets,
+    handleAdminGetWithdrawals,
+    handleAdminApproveWithdrawal,
+    handleAdminRejectWithdrawal,
+    handleAdminRetryWithdrawal,
+    handleAdminAdjustWallet,
+    handleAdminGetRewards,
+    handleAdminCreateReward,
+    handleAdminUpdateReward,
+    handleAdminGetRedemptions,
+    handleAdminUpdateRedemption,
+    handleRazorpayPayoutWebhook
+} from './backend/creator-wallet.js';
 import { 
     SUPABASE_URL,
     dbQuery, 
@@ -107,6 +169,17 @@ console.log(`Supabase URL: ${SUPABASE_URL ? 'CONFIGURED' : 'MISSING'}`);
 console.log(`Publishable credential: ${isPublishableKeyConfigured() ? 'CONFIGURED' : 'MISSING'}`);
 console.log(`Server admin credential: ${hasServerAdminCredential() ? 'CONFIGURED' : 'MISSING'}`);
 
+const razorpayxMode = (process.env.RAZORPAYX_MODE || process.env.RAZORPAY_PAYOUT_MODE || 'sandbox').toLowerCase();
+const livePayoutsAllowed = process.env.ALLOW_LIVE_PAYOUTS === 'true';
+const razorpayxConfigured = Boolean(
+    (process.env.RAZORPAYX_KEY_ID || process.env.RAZORPAY_KEY_ID) &&
+    (process.env.RAZORPAYX_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET) &&
+    (process.env.RAZORPAYX_ACCOUNT_NUMBER || process.env.RAZORPAY_ACCOUNT_NUMBER)
+);
+console.log(`RAZORPAYX_MODE=${razorpayxMode}`);
+console.log(`LIVE_PAYOUTS_ALLOWED=${livePayoutsAllowed}`);
+console.log(`RAZORPAYX_CONFIGURED=${razorpayxConfigured}`);
+
 // CORS configuration (allow local dev origins or configured origins)
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:8085,http://127.0.0.1:8085').split(',');
 app.use(cors({
@@ -121,7 +194,16 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ 
+    limit: '50mb',
+    verify: (req, res, buf) => {
+        // Capture raw request body buffer specifically for webhook endpoints (Phase 3B remediation)
+        if ((req.originalUrl && req.originalUrl.includes('/webhooks')) || 
+            (req.url && req.url.includes('/webhooks'))) {
+            req.rawBody = buf;
+        }
+    }
+}));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Logging middleware
@@ -276,6 +358,83 @@ app.get('/api/customers/:id', handleGetCustomerById);
 app.post('/api/customers', handleCreateCustomer);
 app.patch('/api/customers/:id', handleUpdateCustomer);
 app.post('/api/customers/:id/adjust-balance', handleAdjustCustomerBalance);
+
+// WishRite Creator Club (Influencers Phase 1 & 2)
+// Admin Management (Phase 1)
+app.get('/api/influencers', handleGetInfluencers);
+app.get('/api/influencers/:id', handleGetInfluencerById);
+app.post('/api/influencers', handleCreateInfluencer);
+app.put('/api/influencers/:id', handleUpdateInfluencer);
+app.patch('/api/influencers/:id/status', handleUpdateInfluencerStatus);
+app.delete('/api/influencers/:id', handleDeleteInfluencer);
+app.post('/api/influencers/:id/regenerate-profile-url', handleRegenerateProfileUrl);
+
+// Public Storefront, Attribution & Click Tracking (Phase 2)
+app.get('/api/public/influencers/:slug', handleGetPublicInfluencer);
+app.get('/api/public/influencers/:slug/products', handleGetPublicInfluencerProducts);
+app.post('/api/public/influencers/:slug/click', handleTrackClick);
+app.post('/api/influencers/:id/click', handleTrackClick);
+
+// Creator Links, Analytics & Order Attributions (Phase 2)
+app.get('/api/influencers/:id/stats', handleGetInfluencerStatsEndpoint);
+app.get('/api/influencers/:id/links', handleGetInfluencerLinksEndpoint);
+app.post('/api/influencers/:id/links', handleCreateInfluencerLinkEndpoint);
+app.get('/api/influencers/:id/orders', handleGetInfluencerOrdersEndpoint);
+app.get('/api/influencers/:id/earnings', handleGetInfluencerEarningsEndpoint);
+
+// Orders & Status Reconciliation (Phase 2)
+app.post('/api/orders', handleCreateOrder);
+app.patch('/api/orders/:id/status', handleUpdateOrderStatus);
+
+// WishRite Creator Club — Authenticated Creator Portal (Phase 3A)
+app.post('/api/creator/login', handleCreatorLogin);
+app.post('/api/creator/logout', handleCreatorLogout);
+app.get('/api/creator/me', requireCreatorAuth, handleGetCreatorMe);
+app.get('/api/creator/stats', requireCreatorAuth, handleGetCreatorStats);
+app.get('/api/creator/performance', requireCreatorAuth, handleGetCreatorPerformance);
+app.get('/api/creator/orders', requireCreatorAuth, handleGetCreatorOrders);
+app.get('/api/creator/links', requireCreatorAuth, handleGetCreatorLinks);
+app.post('/api/creator/links', requireCreatorAuth, handleCreateCreatorProductLink);
+app.get('/api/creator/profile', requireCreatorAuth, handleGetCreatorProfile);
+app.patch('/api/creator/profile', requireCreatorAuth, handleUpdateCreatorProfile);
+
+// WishRite Creator Club — Phase 3B: Wallet, Payouts, Points & Rewards
+app.get('/api/creator/wallet', requireCreatorAuth, handleGetCreatorWallet);
+app.get('/api/creator/wallet/transactions', requireCreatorAuth, handleGetCreatorWalletTransactions);
+app.get('/api/creator/wallet/summary', requireCreatorAuth, handleGetCreatorWalletSummary);
+
+app.get('/api/creator/payout-methods', requireCreatorAuth, handleGetPayoutMethods);
+app.post('/api/creator/payout-methods', requireCreatorAuth, handleCreatePayoutMethod);
+app.delete('/api/creator/payout-methods/:id', requireCreatorAuth, handleDeletePayoutMethod);
+app.post('/api/creator/payout-methods/:id/default', requireCreatorAuth, handleSetDefaultPayoutMethod);
+
+app.post('/api/creator/withdrawals', requireCreatorAuth, handleCreateWithdrawal);
+app.get('/api/creator/withdrawals', requireCreatorAuth, handleGetCreatorWithdrawals);
+
+app.get('/api/creator/points', requireCreatorAuth, handleGetCreatorPoints);
+app.get('/api/creator/points/transactions', requireCreatorAuth, handleGetCreatorPointsTransactions);
+
+app.get('/api/creator/rewards', requireCreatorAuth, handleGetCreatorRewards);
+app.get('/api/creator/rewards/:id', requireCreatorAuth, handleGetCreatorRewardById);
+app.post('/api/creator/rewards/:id/redeem', requireCreatorAuth, handleRedeemReward);
+app.get('/api/creator/redemptions', requireCreatorAuth, handleGetCreatorRedemptions);
+
+// WishRite Creator Club — Phase 3B: Inventory Admin Management
+app.get('/api/admin/creator-wallets', requireAdminAuth, handleAdminGetWallets);
+app.post('/api/admin/creator-wallets/:id/adjust', requireAdminAuth, handleAdminAdjustWallet);
+app.get('/api/admin/creator-withdrawals', requireAdminAuth, handleAdminGetWithdrawals);
+app.patch('/api/admin/creator-withdrawals/:id/approve', requireAdminAuth, handleAdminApproveWithdrawal);
+app.patch('/api/admin/creator-withdrawals/:id/reject', requireAdminAuth, handleAdminRejectWithdrawal);
+app.post('/api/admin/creator-withdrawals/:id/retry', requireAdminAuth, handleAdminRetryWithdrawal);
+
+app.get('/api/admin/creator-rewards', requireAdminAuth, handleAdminGetRewards);
+app.post('/api/admin/creator-rewards', requireAdminAuth, handleAdminCreateReward);
+app.patch('/api/admin/creator-rewards/:id', requireAdminAuth, handleAdminUpdateReward);
+app.get('/api/admin/creator-redemptions', requireAdminAuth, handleAdminGetRedemptions);
+app.patch('/api/admin/creator-redemptions/:id', requireAdminAuth, handleAdminUpdateRedemption);
+
+// WishRite Creator Club — Phase 3B: Razorpay Payout Webhooks
+app.post('/api/webhooks/razorpay-payouts', handleRazorpayPayoutWebhook);
 
 // Categories
 app.get('/api/categories', async (req, res) => {

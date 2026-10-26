@@ -4,6 +4,7 @@
 // ==============================================================================
 
 import { dbQuery, dbInsert, dbUpdate } from './supabase-client.js';
+import { attributeOrderToInfluencer } from './influencers.js';
 
 /**
  * GET /api/sales
@@ -27,7 +28,8 @@ export async function handleGetSales(req, res) {
 
 /**
  * POST /api/sales
- * Creates a sale and decrements product inventory
+ * Creates a sale and decrements product inventory.
+ * Automatically attributes sale to referring influencer if referral session is present.
  */
 export async function handleCreateSale(req, res) {
     try {
@@ -39,18 +41,24 @@ export async function handleCreateSale(req, res) {
         }
 
         const createdSales = [];
+        let totalSalesAmount = 0;
 
         for (const item of items) {
+            const qty = parseInt(item.quantity || item.qty, 10) || 1;
+            const price = parseFloat(item.selling_price || item.price) || 0;
+            const itemTotal = parseFloat(item.total_amount) || (price * qty);
+            totalSalesAmount += itemTotal;
+
             const saleRow = {
                 product_code: item.product_code || item.code,
                 product_name: item.product_name || item.name,
                 customer_name: raw.customer_name || item.customer_name || 'Walk-in Customer',
                 customer_phone: raw.customer_phone || item.customer_phone || null,
-                quantity: parseInt(item.quantity || item.qty, 10) || 1,
-                selling_price: parseFloat(item.selling_price || item.price) || 0,
+                quantity: qty,
+                selling_price: price,
                 discount: parseFloat(item.discount) || 0,
                 tax: parseFloat(item.tax) || 0,
-                total_amount: parseFloat(item.total_amount) || 0,
+                total_amount: itemTotal,
                 payment_method: raw.payment_method || 'Cash',
                 created_at: new Date().toISOString()
             };
@@ -73,10 +81,29 @@ export async function handleCreateSale(req, res) {
             }
         }
 
+        // Automatic influencer attribution if referral session exists
+        let attributionResult = null;
+        if (raw.attribution_id || raw.session_id || raw.influencer_id) {
+            const saleReference = createdSales[0]?.id || `SALE-${Date.now()}`;
+            try {
+                attributionResult = await attributeOrderToInfluencer({
+                    order_id: createdSales[0]?.id || null,
+                    order_reference: String(saleReference),
+                    sales_amount: totalSalesAmount,
+                    attribution_id: raw.attribution_id || null,
+                    session_id: raw.session_id || null,
+                    influencer_id: raw.influencer_id || null
+                });
+            } catch (attrErr) {
+                console.warn('[Sales API] Influencer attribution notice:', attrErr.message);
+            }
+        }
+
         return res.status(201).json({
             success: true,
             message: 'Sale recorded successfully.',
-            data: createdSales
+            data: createdSales,
+            attribution: attributionResult
         });
     } catch (err) {
         console.error('[Sales POST Error]:', err);

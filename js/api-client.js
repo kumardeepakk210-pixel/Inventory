@@ -22,7 +22,11 @@
             let user = null;
             try {
                 if (typeof localStorage !== 'undefined') {
-                    token = localStorage.getItem('wishrite_token');
+                    if (cleanEndpoint.startsWith('/creator')) {
+                        token = localStorage.getItem('wishrite_creator_token') || localStorage.getItem('wishrite_token');
+                    } else {
+                        token = localStorage.getItem('wishrite_token') || localStorage.getItem('wishrite_creator_token');
+                    }
                     const rawUser = localStorage.getItem('wishrite_user');
                     if (rawUser) user = JSON.parse(rawUser);
                 }
@@ -424,6 +428,219 @@
 
         async adjustCustomerBalance(id, payload) {
             return await this.post(`/customers/${encodeURIComponent(id)}/adjust-balance`, payload);
+        }
+
+        // ==============================================================================
+        // WISHRITE CREATOR CLUB (INFLUENCERS PHASE 1)
+        // ==============================================================================
+
+        async getInfluencers(filters = {}) {
+            return await this.get('/influencers', filters);
+        }
+
+        async getInfluencer(id) {
+            const res = await this.get(`/influencers/${encodeURIComponent(id)}`);
+            return res.data;
+        }
+
+        async createInfluencer(payload) {
+            return await this.post('/influencers', payload);
+        }
+
+        async updateInfluencer(id, payload) {
+            return await this.put(`/influencers/${encodeURIComponent(id)}`, payload);
+        }
+
+        async updateInfluencerStatus(id, status) {
+            return await this.patch(`/influencers/${encodeURIComponent(id)}/status`, { status });
+        }
+
+        async deleteInfluencer(id) {
+            return await this.delete(`/influencers/${encodeURIComponent(id)}`);
+        }
+
+        async regenerateInfluencerProfileUrl(id) {
+            return await this.post(`/influencers/${encodeURIComponent(id)}/regenerate-profile-url`, {});
+        }
+
+        // ==============================================================================
+        // WISHRITE CREATOR CLUB (INFLUENCERS PHASE 2)
+        // Public Storefront, Referral Links & Order Attribution
+        // ==============================================================================
+
+        async getPublicInfluencer(slug) {
+            const res = await this.get(`/public/influencers/${encodeURIComponent(slug)}`);
+            return res.data;
+        }
+
+        async getPublicInfluencerProducts(slug) {
+            const res = await this.get(`/public/influencers/${encodeURIComponent(slug)}/products`);
+            return res;
+        }
+
+        async trackInfluencerClick(slugOrId, payload = {}) {
+            return await this.post(`/public/influencers/${encodeURIComponent(slugOrId)}/click`, payload);
+        }
+
+        async getInfluencerStats(id) {
+            const res = await this.get(`/influencers/${encodeURIComponent(id)}/stats`);
+            return res.data;
+        }
+
+        async getInfluencerLinks(id) {
+            const res = await this.get(`/influencers/${encodeURIComponent(id)}/links`);
+            return res.data || [];
+        }
+
+        async createInfluencerLink(id, payload) {
+            return await this.post(`/influencers/${encodeURIComponent(id)}/links`, payload);
+        }
+
+        async getInfluencerOrders(id) {
+            const res = await this.get(`/influencers/${encodeURIComponent(id)}/orders`);
+            return res.data || [];
+        }
+
+        async getInfluencerEarnings(id) {
+            const res = await this.get(`/influencers/${encodeURIComponent(id)}/earnings`);
+            return res.data;
+        }
+
+        async createOrder(payload) {
+            return await this.post('/orders', payload);
+        }
+
+        async updateOrderStatus(orderRef, status) {
+            return await this.patch(`/orders/${encodeURIComponent(orderRef)}/status`, { status });
+        }
+
+        // ==============================================================================
+        // CREATOR CLUB PORTAL (PHASE 3A)
+        // ==============================================================================
+
+        async creatorLogin(credentials) {
+            const res = await this.post('/creator/login', credentials);
+            if (res.token) {
+                try {
+                    localStorage.setItem('wishrite_creator_token', res.token);
+                    if (res.creator) {
+                        localStorage.setItem('wishrite_creator_profile', JSON.stringify(res.creator));
+                    }
+                } catch (e) {}
+            }
+            return res;
+        }
+
+        async creatorLogout() {
+            try {
+                await this.post('/creator/logout', {});
+            } catch (e) {}
+            try {
+                localStorage.removeItem('wishrite_creator_token');
+                localStorage.removeItem('wishrite_creator_profile');
+            } catch (e) {}
+            return { success: true };
+        }
+
+        async getCreatorMe() {
+            return await this.get('/creator/me');
+        }
+
+        async getCreatorStats() {
+            const res = await this.get('/creator/stats');
+            return res.data;
+        }
+
+        async getCreatorPerformance(period = '30d') {
+            const res = await this.get('/creator/performance', { period });
+            return res.data;
+        }
+
+        async getCreatorOrders(params = {}) {
+            const res = await this.get('/creator/orders', params);
+            return res;
+        }
+
+        async getCreatorLinks() {
+            const res = await this.get('/creator/links');
+            return res.data;
+        }
+
+        async createCreatorProductLink(productCode) {
+            return await this.post('/creator/links', { product_code: productCode });
+        }
+
+        async getCreatorProfile() {
+            const res = await this.get('/creator/profile');
+            return res.data;
+        }
+
+        async updateCreatorProfile(updates) {
+            return await this.patch('/creator/profile', updates);
+        }
+
+        // ==============================================================================
+        // PHASE 3B: CREATOR WALLET, WITHDRAWALS, POINTS & REWARDS CLIENT METHODS
+        // ==============================================================================
+
+        async getCreatorWallet() {
+            const res = await this.get('/creator/wallet');
+            return res.data;
+        }
+
+        async getCreatorWalletTransactions() {
+            const res = await this.get('/creator/wallet/transactions');
+            return res.data;
+        }
+
+        async getCreatorPayoutMethods() {
+            const res = await this.get('/creator/payout-methods');
+            return res.data;
+        }
+
+        async createCreatorPayoutMethod(payload) {
+            return await this.post('/creator/payout-methods', payload);
+        }
+
+        async deleteCreatorPayoutMethod(id) {
+            return await this.delete(`/creator/payout-methods/${id}`);
+        }
+
+        async setCreatorDefaultPayoutMethod(id) {
+            return await this.post(`/creator/payout-methods/${id}/default`);
+        }
+
+        async createCreatorWithdrawal(payload) {
+            return await this.post('/creator/withdrawals', payload);
+        }
+
+        async getCreatorWithdrawals() {
+            const res = await this.get('/creator/withdrawals');
+            return res.data;
+        }
+
+        async getCreatorPoints() {
+            const res = await this.get('/creator/points');
+            return res.data;
+        }
+
+        async getCreatorPointsTransactions() {
+            const res = await this.get('/creator/points/transactions');
+            return res.data;
+        }
+
+        async getCreatorRewards() {
+            const res = await this.get('/creator/rewards');
+            return res.data;
+        }
+
+        async redeemCreatorReward(rewardId) {
+            return await this.post(`/creator/rewards/${rewardId}/redeem`);
+        }
+
+        async getCreatorRedemptions() {
+            const res = await this.get('/creator/redemptions');
+            return res.data;
         }
 
         async getCategories() {

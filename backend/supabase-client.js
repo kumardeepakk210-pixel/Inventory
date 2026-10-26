@@ -241,6 +241,57 @@ export const tableColumnsCache = {
         'id', 'customer_id', 'customer_phone', 'action_type',
         'wallet_delta', 'wallet_balance_after', 'points_delta', 'points_balance_after',
         'note', 'performed_by', 'created_at'
+    ]),
+    influencers: new Set([
+        'id', 'influencer_code', 'name', 'email', 'phone',
+        'instagram_id', 'instagram_url', 'public_slug', 'public_profile_url',
+        'profile_image', 'category', 'bio', 'commission_rate', 'tier', 'status',
+        'created_at', 'updated_at'
+    ]),
+    influencer_accounts: new Set([
+        'id', 'influencer_id', 'auth_user_id', 'email', 'password_hash',
+        'is_active', 'last_login_at', 'created_at', 'updated_at'
+    ]),
+    influencer_links: new Set([
+        'id', 'influencer_id', 'link_type', 'url', 'campaign_id', 'is_default', 'created_at'
+    ]),
+    influencer_stats: new Set([
+        'id', 'influencer_id', 'total_clicks', 'total_orders', 'total_sales',
+        'total_views', 'total_earnings', 'available_earnings', 'pending_earnings',
+        'total_points', 'updated_at'
+    ]),
+    influencer_clicks: new Set([
+        'id', 'influencer_id', 'influencer_link_id', 'attribution_id',
+        'landing_url', 'product_id', 'product_code', 'session_id',
+        'device_type', 'user_agent', 'referrer_url', 'created_at'
+    ]),
+    influencer_attributions: new Set([
+        'id', 'influencer_id', 'influencer_link_id', 'first_seen_at',
+        'last_seen_at', 'expires_at', 'first_landing_url', 'last_landing_url',
+        'first_influencer_id', 'last_influencer_id', 'session_id',
+        'status', 'created_at', 'updated_at'
+    ]),
+    influencer_order_attributions: new Set([
+        'id', 'influencer_id', 'order_id', 'order_reference', 'attribution_id',
+        'influencer_link_id', 'sales_amount', 'commission_rate', 'commission_amount',
+        'status', 'created_at', 'updated_at'
+    ]),
+    orders: new Set([
+        'id', 'order_number', 'customer_name', 'customer_phone', 'customer_email',
+        'subtotal', 'discount', 'tax', 'grand_total', 'order_status', 'payment_status',
+        'razorpay_order_id', 'razorpay_payment_id', 'influencer_id', 'influencer_code',
+        'influencer_attribution_id', 'influencer_link_id', 'influencer_commission_rate',
+        'influencer_commission_amount', 'created_at', 'updated_at'
+    ]),
+    sales: new Set([
+        'id', 'product_code', 'product_name', 'product_description', 'category',
+        'quantity', 'selling_price', 'discount', 'tax', 'weight', 'size',
+        'customer_name', 'customer_phone', 'customer_email', 'customer_address',
+        'customer_city', 'customer_state', 'customer_pin', 'customer_country',
+        'invoice_total', 'paid_amount', 'due_amount', 'payment_status',
+        'order_id', 'inventory_id', 'influencer_id', 'influencer_code',
+        'influencer_attribution_id', 'influencer_commission_rate', 'influencer_commission_amount',
+        'created_at'
     ])
 };
 
