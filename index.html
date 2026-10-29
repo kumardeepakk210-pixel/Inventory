@@ -10348,17 +10348,17 @@
                         </td>
                         <td class="py-3 px-4 text-center">
                             <div class="inline-flex items-center gap-1">
-                                <button type="button" onclick="viewInfluencerDetails('${inf.id}')"
+                                <button type="button" onclick="viewInfluencerDetails('${inf.influencer_id || inf.id}')"
                                     class="p-1.5 text-slate-500 hover:text-[#5E3435] hover:bg-slate-100 rounded-lg transition"
                                     title="View Creator Details & Statistics">
                                     👁️
                                 </button>
-                                <button type="button" onclick="openEditInfluencerModal('${inf.id}')"
+                                <button type="button" onclick="openEditInfluencerModal('${inf.influencer_id || inf.id}')"
                                     class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition"
                                     title="Edit Creator Profile">
                                     ✏️
                                 </button>
-                                <button type="button" onclick="toggleInfluencerStatus('${inf.id}', '${inf.status}')"
+                                <button type="button" onclick="toggleInfluencerStatus('${inf.influencer_id || inf.id}', '${inf.status}')"
                                     class="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition"
                                     title="${inf.status === 'active' ? 'Deactivate Creator' : 'Activate Creator'}">
                                     ${inf.status === 'active' ? '⏸️' : '▶️'}
@@ -10462,10 +10462,10 @@
          * Open Edit Influencer Modal
          */
         function openEditInfluencerModal(id) {
-            const creator = creatorsList.find(c => c.id === id);
+            const creator = creatorsList.find(c => c.id === id || c.influencer_id === id);
             if (!creator) return alert('Creator record not found');
 
-            currentEditingCreatorId = creator.id;
+            currentEditingCreatorId = creator.influencer_id || creator.id;
             const modal = document.getElementById('influencer-modal');
             const title = document.getElementById('inf-modal-title');
             const subtitle = document.getElementById('inf-modal-subtitle');
@@ -10478,7 +10478,7 @@
                 errorDiv.classList.add('hidden');
             }
 
-            document.getElementById('inf-form-id').value = creator.id;
+            document.getElementById('inf-form-id').value = creator.influencer_id || creator.id;
             document.getElementById('inf-form-name').value = creator.name || '';
             document.getElementById('inf-form-instagram').value = creator.instagram_id || '';
             document.getElementById('inf-form-email').value = creator.email || '';
@@ -10591,7 +10591,7 @@
          * View Influencer Details Modal
          */
         async function viewInfluencerDetails(id) {
-            let creator = creatorsList.find(c => c.id === id);
+            let creator = creatorsList.find(c => c.id === id || c.influencer_id === id);
             try {
                 const res = await WishRiteAPI.getInfluencer(id);
                 if (res) creator = res;
@@ -10599,6 +10599,7 @@
 
             if (!creator) return alert('Influencer not found.');
             currentViewingCreator = creator;
+            const creatorId = creator.influencer_id || creator.id;
 
             const modal = document.getElementById('influencer-view-modal');
             const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(creator.name || 'Creator')}&background=4f46e5&color=fff`;
@@ -10646,8 +10647,8 @@
             if (cvrEl) cvrEl.innerText = `${cvr}%`;
 
             populateProductSelectForReferral();
-            loadInfluencerLinks(creator.id);
-            loadInfluencerOrders(creator.id);
+            loadInfluencerLinks(creatorId);
+            loadInfluencerOrders(creatorId);
 
             if (modal) modal.classList.remove('hidden');
         }

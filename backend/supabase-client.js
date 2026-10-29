@@ -243,7 +243,7 @@ export const tableColumnsCache = {
         'note', 'performed_by', 'created_at'
     ]),
     influencers: new Set([
-        'id', 'influencer_code', 'name', 'email', 'phone',
+        'id', 'influencer_id', 'influencer_code', 'name', 'email', 'phone',
         'instagram_id', 'instagram_url', 'public_slug', 'public_profile_url',
         'profile_image', 'category', 'bio', 'commission_rate', 'tier', 'status',
         'created_at', 'updated_at'

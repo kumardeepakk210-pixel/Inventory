@@ -175,7 +175,7 @@ export async function generateInfluencerCode(existingInfluencers = null) {
 async function getAllInfluencersFromDB() {
     let dbRows = [];
     try {
-        const rows = await dbQuery('influencers', 'order=created_at.desc');
+        const rows = await dbQuery('influencers', 'order=created_at.desc', { useAdmin: true });
         if (Array.isArray(rows)) {
             dbRows = rows;
         }
@@ -185,18 +185,23 @@ async function getAllInfluencersFromDB() {
 
     const local = readLocalStore();
 
-    // Merge DB rows and local store
+    // Merge DB rows and local store using canonical influencer_id
     const map = new Map();
     // First put local rows
     for (const item of (local.influencers || [])) {
-        if (item.id) map.set(item.id, item);
+        const infId = item.influencer_id || item.id;
+        if (infId) {
+            map.set(infId, { ...item, influencer_id: infId, id: infId });
+        }
     }
     // Then merge with DB rows if present
     for (const item of dbRows) {
-        if (item.id) {
-            const localItem = map.get(item.id);
+        const infId = item.influencer_id || item.id;
+        if (infId) {
+            const localItem = map.get(infId);
+            const normalized = { ...item, influencer_id: infId, id: infId };
             if (!localItem || new Date(item.updated_at || 0) >= new Date(localItem.updated_at || 0)) {
-                map.set(item.id, item);
+                map.set(infId, normalized);
             }
         }
     }
@@ -305,7 +310,8 @@ export async function handleGetInfluencers(req, res) {
 
         // Enrich each influencer
         let enriched = rawInfluencers.map(inf => {
-            const stats = statsMap.get(inf.id) || {
+            const creatorId = inf.influencer_id || inf.id;
+            const stats = statsMap.get(creatorId) || {
                 total_clicks: 0,
                 total_orders: 0,
                 total_sales: 0,
@@ -315,7 +321,7 @@ export async function handleGetInfluencers(req, res) {
                 pending_earnings: 0,
                 total_points: 0
             };
-            const links = linksMap.get(inf.id) || [];
+            const links = linksMap.get(creatorId) || [];
             const defaultLink = links.find(l => l.is_default) || links[0] || {
                 url: inf.public_profile_url || buildInfluencerPublicUrl(inf.public_slug),
                 link_type: 'profile'
@@ -323,6 +329,8 @@ export async function handleGetInfluencers(req, res) {
 
             return {
                 ...inf,
+                influencer_id: creatorId,
+                id: creatorId,
                 public_profile_url: inf.public_profile_url || buildInfluencerPublicUrl(inf.public_slug),
                 instagram_url: inf.instagram_url || buildInstagramUrl(inf.instagram_id),
                 stats: {
@@ -398,8 +406,9 @@ export async function handleGetInfluencerById(req, res) {
         const { data: all } = await getAllInfluencersFromDB();
         const normSearch = id.toLowerCase().trim();
 
-        // Match by id UUID, influencer_code, or public_slug
+        // Match by influencer_id UUID, id, influencer_code, public_slug, or instagram_id
         const found = all.find(i => 
+            (i.influencer_id && i.influencer_id.toLowerCase() === normSearch) ||
             (i.id && i.id.toLowerCase() === normSearch) ||
             (i.influencer_code && i.influencer_code.toLowerCase() === normSearch) ||
             (i.public_slug && i.public_slug.toLowerCase() === normSearch) ||
@@ -413,13 +422,16 @@ export async function handleGetInfluencerById(req, res) {
             });
         }
 
-        const stats = await getInfluencerStats(found.id);
-        const links = await getInfluencerLinks(found.id);
+        const creatorId = found.influencer_id || found.id;
+        const stats = await getInfluencerStats(creatorId);
+        const links = await getInfluencerLinks(creatorId);
 
         return res.json({
             success: true,
             data: {
                 ...found,
+                influencer_id: creatorId,
+                id: creatorId,
                 public_profile_url: found.public_profile_url || buildInfluencerPublicUrl(found.public_slug),
                 instagram_url: found.instagram_url || buildInstagramUrl(found.instagram_id),
                 stats: {
@@ -553,6 +565,7 @@ export async function handleCreateInfluencer(req, res) {
 
         // 7. Assemble master record
         const influencerRecord = {
+            influencer_id: newId,
             id: newId,
             influencer_code: influencerCode,
             name: String(name).trim(),
@@ -649,11 +662,12 @@ export async function handleUpdateInfluencer(req, res) {
         const body = req.body || {};
 
         const { data: all } = await getAllInfluencersFromDB();
-        const found = all.find(i => i.id === id || i.influencer_code === id);
+        const found = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id);
         if (!found) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
+        const creatorId = found.influencer_id || found.id;
         const nowIso = new Date().toISOString();
         const updates = { updated_at: nowIso };
 
@@ -686,7 +700,7 @@ export async function handleUpdateInfluencer(req, res) {
                 });
             }
 
-            const duplicate = all.find(i => i.id !== found.id && normalizeInstagramId(i.instagram_id) === newInsta);
+            const duplicate = all.find(i => (i.influencer_id || i.id) !== creatorId && normalizeInstagramId(i.instagram_id) === newInsta);
             if (duplicate) {
                 return res.status(409).json({
                     success: false,
@@ -700,17 +714,17 @@ export async function handleUpdateInfluencer(req, res) {
             updates.public_profile_url = buildInfluencerPublicUrl(newInsta);
         }
 
-        // Update in Supabase
+        // Update in Supabase using authoritative influencer_id
         try {
-            await dbUpdate('influencers', 'id', found.id, updates, { useAdmin: true });
+            await dbUpdate('influencers', 'influencer_id', creatorId, updates, { useAdmin: true });
         } catch (dbErr) {
             console.warn('[Influencers API] dbUpdate on Supabase failed:', dbErr.message);
         }
 
         // Update local mirror
         const local = readLocalStore();
-        const localIdx = local.influencers.findIndex(i => i.id === found.id);
-        const merged = { ...found, ...updates };
+        const localIdx = local.influencers.findIndex(i => (i.influencer_id || i.id) === creatorId);
+        const merged = { ...found, ...updates, influencer_id: creatorId, id: creatorId };
         if (localIdx >= 0) {
             local.influencers[localIdx] = merged;
         } else {
@@ -718,8 +732,8 @@ export async function handleUpdateInfluencer(req, res) {
         }
         writeLocalStore(local);
 
-        const stats = await getInfluencerStats(found.id);
-        const links = await getInfluencerLinks(found.id);
+        const stats = await getInfluencerStats(creatorId);
+        const links = await getInfluencerLinks(creatorId);
 
         return res.json({
             success: true,
@@ -757,31 +771,32 @@ export async function handleUpdateInfluencerStatus(req, res) {
 
         const validStatus = String(status).toLowerCase().trim();
         const { data: all } = await getAllInfluencersFromDB();
-        const found = all.find(i => i.id === id || i.influencer_code === id);
+        const found = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id);
         if (!found) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
+        const creatorId = found.influencer_id || found.id;
         const nowIso = new Date().toISOString();
         const updates = { status: validStatus, updated_at: nowIso };
 
         try {
-            await dbUpdate('influencers', 'id', found.id, updates, { useAdmin: true });
+            await dbUpdate('influencers', 'influencer_id', creatorId, updates, { useAdmin: true });
         } catch (dbErr) {
             console.warn('[Influencers API] dbUpdate status failed on Supabase:', dbErr.message);
         }
 
         const local = readLocalStore();
-        const localIdx = local.influencers.findIndex(i => i.id === found.id);
+        const localIdx = local.influencers.findIndex(i => (i.influencer_id || i.id) === creatorId);
         if (localIdx >= 0) {
-            local.influencers[localIdx] = { ...local.influencers[localIdx], ...updates };
+            local.influencers[localIdx] = { ...local.influencers[localIdx], ...updates, influencer_id: creatorId, id: creatorId };
             writeLocalStore(local);
         }
 
         return res.json({
             success: true,
             message: `Influencer status changed to '${validStatus}'.`,
-            data: { ...found, ...updates }
+            data: { ...found, ...updates, influencer_id: creatorId, id: creatorId }
         });
     } catch (err) {
         console.error('[Influencers API] handleUpdateInfluencerStatus error:', err);
@@ -797,23 +812,25 @@ export async function handleDeleteInfluencer(req, res) {
     try {
         const { id } = req.params;
         const { data: all } = await getAllInfluencersFromDB();
-        const found = all.find(i => i.id === id || i.influencer_code === id);
+        const found = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id);
         if (!found) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
-        // Delete from Supabase
+        const creatorId = found.influencer_id || found.id;
+
+        // Delete from Supabase using authoritative influencer_id
         try {
-            await dbDelete('influencers', 'id', found.id, { useAdmin: true });
+            await dbDelete('influencers', 'influencer_id', creatorId, { useAdmin: true });
         } catch (dbErr) {
             console.warn('[Influencers API] dbDelete on Supabase failed:', dbErr.message);
         }
 
         // Clean local mirror
         const local = readLocalStore();
-        local.influencers = local.influencers.filter(i => i.id !== found.id);
-        local.stats = local.stats.filter(s => s.influencer_id !== found.id);
-        local.links = local.links.filter(l => l.influencer_id !== found.id);
+        local.influencers = local.influencers.filter(i => (i.influencer_id || i.id) !== creatorId);
+        local.stats = local.stats.filter(s => s.influencer_id !== creatorId);
+        local.links = local.links.filter(l => l.influencer_id !== creatorId);
         writeLocalStore(local);
 
         return res.json({
@@ -834,11 +851,12 @@ export async function handleRegenerateProfileUrl(req, res) {
     try {
         const { id } = req.params;
         const { data: all } = await getAllInfluencersFromDB();
-        const found = all.find(i => i.id === id || i.influencer_code === id);
+        const found = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id);
         if (!found) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
+        const creatorId = found.influencer_id || found.id;
         const normInsta = normalizeInstagramId(found.instagram_id);
         const newSlug = normInsta;
         const newUrl = buildInfluencerPublicUrl(newSlug);
@@ -851,19 +869,19 @@ export async function handleRegenerateProfileUrl(req, res) {
         };
 
         try {
-            await dbUpdate('influencers', 'id', found.id, updates, { useAdmin: true });
+            await dbUpdate('influencers', 'influencer_id', creatorId, updates, { useAdmin: true });
             // Update default profile link if exists
-            await dbUpdate('influencer_links', 'influencer_id', found.id, { url: newUrl }, { useAdmin: true }).catch(() => {});
+            await dbUpdate('influencer_links', 'influencer_id', creatorId, { url: newUrl }, { useAdmin: true }).catch(() => {});
         } catch (dbErr) {
             console.warn('[Influencers API] dbUpdate on Supabase failed:', dbErr.message);
         }
 
         const local = readLocalStore();
-        const localIdx = local.influencers.findIndex(i => i.id === found.id);
+        const localIdx = local.influencers.findIndex(i => (i.influencer_id || i.id) === creatorId);
         if (localIdx >= 0) {
-            local.influencers[localIdx] = { ...local.influencers[localIdx], ...updates };
+            local.influencers[localIdx] = { ...local.influencers[localIdx], ...updates, influencer_id: creatorId, id: creatorId };
         }
-        const link = local.links.find(l => l.influencer_id === found.id && l.is_default);
+        const link = local.links.find(l => l.influencer_id === creatorId && l.is_default);
         if (link) link.url = newUrl;
         writeLocalStore(local);
 
@@ -872,7 +890,9 @@ export async function handleRegenerateProfileUrl(req, res) {
             message: 'Public profile URL regenerated successfully.',
             data: {
                 ...found,
-                ...updates
+                ...updates,
+                influencer_id: creatorId,
+                id: creatorId
             }
         });
     } catch (err) {
@@ -890,8 +910,19 @@ export async function handleRegenerateProfileUrl(req, res) {
  */
 export async function getInfluencerBySlug(publicSlug) {
     if (!publicSlug) return null;
-    const { data: all } = await getAllInfluencersFromDB();
     const normSlug = String(publicSlug).trim().toLowerCase();
+    
+    // Direct authoritative lookup in Supabase with useAdmin: true
+    try {
+        const rows = await dbQuery('influencers', `public_slug=eq.${encodeURIComponent(normSlug)}&limit=1`, { useAdmin: true });
+        if (Array.isArray(rows) && rows.length > 0) {
+            const inf = rows[0];
+            const infId = inf.influencer_id || inf.id;
+            return { ...inf, influencer_id: infId, id: infId };
+        }
+    } catch (e) {}
+
+    const { data: all } = await getAllInfluencersFromDB();
     return all.find(i => 
         (i.public_slug && i.public_slug.toLowerCase() === normSlug) ||
         (i.instagram_id && i.instagram_id.toLowerCase() === normSlug)
@@ -1002,7 +1033,7 @@ export async function createOrUpdateAttribution({
     existing_attribution_id = null,
     expires_at = null
 }) {
-    const targetId = influencer?.id || influencer_id;
+    const targetId = influencer?.influencer_id || influencer?.id || influencer_id;
     if (!targetId) return null;
     const now = new Date();
     const expiresAt = expires_at || new Date(now.getTime() + INFLUENCER_ATTRIBUTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -1100,7 +1131,7 @@ export function getActiveAttribution(attribution_id, session_id) {
 export function calculateInfluencerCommission(salesAmount, commissionRate) {
     const amount = Math.max(0, Number(salesAmount) || 0);
     const rate = Math.max(0, Math.min(100, Number(commissionRate) || 0));
-    const commission = Number(((amount * rate) / 100).toFixed(2));
+    const commission = Math.round((amount * rate / 100) * 100) / 100;
     return {
         sales_amount: amount,
         salesAmount: amount,
@@ -1122,7 +1153,7 @@ export async function resolveOrderInfluencer(attribution_id, session_id) {
     if (!targetId) return null;
 
     const { data: all } = await getAllInfluencersFromDB();
-    const creator = all.find(i => i.id === targetId);
+    const creator = all.find(i => (i.influencer_id && i.influencer_id === targetId) || i.id === targetId);
     if (!creator || creator.status !== 'active') return null;
 
     return {
@@ -1149,11 +1180,33 @@ export async function attributeOrderToInfluencer({
         throw new Error('order_reference is required for order attribution');
     }
 
+    const cleanOrderRef = String(order_reference).trim();
+
+    // 1. Authoritative check in Supabase public.influencer_order_attributions with useAdmin: true
+    try {
+        const existingDbRows = await dbQuery(
+            'influencer_order_attributions',
+            `order_reference=eq.${encodeURIComponent(cleanOrderRef)}&limit=1`,
+            { useAdmin: true }
+        );
+        if (Array.isArray(existingDbRows) && existingDbRows.length > 0) {
+            const existing = existingDbRows[0];
+            return {
+                ...existing,
+                attributed: true,
+                already_attributed: true,
+                data: existing
+            };
+        }
+    } catch (dbErr) {
+        console.warn('[Influencers API] Supabase check for existing attribution failed, using local store:', dbErr.message);
+    }
+
     const local = readLocalStore();
     local.order_attributions = local.order_attributions || [];
 
-    // Idempotency: Verify order is not already attributed
-    const existing = local.order_attributions.find(oa => oa.order_reference === String(order_reference).trim());
+    // Idempotency: Verify order is not already attributed in local mirror
+    const existing = local.order_attributions.find(oa => oa.order_reference === cleanOrderRef);
     if (existing) {
         return {
             ...existing,
@@ -1173,7 +1226,7 @@ export async function attributeOrderToInfluencer({
 
     if (targetInfId) {
         const { data: all } = await getAllInfluencersFromDB();
-        targetCreator = all.find(i => i.id === targetInfId);
+        targetCreator = all.find(i => (i.influencer_id && i.influencer_id === targetInfId) || i.id === targetInfId);
     } else if (targetAttrId || targetSessId) {
         const resolved = await resolveOrderInfluencer(targetAttrId, targetSessId);
         if (resolved) {
@@ -1190,15 +1243,17 @@ export async function attributeOrderToInfluencer({
         return { attributed: false, message: `Influencer '${targetCreator.name}' is ${targetCreator.status}. Commission disallowed.` };
     }
 
+    const canonicalCreatorId = targetCreator.influencer_id || targetCreator.id;
+
     // Calculate commission using snapshot of current rate
     const { commission_rate, commission_amount } = calculateInfluencerCommission(sales_amount, targetCreator.commission_rate);
     const nowIso = new Date().toISOString();
 
     const orderAttrRecord = {
         id: randomUUID(),
-        influencer_id: targetCreator.id,
+        influencer_id: canonicalCreatorId,
         order_id: order_id || null,
-        order_reference: String(order_reference).trim(),
+        order_reference: cleanOrderRef,
         attribution_id: activeAttr?.id || attribution_id || null,
         influencer_link_id: activeAttr?.influencer_link_id || null,
         sales_amount: Number(sales_amount) || 0,
@@ -1209,20 +1264,31 @@ export async function attributeOrderToInfluencer({
         updated_at: nowIso
     };
 
+    // Insert into Supabase with useAdmin: true, using unique constraint on order_reference for idempotency
     try {
         await dbInsert('influencer_order_attributions', orderAttrRecord, { useAdmin: true });
     } catch (e) {
+        // Handle database unique constraint conflict as idempotent success
+        if (e.code === '23505' || /unique|duplicate/i.test(e.message || '')) {
+            console.warn(`[Influencers API] Unique constraint caught on order_reference '${cleanOrderRef}'. Order already attributed.`);
+            return {
+                ...orderAttrRecord,
+                attributed: true,
+                already_attributed: true,
+                data: orderAttrRecord
+            };
+        }
         console.warn('[Influencers API] dbInsert influencer_order_attributions notice:', e.message);
     }
 
     local.order_attributions.unshift(orderAttrRecord);
 
     // Update influencer_stats
-    let stat = (local.stats || []).find(s => s.influencer_id === targetCreator.id);
+    let stat = (local.stats || []).find(s => s.influencer_id === canonicalCreatorId);
     if (!stat) {
         stat = {
             id: randomUUID(),
-            influencer_id: targetCreator.id,
+            influencer_id: canonicalCreatorId,
             total_clicks: 0,
             total_orders: 0,
             total_sales: 0,
@@ -1243,7 +1309,7 @@ export async function attributeOrderToInfluencer({
     stat.updated_at = nowIso;
 
     try {
-        await dbUpdate('influencer_stats', 'influencer_id', targetCreator.id, {
+        await dbUpdate('influencer_stats', 'influencer_id', canonicalCreatorId, {
             total_orders: stat.total_orders,
             total_sales: stat.total_sales,
             pending_earnings: stat.pending_earnings,
@@ -1258,8 +1324,8 @@ export async function attributeOrderToInfluencer({
     try {
         const { recordOrderCommissionInWallet } = await import('./creator-wallet.js');
         await recordOrderCommissionInWallet({
-            influencer_id: targetCreator.id,
-            order_reference: String(order_reference).trim(),
+            influencer_id: canonicalCreatorId,
+            order_reference: cleanOrderRef,
             sales_amount: Number(sales_amount) || 0,
             commission_amount
         });
@@ -1281,11 +1347,25 @@ export async function attributeOrderToInfluencer({
  */
 export async function reconcileOrderCommission({ order_reference, new_status }) {
     if (!order_reference) return null;
+    const cleanOrderRef = String(order_reference).trim();
     const normalizedStatus = String(new_status || '').toLowerCase().trim();
+
+    let orderAttr = null;
+    // Query authoritative Supabase table with useAdmin: true
+    try {
+        const dbRows = await dbQuery('influencer_order_attributions', `order_reference=eq.${encodeURIComponent(cleanOrderRef)}&limit=1`, { useAdmin: true });
+        if (Array.isArray(dbRows) && dbRows.length > 0) {
+            orderAttr = dbRows[0];
+        }
+    } catch (e) {}
 
     const local = readLocalStore();
     local.order_attributions = local.order_attributions || [];
-    const orderAttr = local.order_attributions.find(oa => oa.order_reference === String(order_reference).trim());
+    const localAttr = local.order_attributions.find(oa => oa.order_reference === cleanOrderRef);
+    if (!orderAttr && localAttr) {
+        orderAttr = localAttr;
+    }
+
     if (!orderAttr) return null;
 
     if ((normalizedStatus === 'cancelled' || normalizedStatus === 'refunded') && orderAttr.status !== 'cancelled') {
@@ -1294,11 +1374,18 @@ export async function reconcileOrderCommission({ order_reference, new_status }) 
         orderAttr.updated_at = new Date().toISOString();
 
         try {
-            await dbUpdate('influencer_order_attributions', 'id', orderAttr.id, {
+            await dbUpdate('influencer_order_attributions', 'order_reference', cleanOrderRef, {
                 status: 'cancelled',
                 updated_at: orderAttr.updated_at
             }, { useAdmin: true });
-        } catch (e) {}
+        } catch (e) {
+            try {
+                await dbUpdate('influencer_order_attributions', 'id', orderAttr.id, {
+                    status: 'cancelled',
+                    updated_at: orderAttr.updated_at
+                }, { useAdmin: true });
+            } catch (e2) {}
+        }
 
         const stat = (local.stats || []).find(s => s.influencer_id === orderAttr.influencer_id);
         if (stat) {
@@ -1386,7 +1473,8 @@ export async function handleGetPublicInfluencer(req, res) {
         return res.json({
             success: true,
             data: {
-                id: creator.id,
+                influencer_id: creator.influencer_id || creator.id,
+                id: creator.influencer_id || creator.id,
                 name: creator.name,
                 instagram_id: creator.instagram_id,
                 instagram_url: creator.instagram_url || buildInstagramUrl(creator.instagram_id),
@@ -1419,7 +1507,8 @@ export async function handleGetPublicInfluencerProducts(req, res) {
 
         // Check if creator has specific product links tagged
         const local = readLocalStore();
-        const productLinks = (local.links || []).filter(l => l.influencer_id === creator.id && l.link_type === 'product');
+        const creatorId = creator.influencer_id || creator.id;
+        const productLinks = (local.links || []).filter(l => l.influencer_id === creatorId && l.link_type === 'product');
 
         // Fetch live active inventory items directly from Supabase
         let activeInventory = [];
@@ -1485,7 +1574,7 @@ export async function handleTrackClick(req, res) {
         let creator = await getInfluencerBySlug(identifier);
         if (!creator) {
             const { data: all } = await getAllInfluencersFromDB();
-            creator = all.find(i => i.id === identifier || i.influencer_code === identifier);
+            creator = all.find(i => (i.influencer_id && i.influencer_id === identifier) || i.id === identifier || i.influencer_code === identifier);
         }
 
         if (!creator) {
@@ -1496,6 +1585,7 @@ export async function handleTrackClick(req, res) {
             return res.status(403).json({ success: false, error: { message: 'Influencer is inactive' } });
         }
 
+        const creatorId = creator.influencer_id || creator.id;
         const landingUrl = body.landing_url || buildInfluencerPublicUrl(creator.public_slug);
         const sessionId = body.session_id || randomUUID();
         const existingAttributionId = body.attribution_id || null;
@@ -1511,7 +1601,7 @@ export async function handleTrackClick(req, res) {
 
         // Record referral click
         const clickResult = await trackInfluencerClick({
-            influencer_id: creator.id,
+            influencer_id: creatorId,
             influencer_link_id: body.influencer_link_id || null,
             attribution_id: attribution?.id || null,
             landing_url: landingUrl,
@@ -1530,7 +1620,7 @@ export async function handleTrackClick(req, res) {
             click: clickResult?.click || null,
             attribution: {
                 id: attribution.id,
-                influencer_id: creator.id,
+                influencer_id: creatorId,
                 influencer_code: creator.influencer_code,
                 public_slug: creator.public_slug,
                 landing_url: landingUrl,
@@ -1554,12 +1644,13 @@ export async function handleGetInfluencerStatsEndpoint(req, res) {
     try {
         const { id } = req.params;
         const { data: all } = await getAllInfluencersFromDB();
-        const creator = all.find(i => i.id === id || i.influencer_code === id || i.public_slug === id);
+        const creator = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id || i.public_slug === id);
         if (!creator) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
-        const stats = await getInfluencerStats(creator.id);
+        const creatorId = creator.influencer_id || creator.id;
+        const stats = await getInfluencerStats(creatorId);
         const clicks = Number(stats.total_clicks) || 0;
         const orders = Number(stats.total_orders) || 0;
         const conversionRate = clicks > 0 ? Number(((orders / clicks) * 100).toFixed(2)) : 0;
@@ -1568,6 +1659,7 @@ export async function handleGetInfluencerStatsEndpoint(req, res) {
             success: true,
             data: {
                 ...stats,
+                influencer_id: creatorId,
                 conversion_rate: conversionRate,
                 conversion_rate_formatted: `${conversionRate}%`
             }
@@ -1586,12 +1678,13 @@ export async function handleGetInfluencerLinksEndpoint(req, res) {
     try {
         const { id } = req.params;
         const { data: all } = await getAllInfluencersFromDB();
-        const creator = all.find(i => i.id === id || i.influencer_code === id);
+        const creator = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id);
         if (!creator) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
-        const links = await getInfluencerLinks(creator.id);
+        const creatorId = creator.influencer_id || creator.id;
+        const links = await getInfluencerLinks(creatorId);
         const local = readLocalStore();
         const clicksList = local.clicks || [];
 
@@ -1624,11 +1717,12 @@ export async function handleCreateInfluencerLinkEndpoint(req, res) {
         const { link_type = 'product', product_code, campaign_id, custom_url } = req.body || {};
 
         const { data: all } = await getAllInfluencersFromDB();
-        const creator = all.find(i => i.id === id || i.influencer_code === id);
+        const creator = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id);
         if (!creator) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
+        const creatorId = creator.influencer_id || creator.id;
         let destinationUrl = custom_url;
         if (!destinationUrl) {
             if (link_type === 'product' && product_code) {
@@ -1640,7 +1734,7 @@ export async function handleCreateInfluencerLinkEndpoint(req, res) {
 
         const newLink = {
             id: randomUUID(),
-            influencer_id: creator.id,
+            influencer_id: creatorId,
             link_type: ALLOWED_LINK_TYPES.includes(link_type) ? link_type : 'product',
             url: destinationUrl,
             target_url: destinationUrl,
@@ -1683,14 +1777,15 @@ export async function handleGetInfluencerOrdersEndpoint(req, res) {
     try {
         const { id } = req.params;
         const { data: all } = await getAllInfluencersFromDB();
-        const creator = all.find(i => i.id === id || i.influencer_code === id);
+        const creator = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id);
         if (!creator) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
+        const creatorId = creator.influencer_id || creator.id;
         const local = readLocalStore();
         const orders = (local.order_attributions || [])
-            .filter(oa => oa.influencer_id === creator.id)
+            .filter(oa => oa.influencer_id === creatorId)
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         return res.json({
@@ -1712,13 +1807,14 @@ export async function handleGetInfluencerEarningsEndpoint(req, res) {
     try {
         const { id } = req.params;
         const { data: all } = await getAllInfluencersFromDB();
-        const creator = all.find(i => i.id === id || i.influencer_code === id);
+        const creator = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id);
         if (!creator) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
+        const creatorId = creator.influencer_id || creator.id;
         const local = readLocalStore();
-        const orders = (local.order_attributions || []).filter(oa => oa.influencer_id === creator.id);
+        const orders = (local.order_attributions || []).filter(oa => oa.influencer_id === creatorId);
 
         const breakdown = {
             total_earnings: orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + Number(o.commission_amount || 0), 0),

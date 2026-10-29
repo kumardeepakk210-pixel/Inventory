@@ -213,6 +213,19 @@ export async function getOrLinkInfluencerAccount({ email, influencer_id, auth_us
     );
 
     if (account) {
+        // If auth_user_id is provided and account has none, link it
+        if (auth_user_id && !account.auth_user_id) {
+            account.auth_user_id = auth_user_id;
+            account.updated_at = new Date().toISOString();
+            writeLocalStore(local);
+            try {
+                await dbUpdate('influencer_accounts', 'id', account.id, {
+                    auth_user_id: account.auth_user_id,
+                    updated_at: account.updated_at
+                }, { useAdmin: true });
+            } catch (e) {}
+        }
+
         // If password was provided and account has no password_hash, set it
         if (password && !account.password_hash) {
             account.password_hash = hashPassword(password);
@@ -224,15 +237,22 @@ export async function getOrLinkInfluencerAccount({ email, influencer_id, auth_us
 
     // Try finding creator in influencers table
     let creator = local.influencers.find(i => 
-        (influencer_id && i.id === influencer_id) ||
+        (influencer_id && (i.influencer_id === influencer_id || i.id === influencer_id)) ||
         (cleanEmail && i.email && i.email.toLowerCase() === cleanEmail)
     );
 
     if (!creator) {
-        // Try DB lookup
+        // Try DB lookup using authoritative influencer_id or email with admin privileges
         try {
-            const { data } = await dbQuery('influencers', cleanEmail ? `email=eq.${encodeURIComponent(cleanEmail)}` : `id=eq.${influencer_id}`);
-            if (data && data.length > 0) creator = data[0];
+            const queryParam = cleanEmail 
+                ? `email=eq.${encodeURIComponent(cleanEmail)}` 
+                : `influencer_id=eq.${encodeURIComponent(influencer_id)}`;
+            const rows = await dbQuery('influencers', queryParam, { useAdmin: true });
+            if (Array.isArray(rows) && rows.length > 0) {
+                const inf = rows[0];
+                const infId = inf.influencer_id || inf.id;
+                creator = { ...inf, influencer_id: infId, id: infId };
+            }
         } catch (e) {
             // ignore
         }
@@ -242,10 +262,12 @@ export async function getOrLinkInfluencerAccount({ email, influencer_id, auth_us
         return null;
     }
 
-    // Create new influencer_accounts record
+    const canonicalInfluencerId = creator.influencer_id || creator.id;
+
+    // Create new influencer_accounts record mapping auth_user_id -> influencer_id -> public.influencers.influencer_id
     const newAccount = {
         id: randomUUID(),
-        influencer_id: creator.id,
+        influencer_id: canonicalInfluencerId,
         auth_user_id: auth_user_id || null,
         email: cleanEmail || creator.email || `${creator.public_slug || creator.influencer_code}@wishrite-creator.in`,
         password_hash: password ? hashPassword(password) : hashPassword('WishriteCreator2026!'),
@@ -276,7 +298,7 @@ export function issueCreatorSession(account, influencer) {
     
     creatorSessions.set(token, {
         accountId: account.id,
-        influencerId: influencer.id,
+        influencerId: influencer.influencer_id || influencer.id,
         email: account.email,
         expiresAt,
         createdAt: Date.now()
@@ -343,7 +365,18 @@ export async function requireCreatorAuth(req, res, next) {
 
             const local = readLocalStore();
             matchedAccount = local.accounts.find(a => a.id === session.accountId);
-            matchedCreator = local.influencers.find(i => i.id === session.influencerId);
+            matchedCreator = local.influencers.find(i => (i.influencer_id || i.id) === session.influencerId);
+
+            if (!matchedCreator) {
+                try {
+                    const infRows = await dbQuery('influencers', `influencer_id=eq.${encodeURIComponent(session.influencerId)}`, { useAdmin: true });
+                    if (Array.isArray(infRows) && infRows.length > 0) {
+                        const inf = infRows[0];
+                        const infId = inf.influencer_id || inf.id;
+                        matchedCreator = { ...inf, influencer_id: infId, id: infId };
+                    }
+                } catch (e) {}
+            }
         }
 
         // 2. If not found in memory, check if it's a Supabase JWT (format ey...)
@@ -360,8 +393,27 @@ export async function requireCreatorAuth(req, res, next) {
                         (authEmail && a.email?.toLowerCase() === authEmail)
                     );
 
+                    if (!matchedAccount) {
+                        try {
+                            const accRows = await dbQuery('influencer_accounts', `auth_user_id=eq.${encodeURIComponent(authUserId)}`, { useAdmin: true });
+                            if (Array.isArray(accRows) && accRows.length > 0) {
+                                matchedAccount = accRows[0];
+                            }
+                        } catch (e) {}
+                    }
+
                     if (matchedAccount) {
-                        matchedCreator = local.influencers.find(i => i.id === matchedAccount.influencer_id);
+                        matchedCreator = local.influencers.find(i => (i.influencer_id || i.id) === matchedAccount.influencer_id);
+                        if (!matchedCreator) {
+                            try {
+                                const infRows = await dbQuery('influencers', `influencer_id=eq.${encodeURIComponent(matchedAccount.influencer_id)}`, { useAdmin: true });
+                                if (Array.isArray(infRows) && infRows.length > 0) {
+                                    const inf = infRows[0];
+                                    const infId = inf.influencer_id || inf.id;
+                                    matchedCreator = { ...inf, influencer_id: infId, id: infId };
+                                }
+                            } catch (e) {}
+                        }
                     }
                 }
             } catch (e) {
@@ -461,8 +513,27 @@ export async function handleCreatorLogin(req, res) {
                         (authEmail && a.email?.toLowerCase() === authEmail)
                     );
 
+                    if (!matchedAccount) {
+                        try {
+                            const accRows = await dbQuery('influencer_accounts', `auth_user_id=eq.${encodeURIComponent(authUserId)}`, { useAdmin: true });
+                            if (Array.isArray(accRows) && accRows.length > 0) {
+                                matchedAccount = accRows[0];
+                            }
+                        } catch (e) {}
+                    }
+
                     if (matchedAccount) {
-                        matchedCreator = local.influencers.find(i => i.id === matchedAccount.influencer_id);
+                        matchedCreator = local.influencers.find(i => (i.influencer_id || i.id) === matchedAccount.influencer_id);
+                        if (!matchedCreator) {
+                            try {
+                                const infRows = await dbQuery('influencers', `influencer_id=eq.${encodeURIComponent(matchedAccount.influencer_id)}`, { useAdmin: true });
+                                if (Array.isArray(infRows) && infRows.length > 0) {
+                                    const inf = infRows[0];
+                                    const infId = inf.influencer_id || inf.id;
+                                    matchedCreator = { ...inf, influencer_id: infId, id: infId };
+                                }
+                            } catch (e) {}
+                        }
                     }
                 }
             } catch (e) {
@@ -485,15 +556,37 @@ export async function handleCreatorLogin(req, res) {
                     (i.public_slug && i.public_slug.toLowerCase() === loginId)
                 );
 
+                if (!matchedCreator) {
+                    try {
+                        const infRows = await dbQuery('influencers', `email=eq.${encodeURIComponent(loginId)}`, { useAdmin: true });
+                        if (Array.isArray(infRows) && infRows.length > 0) {
+                            const inf = infRows[0];
+                            const infId = inf.influencer_id || inf.id;
+                            matchedCreator = { ...inf, influencer_id: infId, id: infId };
+                        }
+                    } catch (e) {}
+                }
+
                 if (matchedCreator) {
+                    const canonicalCreatorId = matchedCreator.influencer_id || matchedCreator.id;
                     matchedAccount = await getOrLinkInfluencerAccount({
                         email: matchedCreator.email || loginId,
-                        influencer_id: matchedCreator.id,
+                        influencer_id: canonicalCreatorId,
                         password: password || 'WishriteCreator2026!'
                     });
                 }
             } else {
-                matchedCreator = local.influencers.find(i => i.id === matchedAccount.influencer_id);
+                matchedCreator = local.influencers.find(i => (i.influencer_id || i.id) === matchedAccount.influencer_id);
+                if (!matchedCreator) {
+                    try {
+                        const infRows = await dbQuery('influencers', `influencer_id=eq.${encodeURIComponent(matchedAccount.influencer_id)}`, { useAdmin: true });
+                        if (Array.isArray(infRows) && infRows.length > 0) {
+                            const inf = infRows[0];
+                            const infId = inf.influencer_id || inf.id;
+                            matchedCreator = { ...inf, influencer_id: infId, id: infId };
+                        }
+                    } catch (e) {}
+                }
             }
 
             // Verify password if account has password_hash
@@ -588,7 +681,8 @@ export async function handleCreatorLogin(req, res) {
             token,
             expires_at: new Date(expiresAt).toISOString(),
             creator: {
-                id: matchedCreator.id,
+                influencer_id: matchedCreator.influencer_id || matchedCreator.id,
+                id: matchedCreator.influencer_id || matchedCreator.id,
                 influencer_code: matchedCreator.influencer_code,
                 name: matchedCreator.name,
                 display_name: matchedCreator.name,
@@ -642,7 +736,8 @@ export async function handleGetCreatorMe(req, res) {
         success: true,
         data: {
             creator: {
-                id: creator.id,
+                influencer_id: creator.influencer_id || creator.id,
+                id: creator.influencer_id || creator.id,
                 influencer_code: creator.influencer_code,
                 name: creator.name,
                 display_name: creator.name,
@@ -672,10 +767,11 @@ export async function handleGetCreatorMe(req, res) {
  */
 export async function handleGetCreatorStats(req, res) {
     const creator = req.creator;
+    const creatorId = creator.influencer_id || creator.id;
     const local = readLocalStore();
 
     // Find stats record for authenticated creator
-    const stats = (local.stats || []).find(s => s.influencer_id === creator.id) || {
+    const stats = (local.stats || []).find(s => s.influencer_id === creatorId) || {
         total_clicks: 0,
         total_orders: 0,
         total_sales: 0,
@@ -685,7 +781,7 @@ export async function handleGetCreatorStats(req, res) {
     };
 
     // Calculate actual orders attributed to this creator
-    const orders = (local.order_attributions || []).filter(o => o.influencer_id === creator.id);
+    const orders = (local.order_attributions || []).filter(o => o.influencer_id === creatorId);
     const activeOrders = orders.filter(o => o.status !== 'cancelled');
 
     const totalOrders = stats.total_orders || activeOrders.length;
@@ -746,16 +842,17 @@ export async function handleGetCreatorPerformance(req, res) {
     }
 
     const local = readLocalStore();
+    const creatorId = creator.influencer_id || creator.id;
 
     // Filter real clicks
     const clicks = (local.clicks || []).filter(c => 
-        c.influencer_id === creator.id && 
+        c.influencer_id === creatorId && 
         new Date(c.created_at) >= cutoff
     );
 
     // Filter real orders
     const orders = (local.order_attributions || []).filter(o => 
-        o.influencer_id === creator.id && 
+        o.influencer_id === creatorId && 
         o.status !== 'cancelled' &&
         new Date(o.created_at) >= cutoff
     );
@@ -823,13 +920,14 @@ export async function handleGetCreatorPerformance(req, res) {
  */
 export async function handleGetCreatorOrders(req, res) {
     const creator = req.creator;
+    const creatorId = creator.influencer_id || creator.id;
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const statusFilter = req.query.status ? String(req.query.status).toLowerCase() : null;
 
     const local = readLocalStore();
     let orders = (local.order_attributions || [])
-        .filter(o => o.influencer_id === creator.id);
+        .filter(o => o.influencer_id === creatorId);
 
     if (statusFilter) {
         orders = orders.filter(o => (o.status || '').toLowerCase() === statusFilter);
@@ -871,13 +969,14 @@ export async function handleGetCreatorOrders(req, res) {
  */
 export async function handleGetCreatorLinks(req, res) {
     const creator = req.creator;
+    const creatorId = creator.influencer_id || creator.id;
     const local = readLocalStore();
 
     const profileUrl = creator.public_profile_url || buildInfluencerPublicUrl(creator.public_slug);
 
     // Fetch product referral links
     const productLinks = (local.links || [])
-        .filter(l => l.influencer_id === creator.id && l.link_type === 'product')
+        .filter(l => l.influencer_id === creatorId && l.link_type === 'product')
         .map(l => {
             // Find click count for this link
             const clickCount = (local.clicks || []).filter(c => c.influencer_link_id === l.id).length;
@@ -918,10 +1017,11 @@ export async function handleCreateCreatorProductLink(req, res) {
 
     const cleanCode = String(product_code).trim();
     const productUrl = buildInfluencerProductUrl(creator.public_slug, cleanCode);
+    const creatorId = creator.influencer_id || creator.id;
 
     const local = readLocalStore();
     let existingLink = (local.links || []).find(l => 
-        l.influencer_id === creator.id && 
+        l.influencer_id === creatorId && 
         l.link_type === 'product' && 
         (l.campaign_id === cleanCode || l.url === productUrl)
     );
@@ -936,7 +1036,7 @@ export async function handleCreateCreatorProductLink(req, res) {
 
     const newLink = {
         id: randomUUID(),
-        influencer_id: creator.id,
+        influencer_id: creatorId,
         link_type: 'product',
         url: productUrl,
         campaign_id: cleanCode,
@@ -966,11 +1066,13 @@ export async function handleCreateCreatorProductLink(req, res) {
  */
 export async function handleGetCreatorProfile(req, res) {
     const creator = req.creator;
+    const creatorId = creator.influencer_id || creator.id;
 
     return res.json({
         success: true,
         data: {
-            id: creator.id,
+            influencer_id: creatorId,
+            id: creatorId,
             influencer_code: creator.influencer_code,
             name: creator.name,
             display_name: creator.name,
@@ -1048,8 +1150,9 @@ export async function handleUpdateCreatorProfile(req, res) {
 
     permittedUpdates.updated_at = new Date().toISOString();
 
+    const creatorId = creator.influencer_id || creator.id;
     const local = readLocalStore();
-    const idx = local.influencers.findIndex(i => i.id === creator.id);
+    const idx = local.influencers.findIndex(i => (i.influencer_id || i.id) === creatorId);
     if (idx !== -1) {
         Object.assign(local.influencers[idx], permittedUpdates);
         writeLocalStore(local);
@@ -1057,7 +1160,7 @@ export async function handleUpdateCreatorProfile(req, res) {
     }
 
     try {
-        await dbUpdate('influencers', 'id', creator.id, permittedUpdates, { useAdmin: true });
+        await dbUpdate('influencers', 'influencer_id', creatorId, permittedUpdates, { useAdmin: true });
     } catch (e) {
         // local persistence fallback
     }
@@ -1066,7 +1169,8 @@ export async function handleUpdateCreatorProfile(req, res) {
         success: true,
         message: 'Creator profile updated successfully.',
         data: {
-            id: creator.id,
+            influencer_id: creatorId,
+            id: creatorId,
             name: creator.name,
             display_name: creator.name,
             bio: creator.bio,

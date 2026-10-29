@@ -733,7 +733,8 @@ async function recordOrderPointsReversal({ influencer_id, order_reference }) {
 export async function handleGetCreatorWallet(req, res) {
     try {
         const creator = req.creator;
-        const wallet = await getOrCreateInfluencerWallet(creator.id);
+        const creatorId = creator.influencer_id || creator.id;
+        const wallet = await getOrCreateInfluencerWallet(creatorId);
 
         return res.json({
             success: true,
@@ -762,9 +763,10 @@ export async function handleGetCreatorWallet(req, res) {
 export async function handleGetCreatorWalletTransactions(req, res) {
     try {
         const creator = req.creator;
+        const creatorId = creator.influencer_id || creator.id;
         const local = readLocalStore();
         const txs = (local.wallet_transactions || [])
-            .filter(t => t.influencer_id === creator.id)
+            .filter(t => t.influencer_id === creatorId)
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         return res.json({
@@ -791,9 +793,10 @@ export async function handleGetCreatorWalletSummary(req, res) {
 export async function handleGetPayoutMethods(req, res) {
     try {
         const creator = req.creator;
+        const creatorId = creator.influencer_id || creator.id;
         const local = readLocalStore();
         const methods = (local.payout_methods || [])
-            .filter(m => m.influencer_id === creator.id)
+            .filter(m => m.influencer_id === creatorId)
             .map(m => ({
                 id: m.id,
                 method_type: m.method_type,
@@ -823,6 +826,7 @@ export async function handleGetPayoutMethods(req, res) {
 export async function handleCreatePayoutMethod(req, res) {
     try {
         const creator = req.creator;
+        const creatorId = creator.influencer_id || creator.id;
         const { method_type, account_holder_name, upi_id, account_number, ifsc_code, bank_name, is_default } = req.body || {};
 
         if (!method_type || !['upi', 'bank_account'].includes(method_type)) {
@@ -841,12 +845,12 @@ export async function handleCreatePayoutMethod(req, res) {
 
         const local = readLocalStore();
         local.payout_methods = local.payout_methods || [];
-        const existingCount = local.payout_methods.filter(m => m.influencer_id === creator.id).length;
+        const existingCount = local.payout_methods.filter(m => m.influencer_id === creatorId).length;
         const setAsDefault = is_default !== undefined ? Boolean(is_default) : (existingCount === 0);
 
         let methodRecord = {
             id: randomUUID(),
-            influencer_id: creator.id,
+            influencer_id: creatorId,
             method_type,
             account_holder_name: String(account_holder_name).trim(),
             is_default: setAsDefault,
@@ -895,7 +899,7 @@ export async function handleCreatePayoutMethod(req, res) {
         // If setting as default, unset others for this creator
         if (setAsDefault) {
             local.payout_methods.forEach(m => {
-                if (m.influencer_id === creator.id) m.is_default = false;
+                if (m.influencer_id === creatorId) m.is_default = false;
             });
         }
 
@@ -933,10 +937,11 @@ export async function handleCreatePayoutMethod(req, res) {
 export async function handleDeletePayoutMethod(req, res) {
     try {
         const creator = req.creator;
+        const creatorId = creator.influencer_id || creator.id;
         const { id } = req.params;
         const local = readLocalStore();
 
-        const method = (local.payout_methods || []).find(m => m.id === id && m.influencer_id === creator.id);
+        const method = (local.payout_methods || []).find(m => m.id === id && m.influencer_id === creatorId);
         if (!method) {
             return res.status(404).json({ success: false, error: { message: 'Payout method not found.' } });
         }
@@ -971,16 +976,17 @@ export async function handleDeletePayoutMethod(req, res) {
 export async function handleSetDefaultPayoutMethod(req, res) {
     try {
         const creator = req.creator;
+        const creatorId = creator.influencer_id || creator.id;
         const { id } = req.params;
         const local = readLocalStore();
 
-        const method = (local.payout_methods || []).find(m => m.id === id && m.influencer_id === creator.id);
+        const method = (local.payout_methods || []).find(m => m.id === id && m.influencer_id === creatorId);
         if (!method) {
             return res.status(404).json({ success: false, error: { message: 'Payout method not found.' } });
         }
 
         local.payout_methods.forEach(m => {
-            if (m.influencer_id === creator.id) {
+            if (m.influencer_id === creatorId) {
                 m.is_default = (m.id === id);
             }
         });
@@ -998,6 +1004,7 @@ export async function handleSetDefaultPayoutMethod(req, res) {
  */
 export async function handleCreateWithdrawal(req, res) {
     const creator = req.creator;
+    const creatorId = creator.influencer_id || creator.id;
     const { amount, payout_method_id, payout_method, payout_details, idempotency_key } = req.body || {};
 
     const numAmount = Number(amount);
@@ -1048,7 +1055,7 @@ export async function handleCreateWithdrawal(req, res) {
         // Resolve payout method
         let chosenMethod = null;
         if (payout_method_id) {
-            chosenMethod = (local.payout_methods || []).find(m => m.id === payout_method_id && m.influencer_id === creator.id);
+            chosenMethod = (local.payout_methods || []).find(m => m.id === payout_method_id && m.influencer_id === creatorId);
             if (!chosenMethod) {
                 return res.status(400).json({
                     success: false,
@@ -1056,8 +1063,8 @@ export async function handleCreateWithdrawal(req, res) {
                 });
             }
         } else {
-            chosenMethod = (local.payout_methods || []).find(m => m.influencer_id === creator.id && m.is_default) ||
-                (local.payout_methods || []).find(m => m.influencer_id === creator.id);
+            chosenMethod = (local.payout_methods || []).find(m => m.influencer_id === creatorId && m.is_default) ||
+                (local.payout_methods || []).find(m => m.influencer_id === creatorId);
             
             if (!chosenMethod && !payout_details) {
                 return res.status(400).json({
@@ -1077,7 +1084,7 @@ export async function handleCreateWithdrawal(req, res) {
         } : payout_details;
 
         // Atomic balance reservation: conditional atomic deduction (WHERE available_balance >= numAmount)
-        const deductResult = await atomicDeductWalletBalance(creator.id, numAmount, local);
+        const deductResult = await atomicDeductWalletBalance(creatorId, numAmount, local);
         if (!deductResult.success) {
             return res.status(400).json({
                 success: false,
@@ -1094,7 +1101,7 @@ export async function handleCreateWithdrawal(req, res) {
 
         const withdrawalRecord = {
             id: randomUUID(),
-            influencer_id: creator.id,
+            influencer_id: creatorId,
             wallet_id: wallet.id,
             withdrawal_reference: withdrawalReference,
             amount: numAmount,
@@ -1112,7 +1119,7 @@ export async function handleCreateWithdrawal(req, res) {
         // Record immutable ledger entry
         const txRecord = {
             id: randomUUID(),
-            influencer_id: creator.id,
+            influencer_id: creatorId,
             wallet_id: wallet.id,
             transaction_type: 'withdrawal_requested',
             amount: numAmount,
@@ -1146,7 +1153,7 @@ export async function handleCreateWithdrawal(req, res) {
         });
     } catch (err) {
         // Rollback atomic deduction if an unexpected error occurs during record creation
-        await atomicCreditWalletBalance(creator.id, numAmount);
+        await atomicCreditWalletBalance(creatorId, numAmount);
         return res.status(500).json({ success: false, error: { message: err.message } });
     }
 }
@@ -1157,9 +1164,10 @@ export async function handleCreateWithdrawal(req, res) {
 export async function handleGetCreatorWithdrawals(req, res) {
     try {
         const creator = req.creator;
+        const creatorId = creator.influencer_id || creator.id;
         const local = readLocalStore();
         const wths = (local.withdrawals || [])
-            .filter(w => w.influencer_id === creator.id)
+            .filter(w => w.influencer_id === creatorId)
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             .map(w => {
                 let reason = w.failure_reason;
@@ -1188,7 +1196,8 @@ export async function handleGetCreatorWithdrawals(req, res) {
 export async function handleGetCreatorPoints(req, res) {
     try {
         const creator = req.creator;
-        const account = await getOrCreateInfluencerPointsAccount(creator.id);
+        const creatorId = creator.influencer_id || creator.id;
+        const account = await getOrCreateInfluencerPointsAccount(creatorId);
 
         return res.json({
             success: true,
@@ -1210,9 +1219,10 @@ export async function handleGetCreatorPoints(req, res) {
 export async function handleGetCreatorPointsTransactions(req, res) {
     try {
         const creator = req.creator;
+        const creatorId = creator.influencer_id || creator.id;
         const local = readLocalStore();
         const txs = (local.points_transactions || [])
-            .filter(t => t.influencer_id === creator.id)
+            .filter(t => t.influencer_id === creatorId)
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         return res.json({
@@ -1273,9 +1283,10 @@ export async function handleGetCreatorRewardById(req, res) {
  */
 export async function handleRedeemReward(req, res) {
     const creator = req.creator;
+    const creatorId = creator.influencer_id || creator.id;
     const { id } = req.params;
 
-    await acquireWalletLock(creator.id);
+    await acquireWalletLock(creatorId);
     try {
         seedDefaultRewardsIfEmpty();
         const local = readLocalStore();
@@ -1296,7 +1307,7 @@ export async function handleRedeemReward(req, res) {
             return res.status(400).json({ success: false, error: { code: 'OUT_OF_STOCK', message: 'Reward is currently out of stock.' } });
         }
 
-        const account = await getOrCreateInfluencerPointsAccount(creator.id, local);
+        const account = await getOrCreateInfluencerPointsAccount(creatorId, local);
 
         // Check sufficient points balance
         if (account.points_balance < reward.points_cost) {
@@ -1321,7 +1332,7 @@ export async function handleRedeemReward(req, res) {
 
         const redemptionRecord = {
             id: randomUUID(),
-            influencer_id: creator.id,
+            influencer_id: creatorId,
             reward_id: reward.id,
             reward_name: reward.name,
             points_spent: reward.points_cost,
@@ -1332,7 +1343,7 @@ export async function handleRedeemReward(req, res) {
 
         const ptTx = {
             id: randomUUID(),
-            influencer_id: creator.id,
+            influencer_id: creatorId,
             points_account_id: account.id,
             transaction_type: 'reward_redemption',
             points: reward.points_cost,
@@ -1371,7 +1382,7 @@ export async function handleRedeemReward(req, res) {
             }
         });
     } finally {
-        releaseWalletLock(creator.id);
+        releaseWalletLock(creatorId);
     }
 }
 
@@ -1381,9 +1392,10 @@ export async function handleRedeemReward(req, res) {
 export async function handleGetCreatorRedemptions(req, res) {
     try {
         const creator = req.creator;
+        const creatorId = creator.influencer_id || creator.id;
         const local = readLocalStore();
         const redemptions = (local.reward_redemptions || [])
-            .filter(r => r.influencer_id === creator.id)
+            .filter(r => r.influencer_id === creatorId)
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         return res.json({
@@ -1447,7 +1459,7 @@ export async function handleAdminGetWallets(req, res) {
     try {
         const local = readLocalStore();
         const wallets = (local.wallets || []).map(w => {
-            const creator = (local.influencers || []).find(i => i.id === w.influencer_id);
+            const creator = (local.influencers || []).find(i => (i.influencer_id || i.id) === w.influencer_id);
             return {
                 ...w,
                 creator_name: creator?.name || 'Unknown',
@@ -1468,7 +1480,7 @@ export async function handleAdminGetWithdrawals(req, res) {
     try {
         const local = readLocalStore();
         const wths = (local.withdrawals || []).map(w => {
-            const creator = (local.influencers || []).find(i => i.id === w.influencer_id);
+            const creator = (local.influencers || []).find(i => (i.influencer_id || i.id) === w.influencer_id);
             return {
                 ...w,
                 creator_name: creator?.name || 'Unknown',
