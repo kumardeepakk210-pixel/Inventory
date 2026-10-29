@@ -331,6 +331,8 @@ export async function handleGetInfluencers(req, res) {
                 ...inf,
                 influencer_id: creatorId,
                 id: creatorId,
+                name: inf.name || inf.influencer_name || '',
+                influencer_name: inf.influencer_name || inf.name || '',
                 public_profile_url: inf.public_profile_url || buildInfluencerPublicUrl(inf.public_slug),
                 instagram_url: inf.instagram_url || buildInstagramUrl(inf.instagram_id),
                 stats: {
