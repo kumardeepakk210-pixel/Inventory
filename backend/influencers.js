@@ -15,6 +15,7 @@ import {
     dbDelete, 
     hasServerAdminCredential 
 } from './supabase-client.js';
+import { logCreatorAudit } from './creator-audit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -191,7 +192,16 @@ async function getAllInfluencersFromDB() {
     for (const item of (local.influencers || [])) {
         const infId = item.influencer_id || item.id;
         if (infId) {
-            map.set(infId, { ...item, influencer_id: infId, id: infId });
+            const infName = item.influencer_name || item.name || '';
+            map.set(infId, {
+                ...item,
+                influencer_id: infId,
+                id: infId,
+                influencer_name: infName,
+                name: infName,
+                email: item.email || item.email_id || null,
+                phone: item.phone || item.phone_number || null
+            });
         }
     }
     // Then merge with DB rows if present
@@ -199,7 +209,16 @@ async function getAllInfluencersFromDB() {
         const infId = item.influencer_id || item.id;
         if (infId) {
             const localItem = map.get(infId);
-            const normalized = { ...item, influencer_id: infId, id: infId };
+            const infName = item.influencer_name || item.name || localItem?.influencer_name || '';
+            const normalized = {
+                ...item,
+                influencer_id: infId,
+                id: infId,
+                influencer_name: infName,
+                name: infName,
+                email: item.email || item.email_id || null,
+                phone: item.phone || item.phone_number || null
+            };
             if (!localItem || new Date(item.updated_at || 0) >= new Date(localItem.updated_at || 0)) {
                 map.set(infId, normalized);
             }
@@ -226,26 +245,47 @@ async function getInfluencerStats(influencerId) {
     const local = readLocalStore();
     const localStat = (local.stats || []).find(s => s.influencer_id === influencerId);
 
+    let stat = null;
     if (dbStat && localStat) {
-        return new Date(dbStat.updated_at || 0) >= new Date(localStat.updated_at || 0) ? dbStat : localStat;
+        stat = new Date(dbStat.updated_at || 0) >= new Date(localStat.updated_at || 0) ? { ...dbStat } : { ...localStat };
+    } else if (dbStat) {
+        stat = { ...dbStat };
+    } else if (localStat) {
+        stat = { ...localStat };
+    } else {
+        stat = {
+            id: randomUUID(),
+            influencer_id: influencerId,
+            total_clicks: 0,
+            total_orders: 0,
+            total_sales: 0,
+            total_views: 0,
+            total_earnings: 0,
+            available_earnings: 0,
+            pending_earnings: 0,
+            total_points: 0,
+            updated_at: new Date().toISOString()
+        };
     }
-    if (dbStat) return dbStat;
-    if (localStat) return localStat;
 
-    // Default zero statistics
-    return {
-        id: randomUUID(),
-        influencer_id: influencerId,
-        total_clicks: 0,
-        total_orders: 0,
-        total_sales: 0,
-        total_views: 0,
-        total_earnings: 0,
-        available_earnings: 0,
-        pending_earnings: 0,
-        total_points: 0,
-        updated_at: new Date().toISOString()
-    };
+    // Overlay authoritative wallet balances if wallet exists
+    try {
+        let wallet = null;
+        try {
+            const wRows = await dbQuery('influencer_wallets', `influencer_id=eq.${encodeURIComponent(influencerId)}&limit=1`, { useAdmin: true });
+            if (Array.isArray(wRows) && wRows.length > 0) wallet = wRows[0];
+        } catch (e) {}
+        if (!wallet) {
+            wallet = (local.wallets || []).find(w => w.influencer_id === influencerId);
+        }
+        if (wallet) {
+            stat.pending_earnings = Number(wallet.pending_balance || 0);
+            stat.available_earnings = Number(wallet.available_balance || 0);
+            stat.total_earnings = Number(wallet.lifetime_earned || 0);
+        }
+    } catch (e) {}
+
+    return stat;
 }
 
 /**
@@ -308,6 +348,19 @@ export async function handleGetInfluencers(req, res) {
             linksMap.get(l.influencer_id).push(l);
         });
 
+        // Fetch wallets for authoritative balances
+        let allWallets = [];
+        try {
+            allWallets = await dbQuery('influencer_wallets', '', { useAdmin: true }).catch(() => []);
+        } catch (e) {}
+        if (!allWallets || allWallets.length === 0) {
+            allWallets = local.wallets || [];
+        }
+        const walletsMap = new Map();
+        (allWallets || []).forEach(w => {
+            if (w.influencer_id) walletsMap.set(w.influencer_id, w);
+        });
+
         // Enrich each influencer
         let enriched = rawInfluencers.map(inf => {
             const creatorId = inf.influencer_id || inf.id;
@@ -321,29 +374,50 @@ export async function handleGetInfluencers(req, res) {
                 pending_earnings: 0,
                 total_points: 0
             };
+            const wallet = walletsMap.get(creatorId);
+            const pendingEarnings = wallet ? Number(wallet.pending_balance || 0) : Number(stats.pending_earnings || 0);
+            const availableEarnings = wallet ? Number(wallet.available_balance || 0) : Number(stats.available_earnings || 0);
+            const totalEarnings = wallet ? Number(wallet.lifetime_earned || 0) : Number(stats.total_earnings || 0);
+            const paidEarnings = wallet ? Number(wallet.paid_balance || 0) : 0;
+
             const links = linksMap.get(creatorId) || [];
             const defaultLink = links.find(l => l.is_default) || links[0] || {
                 url: inf.public_profile_url || buildInfluencerPublicUrl(inf.public_slug),
                 link_type: 'profile'
             };
 
+            const totalClicks = Number(stats.total_clicks || 0);
+            const totalOrders = Number(stats.total_orders || 0);
+            const convRate = totalClicks > 0 ? Number(((totalOrders / totalClicks) * 100).toFixed(2)) : 0;
+
             return {
                 ...inf,
                 influencer_id: creatorId,
                 id: creatorId,
-                name: inf.name || inf.influencer_name || '',
+                name: inf.influencer_name || inf.name || '',
                 influencer_name: inf.influencer_name || inf.name || '',
                 public_profile_url: inf.public_profile_url || buildInfluencerPublicUrl(inf.public_slug),
                 instagram_url: inf.instagram_url || buildInstagramUrl(inf.instagram_id),
+                total_clicks: totalClicks,
+                total_orders: totalOrders,
+                total_sales: Number(stats.total_sales || 0),
+                total_views: Number(stats.total_views || 0),
+                total_earnings: totalEarnings,
+                available_earnings: availableEarnings,
+                pending_earnings: pendingEarnings,
+                paid_earnings: paidEarnings,
+                conversion_rate: convRate,
                 stats: {
-                    total_clicks: Number(stats.total_clicks || 0),
-                    total_orders: Number(stats.total_orders || 0),
+                    total_clicks: totalClicks,
+                    total_orders: totalOrders,
                     total_sales: Number(stats.total_sales || 0),
                     total_views: Number(stats.total_views || 0),
-                    total_earnings: Number(stats.total_earnings || 0),
-                    available_earnings: Number(stats.available_earnings || 0),
-                    pending_earnings: Number(stats.pending_earnings || 0),
-                    total_points: Number(stats.total_points || 0)
+                    total_earnings: totalEarnings,
+                    available_earnings: availableEarnings,
+                    pending_earnings: pendingEarnings,
+                    paid_earnings: paidEarnings,
+                    total_points: Number(stats.total_points || 0),
+                    conversion_rate: convRate
                 },
                 default_link: defaultLink.url,
                 links_count: links.length
@@ -571,8 +645,11 @@ export async function handleCreateInfluencer(req, res) {
             id: newId,
             influencer_code: influencerCode,
             name: String(name).trim(),
+            influencer_name: String(name).trim(),
             email: email ? String(email).trim().toLowerCase() : null,
+            email_id: email ? String(email).trim().toLowerCase() : null,
             phone: phone ? String(phone).trim() : null,
+            phone_number: phone ? String(phone).trim() : null,
             instagram_id: normalizedInstagramId,
             instagram_url: instagramUrl,
             public_slug: publicSlug,
@@ -673,9 +750,21 @@ export async function handleUpdateInfluencer(req, res) {
         const nowIso = new Date().toISOString();
         const updates = { updated_at: nowIso };
 
-        if (body.name) updates.name = String(body.name).trim();
-        if (body.email !== undefined) updates.email = body.email ? String(body.email).trim().toLowerCase() : null;
-        if (body.phone !== undefined) updates.phone = body.phone ? String(body.phone).trim() : null;
+        if (body.name || body.influencer_name) {
+            const cleanName = String(body.influencer_name || body.name).trim();
+            updates.influencer_name = cleanName;
+            updates.name = cleanName;
+        }
+        if (body.email !== undefined) {
+            const cleanEmail = body.email ? String(body.email).trim().toLowerCase() : null;
+            updates.email = cleanEmail;
+            updates.email_id = cleanEmail;
+        }
+        if (body.phone !== undefined) {
+            const cleanPhone = body.phone ? String(body.phone).trim() : null;
+            updates.phone = cleanPhone;
+            updates.phone_number = cleanPhone;
+        }
         if (body.category !== undefined) updates.category = body.category?.trim() || 'Jewelry & Lifestyle';
         if (body.bio !== undefined) updates.bio = body.bio?.trim() || null;
         if (body.profile_image !== undefined) updates.profile_image = body.profile_image?.trim() || found.profile_image;
@@ -685,11 +774,29 @@ export async function handleUpdateInfluencer(req, res) {
         }
 
         if (body.status && ALLOWED_STATUSES.includes(String(body.status).toLowerCase().trim())) {
-            updates.status = String(body.status).toLowerCase().trim();
+            const newStatus = String(body.status).toLowerCase().trim();
+            if (newStatus !== found.status) {
+                updates.status = newStatus;
+                await logCreatorAudit({
+                    action_type: newStatus === 'active' ? 'creator_activated' : 'creator_deactivated',
+                    influencer_id: creatorId,
+                    influencer_name: found.influencer_name || found.name,
+                    details: `Status transitioned from '${found.status}' to '${newStatus}'`
+                });
+            }
         }
 
         if (body.commission_rate !== undefined && !isNaN(parseFloat(body.commission_rate))) {
-            updates.commission_rate = Math.max(0, Math.min(100, parseFloat(body.commission_rate)));
+            const newRate = Math.max(0, Math.min(100, parseFloat(body.commission_rate)));
+            if (newRate !== Number(found.commission_rate)) {
+                updates.commission_rate = newRate;
+                await logCreatorAudit({
+                    action_type: 'commission_changed',
+                    influencer_id: creatorId,
+                    influencer_name: found.influencer_name || found.name,
+                    details: `Commission rate changed from ${found.commission_rate}% to ${newRate}% (applies to future orders)`
+                });
+            }
         }
 
         // If instagram_id is updated, normalize and check duplicates
@@ -755,9 +862,36 @@ export async function handleUpdateInfluencer(req, res) {
 /**
  * PATCH /api/influencers/:id/status
  * Quick status transition (pending, active, inactive, suspended)
+ * Uses canonical influencer_id. Updates ONLY status and updated_at.
+ * Does not overwrite name, slug, instagram, commission, wallet, auth, attribution.
  */
 export async function handleUpdateInfluencerStatus(req, res) {
     try {
+        const authHeader = req.headers.authorization || req.headers['x-admin-token'] || '';
+        // If a creator token is supplied to status update, strictly deny
+        if (authHeader.includes('crt_')) {
+            return res.status(403).json({
+                success: false,
+                error: {
+                    code: 'ADMIN_ACCESS_REQUIRED',
+                    message: 'Access denied. Creator accounts are not authorized to perform administrative operations.'
+                }
+            });
+        }
+
+        const isAdminHeader = authHeader.includes('wrt_') || authHeader.includes('admin') || req.headers['x-admin-key'];
+        const isInternalAdmin = req.employee || req.user?.role === 'Admin' || req.query.admin_secret;
+
+        if (!isAdminHeader && !isInternalAdmin && !req.headers['x-admin-token']) {
+            return res.status(401).json({
+                success: false,
+                error: {
+                    code: 'ADMIN_AUTH_REQUIRED',
+                    message: 'Authentication required for Inventory Admin operations.'
+                }
+            });
+        }
+
         const { id } = req.params;
         const { status } = req.body || {};
 
@@ -772,14 +906,20 @@ export async function handleUpdateInfluencerStatus(req, res) {
         }
 
         const validStatus = String(status).toLowerCase().trim();
+        const targetId = String(id || '').trim();
         const { data: all } = await getAllInfluencersFromDB();
-        const found = all.find(i => (i.influencer_id && i.influencer_id === id) || i.id === id || i.influencer_code === id);
+        const found = all.find(i => 
+            (i.influencer_id && i.influencer_id.toLowerCase() === targetId.toLowerCase()) || 
+            (i.id && i.id.toLowerCase() === targetId.toLowerCase()) || 
+            (i.influencer_code && i.influencer_code.toLowerCase() === targetId.toLowerCase())
+        );
         if (!found) {
             return res.status(404).json({ success: false, error: { message: 'Influencer not found' } });
         }
 
         const creatorId = found.influencer_id || found.id;
         const nowIso = new Date().toISOString();
+        // Phase 2: Updates ONLY status and updated_at
         const updates = { status: validStatus, updated_at: nowIso };
 
         try {
@@ -791,9 +931,22 @@ export async function handleUpdateInfluencerStatus(req, res) {
         const local = readLocalStore();
         const localIdx = local.influencers.findIndex(i => (i.influencer_id || i.id) === creatorId);
         if (localIdx >= 0) {
-            local.influencers[localIdx] = { ...local.influencers[localIdx], ...updates, influencer_id: creatorId, id: creatorId };
+            local.influencers[localIdx] = { 
+                ...local.influencers[localIdx], 
+                status: validStatus, 
+                updated_at: nowIso, 
+                influencer_id: creatorId, 
+                id: creatorId 
+            };
             writeLocalStore(local);
         }
+
+        await logCreatorAudit({
+            action_type: validStatus === 'active' ? 'creator_activated' : 'creator_deactivated',
+            influencer_id: creatorId,
+            influencer_name: found.influencer_name || found.name,
+            details: `Status transitioned from '${found.status}' to '${validStatus}'`
+        });
 
         return res.json({
             success: true,
@@ -1370,20 +1523,21 @@ export async function reconcileOrderCommission({ order_reference, new_status }) 
 
     if (!orderAttr) return null;
 
-    if ((normalizedStatus === 'cancelled' || normalizedStatus === 'refunded') && orderAttr.status !== 'cancelled') {
+    if ((normalizedStatus === 'cancelled' || normalizedStatus === 'refunded') && orderAttr.status !== 'cancelled' && orderAttr.status !== 'refunded') {
         const oldStatus = orderAttr.status;
-        orderAttr.status = 'cancelled';
+        const targetStatus = normalizedStatus === 'refunded' ? 'refunded' : 'cancelled';
+        orderAttr.status = targetStatus;
         orderAttr.updated_at = new Date().toISOString();
 
         try {
             await dbUpdate('influencer_order_attributions', 'order_reference', cleanOrderRef, {
-                status: 'cancelled',
+                status: targetStatus,
                 updated_at: orderAttr.updated_at
             }, { useAdmin: true });
         } catch (e) {
             try {
                 await dbUpdate('influencer_order_attributions', 'id', orderAttr.id, {
-                    status: 'cancelled',
+                    status: targetStatus,
                     updated_at: orderAttr.updated_at
                 }, { useAdmin: true });
             } catch (e2) {}
@@ -1948,6 +2102,269 @@ export async function handleUpdateOrderStatus(req, res) {
         });
     } catch (err) {
         console.error('[Update Order Status Error]:', err);
+        return res.status(500).json({ success: false, error: { message: err.message } });
+    }
+}
+
+// ==============================================================================
+// ATTRIBUTION & COMMISSION LEDGER MANAGEMENT (PHASE 5, 6, 7)
+// ==============================================================================
+
+/**
+ * GET /api/admin/creator-attributions
+ * Lists all influencer order attributions with creator details
+ */
+export async function handleAdminGetAttributions(req, res) {
+    try {
+        const { status, influencer_id, search, limit = 200 } = req.query || {};
+
+        let attributions = [];
+        try {
+            let q = 'order=created_at.desc';
+            if (status && status !== 'all') q += `&status=eq.${encodeURIComponent(status)}`;
+            if (influencer_id) q += `&influencer_id=eq.${encodeURIComponent(influencer_id)}`;
+            if (limit) q += `&limit=${encodeURIComponent(limit)}`;
+            const rows = await dbQuery('influencer_order_attributions', q, { useAdmin: true });
+            if (Array.isArray(rows) && rows.length > 0) attributions = rows;
+        } catch (e) {}
+
+        const local = readLocalStore();
+        if (attributions.length === 0) {
+            attributions = local.order_attributions || [];
+            if (status && status !== 'all') {
+                attributions = attributions.filter(a => (a.status || 'pending').toLowerCase() === status.toLowerCase());
+            }
+            if (influencer_id) {
+                attributions = attributions.filter(a => a.influencer_id === influencer_id);
+            }
+        }
+
+        const { data: allCreators } = await getAllInfluencersFromDB();
+        const creatorsMap = new Map();
+        (allCreators || []).forEach(c => {
+            const cid = c.influencer_id || c.id;
+            if (cid) creatorsMap.set(cid, c);
+        });
+
+        // Enrich with creator details
+        let enriched = attributions.map(attr => {
+            const creator = creatorsMap.get(attr.influencer_id);
+            const creatorName = creator?.influencer_name || creator?.name || 'Unknown';
+            return {
+                ...attr,
+                influencer_id: attr.influencer_id,
+                creator_name: creatorName,
+                influencer_name: creatorName,
+                instagram_id: creator?.instagram_id || '',
+                influencer_code: creator?.influencer_code || '—',
+                sales_amount: Number(attr.sales_amount || 0),
+                commission_rate: Number(attr.commission_rate || 0),
+                commission_amount: Number(attr.commission_amount || 0)
+            };
+        });
+
+        if (search) {
+            const s = search.toLowerCase().trim();
+            enriched = enriched.filter(a =>
+                (a.order_reference && a.order_reference.toLowerCase().includes(s)) ||
+                (a.influencer_name && a.influencer_name.toLowerCase().includes(s)) ||
+                (a.instagram_id && a.instagram_id.toLowerCase().includes(s))
+            );
+        }
+
+        return res.json({
+            success: true,
+            count: enriched.length,
+            data: enriched
+        });
+    } catch (err) {
+        console.error('[Influencers API] handleAdminGetAttributions error:', err);
+        return res.status(500).json({ success: false, error: { message: err.message } });
+    }
+}
+
+/**
+ * PATCH /api/admin/creator-attributions/:id/approve
+ * Approves a pending commission attribution and makes it available in creator wallet
+ */
+export async function handleAdminApproveCommission(req, res) {
+    try {
+        const { id } = req.params;
+        const cleanId = String(id || '').trim();
+
+        const local = readLocalStore();
+        local.order_attributions = local.order_attributions || [];
+
+        let attr = local.order_attributions.find(a => a.id === cleanId || a.order_reference === cleanId);
+        if (!attr) {
+            try {
+                let dbRows = await dbQuery('influencer_order_attributions', `id=eq.${encodeURIComponent(cleanId)}&limit=1`, { useAdmin: true });
+                if (!dbRows || dbRows.length === 0) {
+                    dbRows = await dbQuery('influencer_order_attributions', `order_reference=eq.${encodeURIComponent(cleanId)}&limit=1`, { useAdmin: true });
+                }
+                if (Array.isArray(dbRows) && dbRows.length > 0) attr = dbRows[0];
+            } catch (e) {}
+        }
+
+        if (!attr) {
+            return res.status(404).json({ success: false, error: { message: 'Attribution record not found.' } });
+        }
+
+        if (attr.status === 'approved') {
+            return res.json({ success: true, message: 'Attribution already approved.', data: attr });
+        }
+
+        if (attr.status !== 'pending') {
+            return res.status(400).json({
+                success: false,
+                error: { message: `Cannot approve attribution with status '${attr.status}'.` }
+            });
+        }
+
+        const nowIso = new Date().toISOString();
+        attr.status = 'approved';
+        attr.updated_at = nowIso;
+        writeLocalStore(local);
+
+        // Transition pending commission into available balance in creator wallet
+        try {
+            const { makeCommissionAvailableInWallet } = await import('./creator-wallet.js');
+            await makeCommissionAvailableInWallet({
+                influencer_id: attr.influencer_id,
+                order_reference: attr.order_reference
+            });
+        } catch (e) {
+            console.warn('[Influencers API] makeCommissionAvailableInWallet error:', e.message);
+        }
+
+        try {
+            await dbUpdate('influencer_order_attributions', 'id', attr.id, {
+                status: 'approved',
+                updated_at: nowIso
+            }, { useAdmin: true }).catch(() => null);
+        } catch (e) {}
+
+        const { data: all } = await getAllInfluencersFromDB();
+        const creator = all.find(i => (i.influencer_id || i.id) === attr.influencer_id);
+
+        await logCreatorAudit({
+            action_type: 'commission_approved',
+            influencer_id: attr.influencer_id,
+            influencer_name: creator?.influencer_name || creator?.name || '',
+            details: `Commission of ₹${attr.commission_amount} approved for order ${attr.order_reference}`
+        });
+
+        return res.json({
+            success: true,
+            message: `Commission approved and available for payout.`,
+            data: attr
+        });
+    } catch (err) {
+        console.error('[Influencers API] handleAdminApproveCommission error:', err);
+        return res.status(500).json({ success: false, error: { message: err.message } });
+    }
+}
+
+/**
+ * PATCH /api/admin/creator-attributions/:id/cancel
+ * Cancels a pending commission
+ */
+export async function handleAdminCancelCommission(req, res) {
+    try {
+        const { id } = req.params;
+        const cleanId = String(id || '').trim();
+
+        const local = readLocalStore();
+        local.order_attributions = local.order_attributions || [];
+
+        let attr = local.order_attributions.find(a => a.id === cleanId || a.order_reference === cleanId);
+        if (!attr) {
+            try {
+                let dbRows = await dbQuery('influencer_order_attributions', `id=eq.${encodeURIComponent(cleanId)}&limit=1`, { useAdmin: true });
+                if (!dbRows || dbRows.length === 0) {
+                    dbRows = await dbQuery('influencer_order_attributions', `order_reference=eq.${encodeURIComponent(cleanId)}&limit=1`, { useAdmin: true });
+                }
+                if (Array.isArray(dbRows) && dbRows.length > 0) attr = dbRows[0];
+            } catch (e) {}
+        }
+
+        if (!attr) {
+            return res.status(404).json({ success: false, error: { message: 'Attribution record not found.' } });
+        }
+
+        const reconciled = await reconcileOrderCommission({
+            order_reference: attr.order_reference,
+            new_status: 'cancelled'
+        });
+
+        const { data: all } = await getAllInfluencersFromDB();
+        const creator = all.find(i => (i.influencer_id || i.id) === attr.influencer_id);
+
+        await logCreatorAudit({
+            action_type: 'commission_cancelled',
+            influencer_id: attr.influencer_id,
+            influencer_name: creator?.influencer_name || creator?.name || '',
+            details: `Commission cancelled for order ${attr.order_reference}`
+        });
+
+        return res.json({
+            success: true,
+            message: `Commission cancelled for order ${attr.order_reference}.`,
+            data: reconciled || attr
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: { message: err.message } });
+    }
+}
+
+/**
+ * PATCH /api/admin/creator-attributions/:id/refund
+ * Refunds an order commission
+ */
+export async function handleAdminRefundCommission(req, res) {
+    try {
+        const { id } = req.params;
+        const cleanId = String(id || '').trim();
+
+        const local = readLocalStore();
+        local.order_attributions = local.order_attributions || [];
+
+        let attr = local.order_attributions.find(a => a.id === cleanId || a.order_reference === cleanId);
+        if (!attr) {
+            try {
+                let dbRows = await dbQuery('influencer_order_attributions', `id=eq.${encodeURIComponent(cleanId)}&limit=1`, { useAdmin: true });
+                if (!dbRows || dbRows.length === 0) {
+                    dbRows = await dbQuery('influencer_order_attributions', `order_reference=eq.${encodeURIComponent(cleanId)}&limit=1`, { useAdmin: true });
+                }
+                if (Array.isArray(dbRows) && dbRows.length > 0) attr = dbRows[0];
+            } catch (e) {}
+        }
+
+        if (!attr) {
+            return res.status(404).json({ success: false, error: { message: 'Attribution record not found.' } });
+        }
+
+        const reconciled = await reconcileOrderCommission({
+            order_reference: attr.order_reference,
+            new_status: 'refunded'
+        });
+
+        const { data: all } = await getAllInfluencersFromDB();
+        const creator = all.find(i => (i.influencer_id || i.id) === attr.influencer_id);
+
+        await logCreatorAudit({
+            action_type: 'refund_processed',
+            influencer_id: attr.influencer_id,
+            influencer_name: creator?.influencer_name || creator?.name || '',
+            details: `Refund processed and commission reversed for order ${attr.order_reference}`
+        });
+
+        return res.json({
+            success: true,
+            message: `Refund processed and commission reversed for order ${attr.order_reference}.`,
+            data: reconciled || attr
+        });
+    } catch (err) {
         return res.status(500).json({ success: false, error: { message: err.message } });
     }
 }

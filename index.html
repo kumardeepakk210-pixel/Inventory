@@ -3689,6 +3689,226 @@
         </div>
     </div>
 
+    <!-- MANUAL PAYOUT / UTR COMPLETION MODAL -->
+    <div id="manual-payout-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden animate-fadeIn">
+        <div class="bg-white rounded-3xl max-w-lg w-full flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-lg">
+                        💸
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-900">Complete Manual Payout</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Record payment reference / UTR for creator withdrawal.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeManualPayoutModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="manual-payout-form" onsubmit="submitManualPayout(event)" class="p-5 md:p-6 space-y-4">
+                <input type="hidden" id="payout-wth-id" value="">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+                    <div class="flex justify-between"><span class="text-slate-500">Creator:</span><span id="payout-wth-creator" class="font-bold text-slate-900">—</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Withdrawal Reference:</span><span id="payout-wth-ref" class="font-mono font-bold text-slate-800">—</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Amount:</span><span id="payout-wth-amount" class="font-extrabold text-[#5E3435] text-sm">₹0.00</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Payout Method:</span><span id="payout-wth-method" class="font-medium text-slate-700">—</span></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Payment Reference / UTR Number <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="payout-wth-utr" required placeholder="e.g. UTR1234567890 or IMPS987654321"
+                        class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono outline-none focus:ring-2 focus:ring-emerald-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Admin Notes / Bank Reference
+                    </label>
+                    <input type="text" id="payout-wth-notes" placeholder="e.g. Paid via HDFC NetBanking Corporate Transfer"
+                        class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-emerald-600">
+                </div>
+                <div id="payout-wth-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium"></div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeManualPayoutModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition">Cancel</button>
+                    <button type="submit" id="payout-wth-submit-btn" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs">✓ Confirm & Mark Paid</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CAMPAIGN CREATION / EDIT MODAL -->
+    <div id="campaign-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden animate-fadeIn">
+        <div class="bg-white rounded-3xl max-w-xl w-full flex flex-col shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh]">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-lg">
+                        📢
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-900" id="camp-modal-title">New Creator Campaign</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Design a promotional campaign with content targets & rewards.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeCampaignModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="campaign-form" onsubmit="saveCreatorCampaign(event)" class="p-5 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="camp-form-id" value="">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Campaign Name <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="camp-form-name" required placeholder="e.g. Diwali Sterling Silver Drops 2026"
+                        class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-600">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Start Date</label>
+                        <input type="date" id="camp-form-start" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">End Date</label>
+                        <input type="date" id="camp-form-end" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Required Content</label>
+                        <input type="text" id="camp-form-content" placeholder="e.g. 1 Instagram Reel + 2 Stories"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Content Deadline</label>
+                        <input type="date" id="camp-form-deadline" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Target Views</label>
+                        <input type="number" id="camp-form-views" placeholder="50000" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Target Sales (₹)</label>
+                        <input type="number" id="camp-form-sales" placeholder="50000" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Commission (%)</label>
+                        <input type="number" step="0.5" id="camp-form-comm" value="12" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Gift / Reward</label>
+                        <input type="text" id="camp-form-reward" placeholder="e.g. Free Solitaire Studs or ₹2,000 Bonus"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Status</label>
+                        <select id="camp-form-status" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 bg-white outline-none focus:ring-2 focus:ring-indigo-600">
+                            <option value="DRAFT">Draft</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="camp-form-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium"></div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeCampaignModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition">Cancel</button>
+                    <button type="submit" id="camp-form-submit-btn" class="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold transition shadow-xs">Save Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONTENT SUBMISSION MODAL -->
+    <div id="content-submission-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden animate-fadeIn">
+        <div class="bg-white rounded-3xl max-w-lg w-full flex flex-col shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh]">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-pink-50 text-pink-700 flex items-center justify-center font-bold text-lg">
+                        🎬
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-900">Submit Creator Content</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Register a published reel, video or post for performance tracking.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeContentModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="content-form" onsubmit="saveCreatorContent(event)" class="p-5 md:p-6 space-y-4 overflow-y-auto">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Creator <span class="text-rose-500">*</span>
+                    </label>
+                    <select id="content-form-creator" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 bg-white outline-none focus:ring-2 focus:ring-pink-600">
+                        <option value="">Select a Creator...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Campaign / Promotion
+                    </label>
+                    <select id="content-form-campaign" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 bg-white outline-none focus:ring-2 focus:ring-pink-600">
+                        <option value="">General Promotion</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Platform</label>
+                        <select id="content-form-platform" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 bg-white outline-none focus:ring-2 focus:ring-pink-600">
+                            <option value="Instagram">Instagram</option>
+                            <option value="YouTube">YouTube</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Content Type</label>
+                        <select id="content-form-type" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 bg-white outline-none focus:ring-2 focus:ring-pink-600">
+                            <option value="Reel">Reel</option>
+                            <option value="Post">Post</option>
+                            <option value="Story">Story</option>
+                            <option value="Video">Video / Shorts</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Content URL / Link <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="url" id="content-form-url" required placeholder="https://www.instagram.com/reel/..."
+                        class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-pink-600">
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Views</label>
+                        <input type="number" id="content-form-views" value="0" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-pink-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Likes</label>
+                        <input type="number" id="content-form-likes" value="0" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-pink-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Comments</label>
+                        <input type="number" id="content-form-comments" value="0" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-pink-600">
+                    </div>
+                </div>
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-amber-800 text-[11px]">
+                    <span>ℹ️</span> <span>Instagram API sync status: <strong>Awaiting Instagram sync</strong> (Metrics recorded manually until API connection is configured).</span>
+                </div>
+                <div id="content-form-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium"></div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeContentModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition">Cancel</button>
+                    <button type="submit" id="content-form-submit-btn" class="px-5 py-2.5 bg-pink-700 hover:bg-pink-800 text-white rounded-xl text-xs font-bold transition shadow-xs">Submit Content</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MAIN APP CONTAINER -->
     <div id="app-container" class="h-full w-full flex overflow-hidden">
 
@@ -4998,7 +5218,7 @@
                     </div>
                 </div>
 
-                <!-- WISHRITE CREATOR CLUB (INFLUENCERS PHASE 1) -->
+                <!-- WISHRITE CREATOR CLUB (INFLUENCERS & AFFILIATE PIPELINE) -->
                 <div id="influencers" class="page space-y-6">
                     <!-- Page Header -->
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
@@ -5006,235 +5226,526 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-xs font-extrabold uppercase tracking-[0.2em] text-[#5E3435]">WISHRITE CREATOR CLUB</span>
                                 <span class="h-1.5 w-1.5 rounded-full bg-[#5E3435]"></span>
-                                <span class="text-xs font-semibold text-slate-400">Affiliate Creators & Brand Ambassadors</span>
+                                <span class="text-xs font-semibold text-slate-400">Admin Control Center</span>
                             </div>
                             <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
-                                WISHRITE CREATOR CLUB
+                                Creator & Affiliate Pipeline
                             </h1>
                             <p class="text-slate-500 mt-1 text-xs md:text-sm">
-                                Manage influencers, affiliate creators and creator performance.
+                                Full creator governance: directory, commission ledger, attribution approvals, manual payouts & campaign engine.
                             </p>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <button onclick="loadInfluencers()" title="Refresh Creators Directory"
-                                class="p-2.5 text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold transition">
-                                🔄 Refresh
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <button onclick="refreshAllCreatorData()" title="Refresh All Pipeline Data"
+                                class="p-2.5 text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                                🔄 <span>Refresh</span>
                             </button>
                             <button onclick="openAddInfluencerModal()"
-                                class="bg-[#5E3435] hover:bg-[#482728] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                </svg>
-                                <span>Add Influencer</span>
+                                class="bg-[#5E3435] hover:bg-[#482728] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5">
+                                <span>🌟</span>
+                                <span>Add Creator</span>
+                            </button>
+                            <button onclick="openCampaignModal()"
+                                class="bg-indigo-700 hover:bg-indigo-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5">
+                                <span>📢</span>
+                                <span>New Campaign</span>
+                            </button>
+                            <button onclick="openContentModal()"
+                                class="bg-pink-700 hover:bg-pink-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5">
+                                <span>🎬</span>
+                                <span>Submit Content</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Top Summary Cards (Phase 1 Database Calculated) -->
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <!-- Total Influencers -->
+                    <!-- Top Executive Dashboard Summary (Phase 14) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Card 1: Creator Overview -->
                         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-                            <div class="flex items-center justify-between text-slate-400 mb-2">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Total Influencers</span>
-                                <span class="text-base">🌟</span>
+                            <div class="flex items-center justify-between text-slate-400 mb-3 border-b border-slate-100 pb-2">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1">
+                                    <span>👥</span> Creator Overview
+                                </span>
+                                <span class="text-xs font-bold text-slate-900" id="inf-stat-total">0 Total</span>
                             </div>
-                            <div>
-                                <div class="text-2xl font-black text-slate-900" id="inf-stat-total">0</div>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Registered creators</p>
-                            </div>
-                        </div>
-
-                        <!-- Active Creators -->
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-                            <div class="flex items-center justify-between text-slate-400 mb-2">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">Active Creators</span>
-                                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                            </div>
-                            <div>
-                                <div class="text-2xl font-black text-emerald-600" id="inf-stat-active">0</div>
-                                <p class="text-[11px] text-emerald-600/80 mt-0.5">Live promotional links</p>
-                            </div>
-                        </div>
-
-                        <!-- Pending Creators -->
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-                            <div class="flex items-center justify-between text-slate-400 mb-2">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">Pending Creators</span>
-                                <span class="h-2 w-2 rounded-full bg-amber-500"></span>
-                            </div>
-                            <div>
-                                <div class="text-2xl font-black text-amber-600" id="inf-stat-pending">0</div>
-                                <p class="text-[11px] text-amber-600/80 mt-0.5">Awaiting onboarding</p>
-                            </div>
-                        </div>
-
-                        <!-- Total Sales -->
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-                            <div class="flex items-center justify-between text-slate-400 mb-2">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Total Sales</span>
-                                <span class="text-base">🛍️</span>
-                            </div>
-                            <div>
-                                <div class="text-2xl font-black text-slate-900" id="inf-stat-sales">₹0.00</div>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Affiliate gross revenue</p>
-                            </div>
-                        </div>
-
-                        <!-- Total Earnings -->
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between col-span-2 md:col-span-1">
-                            <div class="flex items-center justify-between text-slate-400 mb-2">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#5E3435]">Total Earnings</span>
-                                <span class="text-base">💰</span>
-                            </div>
-                            <div>
-                                <div class="text-2xl font-black text-[#5E3435]" id="inf-stat-earnings">₹0.00</div>
-                                <p class="text-[11px] text-[#5E3435]/80 mt-0.5">Commissions earned</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Filter & Search Controls Bar -->
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                        <div class="relative flex-1">
-                            <span class="absolute left-3.5 top-2.5 text-slate-400 text-sm">🔍</span>
-                            <input type="text" id="inf-search" oninput="onInfluencerFilterChange()"
-                                placeholder="Search creators by name, @handle, code (WR-INF-...), category..."
-                                class="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
-                        </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <select id="inf-filter-status" onchange="onInfluencerFilterChange()"
-                                class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
-                                <option value="all">All Statuses</option>
-                                <option value="active">Active</option>
-                                <option value="pending">Pending</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="suspended">Suspended</option>
-                            </select>
-
-                            <select id="inf-filter-tier" onchange="onInfluencerFilterChange()"
-                                class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
-                                <option value="all">All Tiers</option>
-                                <option value="starter">Starter</option>
-                                <option value="silver">Silver</option>
-                                <option value="gold">Gold</option>
-                                <option value="platinum">Platinum</option>
-                                <option value="elite">Elite</option>
-                            </select>
-
-                            <select id="inf-filter-category" onchange="onInfluencerFilterChange()"
-                                class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
-                                <option value="all">All Categories</option>
-                                <option value="Jewelry & Lifestyle">Jewelry & Lifestyle</option>
-                                <option value="Fashion & Apparel">Fashion & Apparel</option>
-                                <option value="Beauty & Makeup">Beauty & Makeup</option>
-                                <option value="Luxury & Bridal">Luxury & Bridal</option>
-                                <option value="Traditional & Sarees">Traditional & Sarees</option>
-                                <option value="Digital Creator">Digital Creator</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Creator Directory Table -->
-                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-                            <div>
-                                <h2 class="font-extrabold text-slate-900 text-base">Creator Directory</h2>
-                                <p class="text-xs text-slate-500 mt-0.5">Authoritative influencer registry with permanent public URLs and tracked sales.</p>
-                            </div>
-                            <span id="inf-table-count" class="text-xs text-slate-400 font-semibold bg-slate-100 px-2.5 py-1 rounded-full">0 creators</span>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead>
-                                    <tr class="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                                        <th class="py-3 px-4">Profile</th>
-                                        <th class="py-3 px-4">Name</th>
-                                        <th class="py-3 px-4">Instagram</th>
-                                        <th class="py-3 px-4">Creator URL</th>
-                                        <th class="py-3 px-4 text-center">Tier</th>
-                                        <th class="py-3 px-4 text-center">Commission</th>
-                                        <th class="py-3 px-4 text-center">Status</th>
-                                        <th class="py-3 px-4 text-center">Clicks</th>
-                                        <th class="py-3 px-4 text-center">Orders</th>
-                                        <th class="py-3 px-4 text-right">Sales</th>
-                                        <th class="py-3 px-4 text-right">Pending</th>
-                                        <th class="py-3 px-4 text-right">Available</th>
-                                        <th class="py-3 px-4 text-center">Conv. Rate</th>
-                                        <th class="py-3 px-4 text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="influencers-table-body" class="divide-y divide-slate-100">
-                                    <tr>
-                                        <td colspan="14" class="py-12 text-center text-slate-400">
-                                            <span class="inline-block animate-spin text-xl mb-2">🔄</span>
-                                            <p class="font-bold text-slate-600">Loading Creator Club Directory...</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Selected Influencer Lookbook Collabs (Preserved & Enhanced) -->
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-extrabold uppercase tracking-wider text-[#5E3435]">Lookbook Campaign Tagging</span>
-                                    <span class="h-1.5 w-1.5 rounded-full bg-[#5E3435]"></span>
-                                    <span class="text-xs text-slate-400">Inventory Association</span>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div class="bg-emerald-50/60 p-2 rounded-xl border border-emerald-100">
+                                    <div class="text-lg font-black text-emerald-600" id="inf-stat-active">0</div>
+                                    <div class="text-[9px] font-bold uppercase text-emerald-800">Active</div>
                                 </div>
-                                <h3 class="font-bold text-slate-900 text-base mt-0.5">Selected Influencer Collabs</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">Tag products to influencers to create active promotional campaigns.</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="relative">
-                                    <span class="absolute left-3 top-2 text-slate-400 text-xs">@</span>
-                                    <input type="text" id="insta-id" placeholder="Enter creator handle..."
-                                        class="border border-slate-200 rounded-xl pl-7 pr-3 py-1.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                <div class="bg-amber-50/60 p-2 rounded-xl border border-amber-100">
+                                    <div class="text-lg font-black text-amber-600" id="inf-stat-pending">0</div>
+                                    <div class="text-[9px] font-bold uppercase text-amber-800">Pending</div>
                                 </div>
-                                <button onclick="fetchInfluencer()"
-                                    class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs whitespace-nowrap">
-                                    Fetch & Add Collab
-                                </button>
+                                <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+                                    <div class="text-lg font-black text-slate-600" id="inf-stat-inactive">0</div>
+                                    <div class="text-[9px] font-bold uppercase text-slate-500">Inactive</div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Influencer Collab Search Result Preview Card (Shown when fetched) -->
-                        <div id="influencer-card" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
-                            <div class="flex items-center gap-3">
-                                <img id="inf-pic" src="" alt="Creator" class="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-white">
+                        <!-- Card 2: Affiliate Performance -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                            <div class="flex items-center justify-between text-slate-400 mb-3 border-b border-slate-100 pb-2">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 flex items-center gap-1">
+                                    <span>🛍️</span> Affiliate Performance
+                                </span>
+                                <span class="text-[11px] font-extrabold text-indigo-800" id="inf-stat-orders">0 Orders</span>
+                            </div>
+                            <div>
+                                <div class="text-xl font-black text-slate-900" id="inf-stat-sales">₹0.00</div>
+                                <div class="flex items-center justify-between text-[10px] text-slate-500 mt-1">
+                                    <span>Clicks: <strong id="inf-stat-clicks" class="text-slate-800">0</strong></span>
+                                    <span>Comm: <strong id="inf-stat-comm-total" class="text-[#5E3435]">₹0.00</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Content Performance -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                            <div class="flex items-center justify-between text-slate-400 mb-3 border-b border-slate-100 pb-2">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-pink-700 flex items-center gap-1">
+                                    <span>🎬</span> Content Performance
+                                </span>
+                                <span class="text-[11px] font-extrabold text-pink-800" id="inf-stat-content">0 Posts</span>
+                            </div>
+                            <div>
+                                <div class="text-xl font-black text-slate-900" id="inf-stat-views">0 Views</div>
+                                <div class="flex items-center justify-between text-[10px] text-slate-500 mt-1">
+                                    <span>Engagements: <strong id="inf-stat-eng" class="text-slate-800">0</strong></span>
+                                    <span class="truncate max-w-[110px]" title="Top Creator">Top: <strong id="inf-stat-top-creator" class="text-pink-700">—</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Payout Summary -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                            <div class="flex items-center justify-between text-slate-400 mb-3 border-b border-slate-100 pb-2">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
+                                    <span>💳</span> Payout Summary
+                                </span>
+                                <span class="text-[10px] font-bold text-amber-700">Pending: <strong id="inf-stat-pending-payout">₹0.00</strong></span>
+                            </div>
+                            <div>
+                                <div class="text-xl font-black text-emerald-700" id="inf-stat-payable">₹0.00</div>
+                                <div class="flex items-center justify-between text-[10px] text-slate-500 mt-1">
+                                    <span>Available Payable</span>
+                                    <span>Paid this Mo: <strong id="inf-stat-paid-month" class="text-slate-800">₹0.00</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pipeline Sub-Tab Navigation Bar -->
+                    <div class="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap gap-2 text-xs font-bold">
+                        <button type="button" onclick="setCreatorClubSubTab('directory')" id="inf-subtab-btn-directory"
+                            class="inf-subtab-btn px-4 py-2 rounded-xl bg-[#5E3435] text-white transition flex items-center gap-2">
+                            <span>👥</span> <span>Directory</span>
+                        </button>
+                        <button type="button" onclick="setCreatorClubSubTab('attributions')" id="inf-subtab-btn-attributions"
+                            class="inf-subtab-btn px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center gap-2">
+                            <span>📋</span> <span>Attributions & Ledger</span>
+                        </button>
+                        <button type="button" onclick="setCreatorClubSubTab('wallets')" id="inf-subtab-btn-wallets"
+                            class="inf-subtab-btn px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center gap-2">
+                            <span>💳</span> <span>Wallets & Payouts</span>
+                        </button>
+                        <button type="button" onclick="setCreatorClubSubTab('campaigns')" id="inf-subtab-btn-campaigns"
+                            class="inf-subtab-btn px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center gap-2">
+                            <span>📢</span> <span>Campaigns & Content</span>
+                        </button>
+                        <button type="button" onclick="setCreatorClubSubTab('tiers')" id="inf-subtab-btn-tiers"
+                            class="inf-subtab-btn px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center gap-2">
+                            <span>🏆</span> <span>Tiers & Rewards</span>
+                        </button>
+                        <button type="button" onclick="setCreatorClubSubTab('audit')" id="inf-subtab-btn-audit"
+                            class="inf-subtab-btn px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center gap-2">
+                            <span>📜</span> <span>Audit Log</span>
+                        </button>
+                    </div>
+
+                    <!-- SUB-VIEW 1: CREATOR DIRECTORY -->
+                    <div id="inf-subtab-directory-view" class="space-y-6">
+                        <!-- Filter & Search Controls Bar -->
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                            <div class="relative flex-1">
+                                <span class="absolute left-3.5 top-2.5 text-slate-400 text-sm">🔍</span>
+                                <input type="text" id="inf-search" oninput="onInfluencerFilterChange()"
+                                    placeholder="Search creators by name, @handle, code (WR-INF-...), category..."
+                                    class="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <select id="inf-filter-status" onchange="onInfluencerFilterChange()"
+                                    class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="all">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="suspended">Suspended</option>
+                                </select>
+
+                                <select id="inf-filter-tier" onchange="onInfluencerFilterChange()"
+                                    class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="all">All Tiers</option>
+                                    <option value="starter">Starter</option>
+                                    <option value="silver">Silver</option>
+                                    <option value="gold">Gold</option>
+                                    <option value="platinum">Platinum</option>
+                                    <option value="elite">Elite</option>
+                                </select>
+
+                                <select id="inf-filter-category" onchange="onInfluencerFilterChange()"
+                                    class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="all">All Categories</option>
+                                    <option value="Jewelry & Lifestyle">Jewelry & Lifestyle</option>
+                                    <option value="Fashion & Apparel">Fashion & Apparel</option>
+                                    <option value="Beauty & Makeup">Beauty & Makeup</option>
+                                    <option value="Luxury & Bridal">Luxury & Bridal</option>
+                                    <option value="Traditional & Sarees">Traditional & Sarees</option>
+                                    <option value="Digital Creator">Digital Creator</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Creator Directory Table -->
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
                                 <div>
-                                    <h4 id="inf-name" class="font-bold text-slate-900 text-sm">Creator Name</h4>
-                                    <p id="inf-handle" class="text-xs text-slate-500">@handle</p>
-                                    <div class="flex items-center gap-2 mt-0.5">
-                                        <span id="inf-category" class="text-[10px] font-bold text-pink-600 bg-pink-50 px-2 py-0.5 rounded">Category</span>
-                                        <span id="inf-status" class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Active</span>
+                                    <h2 class="font-extrabold text-slate-900 text-base">Creator Directory</h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Canonical registry using <code class="font-mono text-[#5E3435]">influencer_id</code> & <code class="font-mono text-[#5E3435]">influencer_name</code>.</p>
+                                </div>
+                                <span id="inf-table-count" class="text-xs text-slate-400 font-semibold bg-slate-100 px-2.5 py-1 rounded-full">0 creators</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                            <th class="py-3 px-4">Profile</th>
+                                            <th class="py-3 px-4">Name</th>
+                                            <th class="py-3 px-4">Instagram</th>
+                                            <th class="py-3 px-4">Creator URL</th>
+                                            <th class="py-3 px-4 text-center">Tier</th>
+                                            <th class="py-3 px-4 text-center">Commission</th>
+                                            <th class="py-3 px-4 text-center">Status</th>
+                                            <th class="py-3 px-4 text-center">Clicks</th>
+                                            <th class="py-3 px-4 text-center">Orders</th>
+                                            <th class="py-3 px-4 text-right">Sales</th>
+                                            <th class="py-3 px-4 text-right">Pending</th>
+                                            <th class="py-3 px-4 text-right">Available</th>
+                                            <th class="py-3 px-4 text-center">Conv. Rate</th>
+                                            <th class="py-3 px-4 text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="influencers-table-body" class="divide-y divide-slate-100">
+                                        <tr>
+                                            <td colspan="14" class="py-12 text-center text-slate-400">
+                                                <span class="inline-block animate-spin text-xl mb-2">🔄</span>
+                                                <p class="font-bold text-slate-600">Loading Creator Club Directory...</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Selected Influencer Lookbook Collabs (Preserved & Enhanced) -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-extrabold uppercase tracking-wider text-[#5E3435]">Lookbook Campaign Tagging</span>
+                                        <span class="h-1.5 w-1.5 rounded-full bg-[#5E3435]"></span>
+                                        <span class="text-xs text-slate-400">Inventory Association</span>
+                                    </div>
+                                    <h3 class="font-bold text-slate-900 text-base mt-0.5">Selected Influencer Collabs</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Tag products to influencers to create active promotional campaigns.</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-slate-400 text-xs">@</span>
+                                        <input type="text" id="insta-id" placeholder="Enter creator handle..."
+                                            class="border border-slate-200 rounded-xl pl-7 pr-3 py-1.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    </div>
+                                    <button onclick="fetchInfluencer()"
+                                        class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs whitespace-nowrap">
+                                        Fetch & Add Collab
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Preview Card -->
+                            <div id="influencer-card" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
+                                <div class="flex items-center gap-3">
+                                    <img id="inf-pic" src="" alt="Creator" class="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-white">
+                                    <div>
+                                        <h4 id="inf-name" class="font-bold text-slate-900 text-sm">Creator Name</h4>
+                                        <p id="inf-handle" class="text-xs text-slate-500">@handle</p>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <span id="inf-category" class="text-[10px] font-bold text-pink-600 bg-pink-50 px-2 py-0.5 rounded">Category</span>
+                                            <span id="inf-status" class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Active</span>
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="flex items-center gap-4 text-xs">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 uppercase font-bold block">Followers</span>
+                                        <span id="inf-followers" class="font-extrabold text-slate-800">0</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 uppercase font-bold block">Views</span>
+                                        <span id="inf-views" class="font-extrabold text-slate-800">0</span>
+                                    </div>
+                                    <button onclick="addToCollab()"
+                                        class="bg-[#5E3435] hover:bg-[#482728] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs">
+                                        + Add to Lookbook
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-4 text-xs">
-                                <div>
-                                    <span class="text-[10px] text-slate-400 uppercase font-bold block">Followers</span>
-                                    <span id="inf-followers" class="font-extrabold text-slate-800">0</span>
+
+                            <div id="collab-gallery" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="text-slate-400 text-sm italic col-span-full text-center py-10 border border-dashed border-slate-200 rounded-2xl">
+                                    <span class="text-3xl block mb-2">🌟</span>
+                                    <p class="font-bold text-slate-600">No influencers selected yet</p>
+                                    <p class="text-xs text-slate-400 mt-1">Fetch and add creators from your registered directory to build promotional lookbooks.</p>
                                 </div>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 uppercase font-bold block">Views</span>
-                                    <span id="inf-views" class="font-extrabold text-slate-800">0</span>
-                                </div>
-                                <button onclick="addToCollab()"
-                                    class="bg-[#5E3435] hover:bg-[#482728] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs">
-                                    + Add to Lookbook
-                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-VIEW 2: ATTRIBUTIONS & COMMISSION LEDGER -->
+                    <div id="inf-subtab-attributions-view" class="space-y-6 hidden">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                            <div class="relative flex-1">
+                                <span class="absolute left-3.5 top-2.5 text-slate-400 text-sm">🔍</span>
+                                <input type="text" id="inf-attr-search" oninput="loadCreatorAttributions()"
+                                    placeholder="Filter by Order Reference, Creator name, handle..."
+                                    class="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#5E3435]">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <select id="inf-attr-status" onchange="loadCreatorAttributions()"
+                                    class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="all">All Attribution Statuses</option>
+                                    <option value="pending">Pending Validation</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="paid">Paid</option>
+                                    <option value="cancelled">Cancelled</option>
+                                    <option value="refunded">Refunded</option>
+                                </select>
+                                <button onclick="loadCreatorAttributions()" class="p-2 border border-slate-200 rounded-xl text-xs hover:bg-slate-50 font-bold">🔄 Refresh</button>
                             </div>
                         </div>
 
-                        <!-- Collab Gallery -->
-                        <div id="collab-gallery" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="text-slate-400 text-sm italic col-span-full text-center py-10 border border-dashed border-slate-200 rounded-2xl">
-                                <span class="text-3xl block mb-2">🌟</span>
-                                <p class="font-bold text-slate-600">No influencers selected yet</p>
-                                <p class="text-xs text-slate-400 mt-1">Fetch and add creators from your registered directory to build promotional lookbooks.</p>
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <h2 class="font-extrabold text-slate-900 text-base">Attributed Orders & Commission Ledger</h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Authoritative commission lifecycle: ORDER CREATED → PENDING → RETURN WINDOW → APPROVED → PAYOUT.</p>
+                                </div>
+                                <span id="inf-attr-table-count" class="text-xs text-slate-400 font-semibold bg-slate-100 px-2.5 py-1 rounded-full">0 orders</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                            <th class="py-3 px-4">Creator</th>
+                                            <th class="py-3 px-4">Order Ref</th>
+                                            <th class="py-3 px-4">Attributed Date</th>
+                                            <th class="py-3 px-4 text-right">Sales Amount</th>
+                                            <th class="py-3 px-4 text-center">Comm. Rate</th>
+                                            <th class="py-3 px-4 text-right">Commission</th>
+                                            <th class="py-3 px-4 text-center">Status</th>
+                                            <th class="py-3 px-4 text-center">Lifecycle Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inf-attributions-tbody" class="divide-y divide-slate-100">
+                                        <tr><td colspan="8" class="py-12 text-center text-slate-400">Loading attributions ledger...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-VIEW 3: WALLETS & PAYOUTS -->
+                    <div id="inf-subtab-wallets-view" class="space-y-6 hidden">
+                        <!-- Creator Wallets Overview -->
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <h2 class="font-extrabold text-slate-900 text-base">Creator Wallets Master View</h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Aggregated ledger balances: Pending, Available (Payable), Lifetime Earned, and Paid.</p>
+                                </div>
+                                <button onclick="loadCreatorWallets()" class="text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">🔄 Refresh</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                            <th class="py-3 px-4">Creator</th>
+                                            <th class="py-3 px-4">Instagram</th>
+                                            <th class="py-3 px-4 text-center">Tier</th>
+                                            <th class="py-3 px-4 text-right">Pending Balance</th>
+                                            <th class="py-3 px-4 text-right">Available (Payable)</th>
+                                            <th class="py-3 px-4 text-right">Paid Balance</th>
+                                            <th class="py-3 px-4 text-right">Lifetime Earned</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inf-wallets-tbody" class="divide-y divide-slate-100">
+                                        <tr><td colspan="7" class="py-8 text-center text-slate-400">Loading creator wallets...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Payout & Withdrawal Requests -->
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <h2 class="font-extrabold text-slate-900 text-base">Creator Payout Requests & Settlements</h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Admin approval & manual settlement workflow (with payment reference / UTR logging).</p>
+                                </div>
+                                <button onclick="loadCreatorWithdrawals()" class="text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">🔄 Refresh</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                            <th class="py-3 px-4">Withdrawal Ref</th>
+                                            <th class="py-3 px-4">Creator</th>
+                                            <th class="py-3 px-4 text-right">Amount</th>
+                                            <th class="py-3 px-4">Payout Method</th>
+                                            <th class="py-3 px-4 text-center">Status</th>
+                                            <th class="py-3 px-4">Requested At</th>
+                                            <th class="py-3 px-4">Payment Ref / UTR</th>
+                                            <th class="py-3 px-4 text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inf-withdrawals-tbody" class="divide-y divide-slate-100">
+                                        <tr><td colspan="8" class="py-8 text-center text-slate-400">Loading payout requests...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-VIEW 4: CAMPAIGNS & CONTENT -->
+                    <div id="inf-subtab-campaigns-view" class="space-y-6 hidden">
+                        <!-- Campaigns Section -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-base">Creator Campaigns</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Brand ambassador initiatives with content targets, deadlines & gifts.</p>
+                                </div>
+                                <button onclick="openCampaignModal()" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold shadow-xs">
+                                    + New Campaign
+                                </button>
+                            </div>
+                            <div id="inf-campaigns-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div class="col-span-full py-8 text-center text-slate-400 text-xs">Loading campaigns...</div>
+                            </div>
+                        </div>
+
+                        <!-- Content Submissions Section -->
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-base">Creator Content Submissions</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Reels, posts & videos registered for verification and engagement tracking.</p>
+                                </div>
+                                <button onclick="openContentModal()" class="px-4 py-2 bg-pink-700 hover:bg-pink-800 text-white rounded-xl text-xs font-bold shadow-xs">
+                                    + Submit Content
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                            <th class="py-3 px-4">Platform & Type</th>
+                                            <th class="py-3 px-4">Creator</th>
+                                            <th class="py-3 px-4">Campaign</th>
+                                            <th class="py-3 px-4">Content URL</th>
+                                            <th class="py-3 px-4 text-center">Metrics</th>
+                                            <th class="py-3 px-4 text-center">Instagram Sync</th>
+                                            <th class="py-3 px-4 text-center">Verification</th>
+                                            <th class="py-3 px-4 text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inf-content-tbody" class="divide-y divide-slate-100">
+                                        <tr><td colspan="8" class="py-8 text-center text-slate-400">Loading content submissions...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-VIEW 5: TIERS & REWARDS -->
+                    <div id="inf-subtab-tiers-view" class="space-y-6 hidden">
+                        <!-- Tiers Configuration Cards -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-base">Creator Tiers & Commission Hierarchy</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Compatible with STARTER, GROWTH, PRO, ELITE. Automatic or manual advancement.</p>
+                                </div>
+                                <button onclick="loadCreatorTierRules()" class="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50">🔄 Refresh</button>
+                            </div>
+                            <div id="inf-tiers-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div class="col-span-full py-8 text-center text-slate-400 text-xs">Loading tier configurations...</div>
+                            </div>
+                        </div>
+
+                        <!-- Milestone Rewards Rules Engine -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                            <div class="border-b border-slate-100 pb-3">
+                                <h3 class="font-extrabold text-slate-900 text-base">Milestone & Reward Rules Engine</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Configurable reward criteria (e.g. 100K Views → Gift, ₹25K Sales → Bonus).</p>
+                            </div>
+                            <div id="inf-rewards-rules-list" class="space-y-3">
+                                <div class="py-4 text-center text-slate-400 text-xs">Loading reward rules...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-VIEW 6: AUDIT LOG -->
+                    <div id="inf-subtab-audit-view" class="space-y-6 hidden">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <h2 class="font-extrabold text-slate-900 text-base">Creator Governance Audit Trail</h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Immutable record of status changes, commission approvals, payouts, and adjustments.</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <select id="inf-audit-action-filter" onchange="loadCreatorAuditLogs()" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 bg-white">
+                                        <option value="all">All Actions</option>
+                                        <option value="creator_activated">Creator Activated</option>
+                                        <option value="creator_deactivated">Creator Deactivated</option>
+                                        <option value="commission_changed">Commission Changed</option>
+                                        <option value="commission_approved">Commission Approved</option>
+                                        <option value="commission_cancelled">Commission Cancelled</option>
+                                        <option value="refund_processed">Refund Processed</option>
+                                        <option value="payout_requested">Payout Requested</option>
+                                        <option value="payout_approved">Payout Approved</option>
+                                        <option value="payout_paid">Payout Paid</option>
+                                        <option value="reward_issued">Reward Issued</option>
+                                    </select>
+                                    <button onclick="loadCreatorAuditLogs()" class="p-1.5 border border-slate-200 rounded-xl text-xs hover:bg-slate-50 font-bold">🔄</button>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                            <th class="py-3 px-4">Timestamp</th>
+                                            <th class="py-3 px-4">Action</th>
+                                            <th class="py-3 px-4">Creator</th>
+                                            <th class="py-3 px-4">Details</th>
+                                            <th class="py-3 px-4">Performed By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inf-audit-tbody" class="divide-y divide-slate-100">
+                                        <tr><td colspan="5" class="py-8 text-center text-slate-400">Loading audit trail...</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -10216,6 +10727,7 @@
 
                 renderInfluencersSummary();
                 renderInfluencersTable();
+                loadCreatorDashboardSummary().catch(() => null);
             } catch (err) {
                 console.error('[Creator Club] Error loading influencers:', err);
                 if (tbody) {
@@ -10246,6 +10758,728 @@
             if (pendingEl) pendingEl.innerText = creatorsSummary.pending_creators || 0;
             if (salesEl) salesEl.innerText = formatInr(creatorsSummary.total_sales || 0);
             if (earningsEl) earningsEl.innerText = formatInr(creatorsSummary.total_earnings || 0);
+        }
+
+        // ==============================================================================
+        // CREATOR AFFILIATE PIPELINE — SUB-TAB CONTROLLER (PHASES 1 - 20)
+        // ==============================================================================
+
+        let currentCreatorSubTab = 'directory';
+
+        function setCreatorClubSubTab(tab) {
+            currentCreatorSubTab = tab;
+            document.querySelectorAll('.inf-subtab-btn').forEach(btn => {
+                btn.classList.remove('bg-[#5E3435]', 'text-white');
+                btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+            });
+            const activeBtn = document.getElementById(`inf-subtab-btn-${tab}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-[#5E3435]', 'text-white');
+                activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+            }
+
+            const views = ['directory', 'attributions', 'wallets', 'campaigns', 'tiers', 'audit'];
+            views.forEach(v => {
+                const el = document.getElementById(`inf-subtab-${v}-view`);
+                if (el) {
+                    if (v === tab) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                }
+            });
+
+            if (tab === 'directory') loadInfluencers(true);
+            if (tab === 'attributions') loadCreatorAttributions();
+            if (tab === 'wallets') { loadCreatorWallets(); loadCreatorWithdrawals(); }
+            if (tab === 'campaigns') { loadCreatorCampaigns(); loadCreatorContentSubmissions(); }
+            if (tab === 'tiers') loadCreatorTierRules();
+            if (tab === 'audit') loadCreatorAuditLogs();
+        }
+
+        async function refreshAllCreatorData() {
+            await loadCreatorDashboardSummary();
+            await loadInfluencers(false);
+            if (currentCreatorSubTab === 'attributions') await loadCreatorAttributions();
+            if (currentCreatorSubTab === 'wallets') { await loadCreatorWallets(); await loadCreatorWithdrawals(); }
+            if (currentCreatorSubTab === 'campaigns') { await loadCreatorCampaigns(); await loadCreatorContentSubmissions(); }
+            if (currentCreatorSubTab === 'tiers') await loadCreatorTierRules();
+            if (currentCreatorSubTab === 'audit') await loadCreatorAuditLogs();
+        }
+
+        async function loadCreatorDashboardSummary() {
+            try {
+                const summary = await WishRiteAPI.getCreatorDashboardSummary();
+                if (!summary) return;
+
+                // Creator Overview
+                const co = summary.creator_overview || {};
+                const totalEl = document.getElementById('inf-stat-total');
+                const activeEl = document.getElementById('inf-stat-active');
+                const pendingEl = document.getElementById('inf-stat-pending');
+                const inactiveEl = document.getElementById('inf-stat-inactive');
+                if (totalEl) totalEl.innerText = `${co.total_creators || 0} Total`;
+                if (activeEl) activeEl.innerText = co.active_creators || 0;
+                if (pendingEl) pendingEl.innerText = co.pending_creators || 0;
+                if (inactiveEl) inactiveEl.innerText = co.inactive_creators || 0;
+
+                // Affiliate Performance
+                const ap = summary.affiliate_performance || {};
+                const ordersEl = document.getElementById('inf-stat-orders');
+                const salesEl = document.getElementById('inf-stat-sales');
+                const clicksEl = document.getElementById('inf-stat-clicks');
+                const commEl = document.getElementById('inf-stat-comm-total');
+                if (ordersEl) ordersEl.innerText = `${ap.total_orders || 0} Orders`;
+                if (salesEl) salesEl.innerText = formatInr(ap.total_sales || 0);
+                if (clicksEl) clicksEl.innerText = ap.total_clicks || 0;
+                if (commEl) commEl.innerText = formatInr(ap.total_commission || 0);
+
+                // Content Performance
+                const cp = summary.content_performance || {};
+                const contentEl = document.getElementById('inf-stat-content');
+                const viewsEl = document.getElementById('inf-stat-views');
+                const engEl = document.getElementById('inf-stat-eng');
+                const topCreatorEl = document.getElementById('inf-stat-top-creator');
+                if (contentEl) contentEl.innerText = `${cp.total_content || 0} Posts`;
+                if (viewsEl) viewsEl.innerText = `${(cp.total_views || 0).toLocaleString('en-IN')} Views`;
+                if (engEl) engEl.innerText = (cp.total_engagement || 0).toLocaleString('en-IN');
+                if (topCreatorEl) topCreatorEl.innerText = cp.top_creator ? (cp.top_creator.influencer_name || `@${cp.top_creator.instagram_id}`) : '—';
+
+                // Payout Summary
+                const ps = summary.payout_summary || {};
+                const payableEl = document.getElementById('inf-stat-payable');
+                const pendingPayoutEl = document.getElementById('inf-stat-pending-payout');
+                const paidMonthEl = document.getElementById('inf-stat-paid-month');
+                if (payableEl) payableEl.innerText = formatInr(ps.payable_balance || 0);
+                if (pendingPayoutEl) pendingPayoutEl.innerText = formatInr(ps.pending_payout || 0);
+                if (paidMonthEl) paidMonthEl.innerText = formatInr(ps.paid_this_month || 0);
+            } catch (e) {
+                console.warn('[Creator Club] Could not load dashboard summary:', e);
+            }
+        }
+
+        async function loadCreatorAttributions() {
+            const tbody = document.getElementById('inf-attributions-tbody');
+            const countEl = document.getElementById('inf-attr-table-count');
+            const statusEl = document.getElementById('inf-attr-status');
+            const searchEl = document.getElementById('inf-attr-search');
+
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">Loading attributions ledger...</td></tr>';
+
+            try {
+                const params = {};
+                if (statusEl && statusEl.value !== 'all') params.status = statusEl.value;
+                if (searchEl && searchEl.value.trim()) params.search = searchEl.value.trim();
+
+                const attributions = await WishRiteAPI.getAdminCreatorAttributions(params);
+                if (countEl) countEl.innerText = `${attributions.length} order${attributions.length === 1 ? '' : 's'}`;
+
+                if (attributions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">No attributed orders found matching criteria.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = attributions.map(a => {
+                    const cName = escapeHtml(a.influencer_name || a.creator_name || 'Creator');
+                    const cHandle = escapeHtml(a.instagram_id ? `@${a.instagram_id}` : a.influencer_code || '');
+                    const dateStr = a.created_at ? new Date(a.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+                    const sales = formatInr(a.sales_amount || 0);
+                    const rate = Number(a.commission_rate || 0).toFixed(1);
+                    const comm = formatInr(a.commission_amount || 0);
+
+                    let statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Pending</span>';
+                    if (a.status === 'approved') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Approved</span>';
+                    if (a.status === 'paid') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800">Paid</span>';
+                    if (a.status === 'cancelled') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">Cancelled</span>';
+                    if (a.status === 'refunded') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800">Refunded</span>';
+
+                    let actionsHtml = '—';
+                    if (a.status === 'pending') {
+                        actionsHtml = `
+                            <div class="inline-flex items-center gap-1.5">
+                                <button onclick="approveAttributionCommission('${a.id || a.order_reference}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition shadow-xs">✓ Approve</button>
+                                <button onclick="cancelAttributionCommission('${a.id || a.order_reference}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold transition">✕ Cancel</button>
+                            </div>`;
+                    } else if (a.status === 'approved') {
+                        actionsHtml = `
+                            <button onclick="refundAttributionCommission('${a.id || a.order_reference}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-bold transition">↺ Refund</button>`;
+                    }
+
+                    return `
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="py-3 px-4">
+                                <div class="font-bold text-slate-900">${cName}</div>
+                                <div class="text-[10px] text-pink-600 font-semibold">${cHandle}</div>
+                            </td>
+                            <td class="py-3 px-4 font-mono font-bold text-slate-800 text-[11px]">${escapeHtml(a.order_reference)}</td>
+                            <td class="py-3 px-4 text-slate-500 text-[11px]">${dateStr}</td>
+                            <td class="py-3 px-4 text-right font-extrabold text-slate-900">${sales}</td>
+                            <td class="py-3 px-4 text-center font-bold text-slate-700">${rate}%</td>
+                            <td class="py-3 px-4 text-right font-black text-[#5E3435]">${comm}</td>
+                            <td class="py-3 px-4 text-center">${statusBadge}</td>
+                            <td class="py-3 px-4 text-center">${actionsHtml}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-rose-500 text-xs font-bold">Failed to load attributions: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function approveAttributionCommission(id) {
+            if (!confirm('Approve commission for this order? It will be cleared and made available for creator payout.')) return;
+            try {
+                await WishRiteAPI.approveCreatorCommission(id);
+                await loadCreatorAttributions();
+                await loadCreatorDashboardSummary();
+            } catch (err) {
+                alert(`Approval failed: ${err.message}`);
+            }
+        }
+
+        async function cancelAttributionCommission(id) {
+            if (!confirm('Cancel commission for this order? Pending earnings will be reversed.')) return;
+            try {
+                await WishRiteAPI.cancelCreatorCommission(id);
+                await loadCreatorAttributions();
+                await loadCreatorDashboardSummary();
+            } catch (err) {
+                alert(`Cancellation failed: ${err.message}`);
+            }
+        }
+
+        async function refundAttributionCommission(id) {
+            if (!confirm('Mark commission refunded? Available/pending creator earnings will be reversed.')) return;
+            try {
+                await WishRiteAPI.refundCreatorCommission(id);
+                await loadCreatorAttributions();
+                await loadCreatorDashboardSummary();
+            } catch (err) {
+                alert(`Refund failed: ${err.message}`);
+            }
+        }
+
+        async function loadCreatorWallets() {
+            const tbody = document.getElementById('inf-wallets-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs">Loading wallets...</td></tr>';
+
+            try {
+                const wallets = await WishRiteAPI.getAdminCreatorWallets();
+                if (wallets.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs">No creator wallets registered yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = wallets.map(w => {
+                    const cName = escapeHtml(w.influencer_name || w.creator_name || 'Creator');
+                    const cHandle = escapeHtml(w.instagram_id ? `@${w.instagram_id}` : w.influencer_code || '');
+                    const pending = formatInr(w.pending_balance || 0);
+                    const available = formatInr(w.available_balance || 0);
+                    const paid = formatInr(w.paid_balance || 0);
+                    const lifetime = formatInr(w.lifetime_earned || 0);
+
+                    return `
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="py-3 px-4 font-bold text-slate-900">${cName}</td>
+                            <td class="py-3 px-4 text-pink-600 font-semibold text-[11px]">${cHandle}</td>
+                            <td class="py-3 px-4 text-center">${getCreatorTierBadgeHtml(w.tier || 'starter')}</td>
+                            <td class="py-3 px-4 text-right font-bold text-amber-700">${pending}</td>
+                            <td class="py-3 px-4 text-right font-extrabold text-emerald-700">${available}</td>
+                            <td class="py-3 px-4 text-right font-bold text-slate-700">${paid}</td>
+                            <td class="py-3 px-4 text-right font-black text-[#5E3435]">${lifetime}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-rose-500 text-xs font-bold">Failed to load wallets: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function loadCreatorWithdrawals() {
+            const tbody = document.getElementById('inf-withdrawals-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">Loading withdrawals...</td></tr>';
+
+            try {
+                const withdrawals = await WishRiteAPI.getAdminCreatorWithdrawals();
+                if (withdrawals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">No withdrawal requests found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = withdrawals.map(w => {
+                    const cName = escapeHtml(w.influencer_name || w.creator_name || 'Creator');
+                    const amount = formatInr(w.amount || 0);
+                    const reqDate = w.requested_at ? new Date(w.requested_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+                    const method = escapeHtml((w.payout_method || 'UPI').toUpperCase());
+                    const ref = escapeHtml(w.withdrawal_reference || w.id);
+                    const utr = escapeHtml(w.payment_reference || w.razorpay_payout_id || '—');
+
+                    let statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Requested</span>';
+                    if (w.payout_status === 'approved') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">Approved</span>';
+                    if (w.payout_status === 'processing') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">Processing</span>';
+                    if (w.payout_status === 'completed') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Completed</span>';
+                    if (w.payout_status === 'rejected') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">Rejected</span>';
+
+                    let actionsHtml = '—';
+                    if (w.payout_status === 'requested') {
+                        actionsHtml = `
+                            <div class="inline-flex items-center gap-1.5">
+                                <button onclick="approveWithdrawal('${w.id}')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold">Approve</button>
+                                <button onclick="openManualPayoutModal('${w.id}', '${ref}', '${w.amount}', '${cName}', '${method}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold">Pay (UTR)</button>
+                                <button onclick="rejectWithdrawal('${w.id}')" class="px-2 py-1 bg-rose-50 text-rose-700 rounded-lg text-[10px] font-bold">Reject</button>
+                            </div>`;
+                    } else if (w.payout_status === 'approved' || w.payout_status === 'processing') {
+                        actionsHtml = `
+                            <button onclick="openManualPayoutModal('${w.id}', '${ref}', '${w.amount}', '${cName}', '${method}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-xs">
+                                ✓ Mark Paid (UTR)
+                            </button>`;
+                    } else if (w.payout_status === 'completed') {
+                        actionsHtml = `<span class="text-emerald-700 font-bold text-[11px]">✓ Settled</span>`;
+                    }
+
+                    return `
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="py-3 px-4 font-mono font-bold text-slate-800 text-[11px]">${ref}</td>
+                            <td class="py-3 px-4 font-bold text-slate-900">${cName}</td>
+                            <td class="py-3 px-4 text-right font-black text-emerald-700">${amount}</td>
+                            <td class="py-3 px-4 font-bold text-slate-600 text-[11px]">${method}</td>
+                            <td class="py-3 px-4 text-center">${statusBadge}</td>
+                            <td class="py-3 px-4 text-slate-500 text-[11px]">${reqDate}</td>
+                            <td class="py-3 px-4 font-mono text-[11px] text-slate-700 font-semibold">${utr}</td>
+                            <td class="py-3 px-4 text-center">${actionsHtml}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-rose-500 text-xs font-bold">Failed to load withdrawals: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function approveWithdrawal(id) {
+            if (!confirm('Approve this withdrawal request?')) return;
+            try {
+                await WishRiteAPI.approveCreatorWithdrawal(id);
+                await loadCreatorWithdrawals();
+                await loadCreatorDashboardSummary();
+            } catch (err) {
+                alert(`Approval failed: ${err.message}`);
+            }
+        }
+
+        async function rejectWithdrawal(id) {
+            const reason = prompt('Please enter a rejection reason:');
+            if (reason === null) return;
+            try {
+                await WishRiteAPI.rejectCreatorWithdrawal(id, reason || 'Rejected by administrator');
+                await loadCreatorWithdrawals();
+                await loadCreatorWallets();
+                await loadCreatorDashboardSummary();
+            } catch (err) {
+                alert(`Rejection failed: ${err.message}`);
+            }
+        }
+
+        function openManualPayoutModal(wthId, ref, amount, creatorName, method) {
+            const modal = document.getElementById('manual-payout-modal');
+            const errEl = document.getElementById('payout-wth-error');
+            if (errEl) { errEl.innerText = ''; errEl.classList.add('hidden'); }
+
+            document.getElementById('payout-wth-id').value = wthId;
+            document.getElementById('payout-wth-creator').innerText = creatorName;
+            document.getElementById('payout-wth-ref').innerText = ref;
+            document.getElementById('payout-wth-amount').innerText = formatInr(amount);
+            document.getElementById('payout-wth-method').innerText = method;
+            document.getElementById('payout-wth-utr').value = '';
+            document.getElementById('payout-wth-notes').value = '';
+
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeManualPayoutModal() {
+            const modal = document.getElementById('manual-payout-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function submitManualPayout(event) {
+            event.preventDefault();
+            const wthId = document.getElementById('payout-wth-id').value;
+            const utr = document.getElementById('payout-wth-utr').value.trim();
+            const notes = document.getElementById('payout-wth-notes').value.trim();
+            const errEl = document.getElementById('payout-wth-error');
+            const btn = document.getElementById('payout-wth-submit-btn');
+
+            if (!utr) {
+                if (errEl) { errEl.innerText = 'Payment reference / UTR is required.'; errEl.classList.remove('hidden'); }
+                return;
+            }
+
+            if (btn) { btn.disabled = true; btn.innerText = 'Processing...'; }
+
+            try {
+                await WishRiteAPI.completeCreatorWithdrawal(wthId, { payment_reference: utr, admin_notes: notes });
+                closeManualPayoutModal();
+                alert(`Payout successfully marked completed! Reference: ${utr}`);
+                await loadCreatorWithdrawals();
+                await loadCreatorWallets();
+                await loadCreatorDashboardSummary();
+            } catch (err) {
+                if (errEl) { errEl.innerText = err.message || 'Failed to complete payout'; errEl.classList.remove('hidden'); }
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = '✓ Confirm & Mark Paid'; }
+            }
+        }
+
+        async function loadCreatorCampaigns() {
+            const grid = document.getElementById('inf-campaigns-grid');
+            if (!grid) return;
+            grid.innerHTML = '<div class="col-span-full py-8 text-center text-slate-400 text-xs">Loading campaigns...</div>';
+
+            try {
+                const campaigns = await WishRiteAPI.getAdminCreatorCampaigns();
+                if (campaigns.length === 0) {
+                    grid.innerHTML = `
+                        <div class="col-span-full py-8 text-center text-slate-400 text-xs">
+                            No campaigns created yet. Click "+ New Campaign" to create one.
+                        </div>`;
+                    return;
+                }
+
+                grid.innerHTML = campaigns.map(c => {
+                    const statusClass = c.status === 'ACTIVE'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : (c.status === 'COMPLETED' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-700');
+                    const dates = (c.start_date && c.end_date)
+                        ? `${new Date(c.start_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} – ${new Date(c.end_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                        : 'Open timeline';
+
+                    return `
+                        <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(c.campaign_name)}</h4>
+                                    <span class="text-[10px] text-slate-400 font-medium">${dates}</span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${statusClass}">${escapeHtml(c.status || 'DRAFT')}</span>
+                            </div>
+                            <div class="space-y-1 text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-100">
+                                <div><strong>Content:</strong> ${escapeHtml(c.required_content || '1 Reel')}</div>
+                                <div><strong>Targets:</strong> ${(c.target_views || 0).toLocaleString('en-IN')} Views • ${formatInr(c.target_sales || 0)} Sales</div>
+                                <div><strong>Commission:</strong> ${c.commission_rate || 10}%</div>
+                                ${c.gift_reward ? `<div class="text-[#5E3435] font-bold"><strong>Reward:</strong> ${escapeHtml(c.gift_reward)}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                grid.innerHTML = `<div class="col-span-full py-8 text-center text-rose-500 text-xs font-bold">Failed to load campaigns: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        function openCampaignModal() {
+            const modal = document.getElementById('campaign-modal');
+            const form = document.getElementById('campaign-form');
+            const errEl = document.getElementById('camp-form-error');
+            if (form) form.reset();
+            document.getElementById('camp-form-id').value = '';
+            if (errEl) { errEl.innerText = ''; errEl.classList.add('hidden'); }
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeCampaignModal() {
+            const modal = document.getElementById('campaign-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function saveCreatorCampaign(event) {
+            event.preventDefault();
+            const name = document.getElementById('camp-form-name').value.trim();
+            const start = document.getElementById('camp-form-start').value || null;
+            const end = document.getElementById('camp-form-end').value || null;
+            const reqContent = document.getElementById('camp-form-content').value.trim();
+            const deadline = document.getElementById('camp-form-deadline').value || null;
+            const views = Number(document.getElementById('camp-form-views').value) || 0;
+            const sales = Number(document.getElementById('camp-form-sales').value) || 0;
+            const comm = Number(document.getElementById('camp-form-comm').value) || 10;
+            const reward = document.getElementById('camp-form-reward').value.trim();
+            const status = document.getElementById('camp-form-status').value;
+            const btn = document.getElementById('camp-form-submit-btn');
+
+            if (btn) { btn.disabled = true; btn.innerText = 'Saving...'; }
+
+            try {
+                await WishRiteAPI.createCreatorCampaign({
+                    campaign_name: name,
+                    start_date: start,
+                    end_date: end,
+                    required_content: reqContent,
+                    content_deadline: deadline,
+                    target_views: views,
+                    target_sales: sales,
+                    commission_rate: comm,
+                    gift_reward: reward,
+                    status
+                });
+                closeCampaignModal();
+                alert(`Campaign '${name}' created successfully.`);
+                await loadCreatorCampaigns();
+            } catch (err) {
+                const errEl = document.getElementById('camp-form-error');
+                if (errEl) { errEl.innerText = err.message || 'Failed to save campaign'; errEl.classList.remove('hidden'); }
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'Save Campaign'; }
+            }
+        }
+
+        async function loadCreatorContentSubmissions() {
+            const tbody = document.getElementById('inf-content-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">Loading content submissions...</td></tr>';
+
+            try {
+                const submissions = await WishRiteAPI.getAdminCreatorContent();
+                if (submissions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">No creator content submissions registered yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = submissions.map(s => {
+                    const cName = escapeHtml(s.influencer_name || 'Creator');
+                    const camp = escapeHtml(s.campaign_name || 'General Promotion');
+                    const url = escapeHtml(s.content_url || '#');
+                    const type = escapeHtml(s.content_type || 'Reel');
+                    const platform = escapeHtml(s.platform || 'Instagram');
+                    const views = (s.views || 0).toLocaleString('en-IN');
+                    const likes = (s.likes || 0).toLocaleString('en-IN');
+                    const er = `${Number(s.engagement_rate || 0).toFixed(1)}%`;
+
+                    let statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Submitted</span>';
+                    if (s.verification_status === 'APPROVED') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Approved</span>';
+                    if (s.verification_status === 'UNDER_REVIEW') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">Under Review</span>';
+                    if (s.verification_status === 'REJECTED') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">Rejected</span>';
+
+                    return `
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="py-3 px-4">
+                                <span class="font-bold text-slate-800">${platform}</span>
+                                <span class="px-2 py-0.5 bg-pink-50 text-pink-700 font-bold rounded-md text-[9px] ml-1">${type}</span>
+                            </td>
+                            <td class="py-3 px-4 font-bold text-slate-900">${cName}</td>
+                            <td class="py-3 px-4 text-slate-600 text-[11px]">${camp}</td>
+                            <td class="py-3 px-4">
+                                <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-mono text-[11px] truncate max-w-[150px] inline-block" title="${url}">
+                                    ${url.replace('https://', '')}
+                                </a>
+                            </td>
+                            <td class="py-3 px-4 text-center text-[11px]">
+                                <strong>${views}</strong> views • <strong>${likes}</strong> likes • <span class="text-emerald-700 font-bold">${er} ER</span>
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                <span class="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold rounded-md whitespace-nowrap">
+                                    Awaiting Instagram sync
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-center">${statusBadge}</td>
+                            <td class="py-3 px-4 text-center">
+                                <div class="inline-flex items-center gap-1">
+                                    <button onclick="updateContentVerification('${s.id}', 'APPROVED')" class="px-2 py-1 bg-emerald-600 text-white rounded-md text-[10px] font-bold">Approve</button>
+                                    <button onclick="updateContentVerification('${s.id}', 'REJECTED')" class="px-2 py-1 bg-rose-50 text-rose-700 rounded-md text-[10px] font-bold">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-rose-500 text-xs font-bold">Failed to load content: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        async function openContentModal() {
+            const modal = document.getElementById('content-submission-modal');
+            const creatorSelect = document.getElementById('content-form-creator');
+            const campSelect = document.getElementById('content-form-campaign');
+            const errEl = document.getElementById('content-form-error');
+
+            if (errEl) { errEl.innerText = ''; errEl.classList.add('hidden'); }
+            document.getElementById('content-form').reset();
+
+            if (creatorSelect) {
+                creatorSelect.innerHTML = '<option value="">Select a Creator...</option>' + 
+                    creatorsList.map(c => `<option value="${c.influencer_id || c.id}" data-name="${escapeHtml(c.name)}">${escapeHtml(c.name)} (@${escapeHtml(c.instagram_id)})</option>`).join('');
+            }
+
+            if (campSelect) {
+                try {
+                    const camps = await WishRiteAPI.getAdminCreatorCampaigns();
+                    campSelect.innerHTML = '<option value="">General Promotion</option>' +
+                        camps.map(cp => `<option value="${cp.id}">${escapeHtml(cp.campaign_name)}</option>`).join('');
+                } catch (e) {}
+            }
+
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeContentModal() {
+            const modal = document.getElementById('content-submission-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function saveCreatorContent(event) {
+            event.preventDefault();
+            const creatorSelect = document.getElementById('content-form-creator');
+            const infId = creatorSelect.value;
+            const selectedOpt = creatorSelect.options[creatorSelect.selectedIndex];
+            const creatorName = selectedOpt ? selectedOpt.getAttribute('data-name') : 'Creator';
+
+            const campSelect = document.getElementById('content-form-campaign');
+            const campId = campSelect.value || null;
+            const campName = campSelect.selectedIndex > 0 ? campSelect.options[campSelect.selectedIndex].text : 'General Promotion';
+
+            const platform = document.getElementById('content-form-platform').value;
+            const type = document.getElementById('content-form-type').value;
+            const url = document.getElementById('content-form-url').value.trim();
+            const views = Number(document.getElementById('content-form-views').value) || 0;
+            const likes = Number(document.getElementById('content-form-likes').value) || 0;
+            const comments = Number(document.getElementById('content-form-comments').value) || 0;
+            const btn = document.getElementById('content-form-submit-btn');
+
+            if (!infId || !url) {
+                alert('Please select a creator and enter content URL.');
+                return;
+            }
+
+            if (btn) { btn.disabled = true; btn.innerText = 'Submitting...'; }
+
+            try {
+                await WishRiteAPI.createCreatorContent({
+                    influencer_id: infId,
+                    influencer_name: creatorName,
+                    campaign_id: campId,
+                    campaign_name: campName,
+                    platform,
+                    content_type: type,
+                    content_url: url,
+                    views,
+                    likes,
+                    comments
+                });
+                closeContentModal();
+                alert('Creator content registered successfully.');
+                await loadCreatorContentSubmissions();
+                await loadCreatorDashboardSummary();
+            } catch (err) {
+                const errEl = document.getElementById('content-form-error');
+                if (errEl) { errEl.innerText = err.message || 'Submission failed'; errEl.classList.remove('hidden'); }
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'Submit Content'; }
+            }
+        }
+
+        async function updateContentVerification(id, status) {
+            try {
+                await WishRiteAPI.updateCreatorContentStatus(id, status);
+                await loadCreatorContentSubmissions();
+            } catch (err) {
+                alert(`Failed to update status: ${err.message}`);
+            }
+        }
+
+        async function loadCreatorTierRules() {
+            const tiersGrid = document.getElementById('inf-tiers-cards-grid');
+            const rulesList = document.getElementById('inf-rewards-rules-list');
+
+            try {
+                const res = await WishRiteAPI.getCreatorTierRules();
+                if (!res) return;
+
+                const tiers = res.tiers || [];
+                const rules = res.reward_rules || [];
+
+                if (tiersGrid) {
+                    tiersGrid.innerHTML = tiers.map(t => {
+                        const tierColor = t.tier === 'elite' ? 'bg-amber-50 border-amber-200 text-amber-900' :
+                            (t.tier === 'pro' ? 'bg-purple-50 border-purple-200 text-purple-900' :
+                            (t.tier === 'growth' ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-800'));
+
+                        return `
+                            <div class="${tierColor} p-4 rounded-2xl border flex flex-col justify-between space-y-3">
+                                <div>
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider block opacity-75">${escapeHtml(t.tier)}</span>
+                                    <h4 class="font-black text-base mt-0.5">${escapeHtml(t.name)}</h4>
+                                    <div class="text-2xl font-black mt-2">${t.default_commission_rate}%</div>
+                                    <span class="text-[10px] font-bold block opacity-80">Default Commission</span>
+                                </div>
+                                <div class="text-[11px] pt-2 border-t border-current/10 space-y-1">
+                                    <div>Min Sales: <strong>${formatInr(t.min_sales || 0)}</strong></div>
+                                    <div>Payout Limit: <strong>${formatInr(t.payout_limit || 50000)}</strong></div>
+                                    <p class="text-[10px] opacity-80 pt-1">${escapeHtml(t.perks || '')}</p>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                if (rulesList) {
+                    rulesList.innerHTML = rules.map(r => {
+                        return `
+                            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-lg">🎁</span>
+                                    <div>
+                                        <div class="font-bold text-slate-900">${escapeHtml(r.reward_name)}</div>
+                                        <div class="text-[11px] text-slate-500">Trigger: ${r.threshold.toLocaleString('en-IN')} ${r.metric} → Reward: ${r.reward_type}</div>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold rounded-lg text-[10px]">ACTIVE RULE</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.warn('[Creator Club] Error loading tier rules:', err);
+            }
+        }
+
+        async function loadCreatorAuditLogs() {
+            const tbody = document.getElementById('inf-audit-tbody');
+            const filterEl = document.getElementById('inf-audit-action-filter');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">Loading audit trail...</td></tr>';
+
+            try {
+                const params = {};
+                if (filterEl && filterEl.value !== 'all') params.action_type = filterEl.value;
+
+                const logs = await WishRiteAPI.getCreatorAuditLogs(params);
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">No audit logs found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(l => {
+                    const timeStr = l.created_at ? new Date(l.created_at).toLocaleString('en-IN') : '—';
+                    const actionName = (l.action_type || 'Action').replace(/_/g, ' ').toUpperCase();
+                    let badgeClass = 'bg-slate-100 text-slate-700';
+                    if (l.action_type.includes('activate')) badgeClass = 'bg-emerald-100 text-emerald-800';
+                    if (l.action_type.includes('deactivate')) badgeClass = 'bg-rose-100 text-rose-800';
+                    if (l.action_type.includes('payout')) badgeClass = 'bg-teal-100 text-teal-800';
+                    if (l.action_type.includes('commission')) badgeClass = 'bg-amber-100 text-amber-800';
+
+                    return `
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="py-3 px-4 font-mono text-[11px] text-slate-500">${timeStr}</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-bold ${badgeClass}">${actionName}</span>
+                            </td>
+                            <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(l.influencer_name || '—')}</td>
+                            <td class="py-3 px-4 text-slate-600 text-xs">${escapeHtml(l.details || '')}</td>
+                            <td class="py-3 px-4 text-slate-500 text-xs">${escapeHtml(l.performed_by || 'Admin')}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-rose-500 text-xs font-bold">Failed to load audit logs: ${escapeHtml(err.message)}</td></tr>`;
+            }
         }
 
         /**

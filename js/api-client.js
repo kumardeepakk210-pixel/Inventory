@@ -643,6 +643,101 @@
             return res.data;
         }
 
+        // ==============================================================================
+        // WISHRITE CREATOR CLUB — ADMIN PIPELINE
+        // ==============================================================================
+
+        async getCreatorDashboardSummary() {
+            const res = await this.get('/admin/creator-dashboard-summary');
+            return res.data;
+        }
+
+        async getAdminCreatorWallets() {
+            const res = await this.get('/admin/creator-wallets');
+            return res.data || [];
+        }
+
+        async getAdminCreatorWithdrawals() {
+            const res = await this.get('/admin/creator-withdrawals');
+            return res.data || [];
+        }
+
+        async approveCreatorWithdrawal(id) {
+            return await this.patch(`/admin/creator-withdrawals/${encodeURIComponent(id)}/approve`);
+        }
+
+        async completeCreatorWithdrawal(id, payload) {
+            return await this.patch(`/admin/creator-withdrawals/${encodeURIComponent(id)}/complete`, payload);
+        }
+
+        async rejectCreatorWithdrawal(id, reason) {
+            return await this.patch(`/admin/creator-withdrawals/${encodeURIComponent(id)}/reject`, { rejection_reason: reason });
+        }
+
+        async getAdminCreatorAttributions(params = {}) {
+            const res = await this.get('/admin/creator-attributions', params);
+            return res.data || [];
+        }
+
+        async approveCreatorCommission(id) {
+            return await this.patch(`/admin/creator-attributions/${encodeURIComponent(id)}/approve`);
+        }
+
+        async cancelCreatorCommission(id) {
+            return await this.patch(`/admin/creator-attributions/${encodeURIComponent(id)}/cancel`);
+        }
+
+        async refundCreatorCommission(id) {
+            return await this.patch(`/admin/creator-attributions/${encodeURIComponent(id)}/refund`);
+        }
+
+        async getAdminCreatorCampaigns(params = {}) {
+            const res = await this.get('/admin/creator-campaigns', params);
+            return res.data || [];
+        }
+
+        async createCreatorCampaign(payload) {
+            return await this.post('/admin/creator-campaigns', payload);
+        }
+
+        async updateCreatorCampaign(id, payload) {
+            return await this.put(`/admin/creator-campaigns/${encodeURIComponent(id)}`, payload);
+        }
+
+        async deleteCreatorCampaign(id) {
+            return await this.delete(`/admin/creator-campaigns/${encodeURIComponent(id)}`);
+        }
+
+        async getAdminCreatorContent(params = {}) {
+            const res = await this.get('/admin/creator-content', params);
+            return res.data || [];
+        }
+
+        async createCreatorContent(payload) {
+            return await this.post('/admin/creator-content', payload);
+        }
+
+        async updateCreatorContentStatus(id, verification_status, rejection_reason = null) {
+            return await this.patch(`/admin/creator-content/${encodeURIComponent(id)}/status`, {
+                verification_status,
+                rejection_reason
+            });
+        }
+
+        async getCreatorTierRules() {
+            const res = await this.get('/admin/creator-tier-rules');
+            return res.data;
+        }
+
+        async updateCreatorTierRules(payload) {
+            return await this.put('/admin/creator-tier-rules', payload);
+        }
+
+        async getCreatorAuditLogs(params = {}) {
+            const res = await this.get('/admin/creator-audit-logs', params);
+            return res.data || [];
+        }
+
         async getCategories() {
             const res = await this.get('/categories');
             return res.data || [];

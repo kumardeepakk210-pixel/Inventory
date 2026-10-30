@@ -14,6 +14,7 @@ import {
     dbUpdate, 
     adminClient 
 } from './supabase-client.js';
+import { logCreatorAudit } from './creator-audit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -131,38 +132,38 @@ export async function atomicCreditWalletBalance(influencerId, amount, local) {
  * Reads local JSON backup store safely with Phase 3B extensions
  */
 export function readLocalStore() {
-    if (process.env.NODE_ENV === 'test') {
-        try {
-            if (fs.existsSync(INFLUENCERS_STORE_PATH)) {
-                const raw = fs.readFileSync(INFLUENCERS_STORE_PATH, 'utf-8');
-                const data = JSON.parse(raw);
-                return {
-                    influencers: data.influencers || [],
-                    accounts: data.accounts || [],
-                    links: data.links || [],
-                    stats: data.stats || [],
-                    clicks: data.clicks || [],
-                    attributions: data.attributions || [],
-                    order_attributions: data.order_attributions || [],
-                    // Phase 3B additions
-                    wallets: data.wallets || [],
-                    wallet_transactions: data.wallet_transactions || [],
-                    payout_methods: data.payout_methods || [],
-                    withdrawals: data.withdrawals || [],
-                    points_accounts: data.points_accounts || [],
-                    points_transactions: data.points_transactions || [],
-                    rewards: data.rewards || [],
-                    reward_redemptions: data.reward_redemptions || [],
-                    payout_webhooks: data.payout_webhooks || []
-                };
-            }
-        } catch (e) {
-            console.warn('[Creator Wallet] Could not read influencers_store.json:', e.message);
+    try {
+        if (fs.existsSync(INFLUENCERS_STORE_PATH)) {
+            const raw = fs.readFileSync(INFLUENCERS_STORE_PATH, 'utf-8');
+            const data = JSON.parse(raw);
+            return {
+                influencers: data.influencers || [],
+                accounts: data.accounts || [],
+                influencer_accounts: data.influencer_accounts || data.accounts || [],
+                links: data.links || [],
+                stats: data.stats || [],
+                clicks: data.clicks || [],
+                attributions: data.attributions || [],
+                order_attributions: data.order_attributions || [],
+                // Phase 3B additions
+                wallets: data.wallets || [],
+                wallet_transactions: data.wallet_transactions || [],
+                payout_methods: data.payout_methods || [],
+                withdrawals: data.withdrawals || [],
+                points_accounts: data.points_accounts || [],
+                points_transactions: data.points_transactions || [],
+                rewards: data.rewards || [],
+                reward_redemptions: data.reward_redemptions || [],
+                payout_webhooks: data.payout_webhooks || []
+            };
         }
+    } catch (e) {
+        console.warn('[Creator Wallet] Could not read influencers_store.json:', e.message);
     }
     return {
         influencers: [],
         accounts: [],
+        influencer_accounts: [],
         links: [],
         stats: [],
         clicks: [],
@@ -181,10 +182,9 @@ export function readLocalStore() {
 }
 
 /**
- * Writes to local JSON backup store safely (test only)
+ * Writes to local JSON backup store safely
  */
 export function writeLocalStore(store) {
-    if (process.env.NODE_ENV !== 'test') return;
     try {
         fs.writeFileSync(INFLUENCERS_STORE_PATH, JSON.stringify(store, null, 2), 'utf-8');
     } catch (e) {
@@ -464,11 +464,36 @@ export async function makeCommissionAvailableInWallet({
         const cleanRef = String(order_reference).trim();
 
         // Check if pending transaction exists
-        const pendingTx = local.wallet_transactions.find(t => 
+        let pendingTx = local.wallet_transactions.find(t => 
             t.influencer_id === influencer_id &&
             t.transaction_type === 'commission_pending' &&
             t.reference_id === cleanRef
         );
+        if (!pendingTx) {
+            try {
+                const dbTx = await dbQuery('influencer_wallet_transactions', `reference_id=eq.${encodeURIComponent(cleanRef)}&limit=1`, { useAdmin: true });
+                if (Array.isArray(dbTx) && dbTx.length > 0) {
+                    pendingTx = dbTx[0];
+                }
+            } catch (e) {}
+        }
+        if (!pendingTx) {
+            // Fallback: check influencer_order_attributions
+            try {
+                let attrRows = await dbQuery('influencer_order_attributions', `order_reference=eq.${encodeURIComponent(cleanRef)}&limit=1`, { useAdmin: true });
+                if (!attrRows || attrRows.length === 0) {
+                    attrRows = (local.order_attributions || []).filter(a => a.order_reference === cleanRef);
+                }
+                if (Array.isArray(attrRows) && attrRows.length > 0) {
+                    pendingTx = {
+                        influencer_id,
+                        transaction_type: 'commission_pending',
+                        reference_id: cleanRef,
+                        amount: Number(attrRows[0].commission_amount) || 0
+                    };
+                }
+            } catch (e) {}
+        }
         if (!pendingTx) return null;
 
         // Check if already made available
@@ -1458,12 +1483,31 @@ export async function requireAdminAuth(req, res, next) {
 export async function handleAdminGetWallets(req, res) {
     try {
         const local = readLocalStore();
-        const wallets = (local.wallets || []).map(w => {
-            const creator = (local.influencers || []).find(i => (i.influencer_id || i.id) === w.influencer_id);
+        let dbWallets = [];
+        try {
+            dbWallets = await dbQuery('influencer_wallets', 'order=created_at.desc', { useAdmin: true });
+        } catch (e) {}
+
+        const rawWallets = (Array.isArray(dbWallets) && dbWallets.length > 0) ? dbWallets : (local.wallets || []);
+        const creators = local.influencers || [];
+
+        const wallets = rawWallets.map(w => {
+            const creator = creators.find(i => (i.influencer_id || i.id) === w.influencer_id);
+            const cName = creator?.influencer_name || creator?.name || 'Unknown Creator';
             return {
                 ...w,
-                creator_name: creator?.name || 'Unknown',
-                influencer_code: creator?.influencer_code || 'N/A'
+                influencer_id: w.influencer_id,
+                creator_name: cName,
+                influencer_name: cName,
+                name: cName,
+                instagram_id: creator?.instagram_id || '',
+                influencer_code: creator?.influencer_code || 'N/A',
+                tier: creator?.tier || 'starter',
+                pending_balance: Number(w.pending_balance || 0),
+                available_balance: Number(w.available_balance || 0),
+                paid_balance: Number(w.paid_balance || 0),
+                lifetime_earned: Number(w.lifetime_earned || 0),
+                payable_balance: Number(w.available_balance || 0)
             };
         });
 
@@ -1479,12 +1523,26 @@ export async function handleAdminGetWallets(req, res) {
 export async function handleAdminGetWithdrawals(req, res) {
     try {
         const local = readLocalStore();
-        const wths = (local.withdrawals || []).map(w => {
-            const creator = (local.influencers || []).find(i => (i.influencer_id || i.id) === w.influencer_id);
+        let dbWithdrawals = [];
+        try {
+            dbWithdrawals = await dbQuery('influencer_withdrawals', 'order=created_at.desc', { useAdmin: true });
+        } catch (e) {}
+
+        const rawWithdrawals = (Array.isArray(dbWithdrawals) && dbWithdrawals.length > 0) ? dbWithdrawals : (local.withdrawals || []);
+        const creators = local.influencers || [];
+
+        const wths = rawWithdrawals.map(w => {
+            const creator = creators.find(i => (i.influencer_id || i.id) === w.influencer_id);
+            const cName = creator?.influencer_name || creator?.name || 'Unknown Creator';
             return {
                 ...w,
-                creator_name: creator?.name || 'Unknown',
-                influencer_code: creator?.influencer_code || 'N/A'
+                influencer_id: w.influencer_id,
+                creator_name: cName,
+                influencer_name: cName,
+                name: cName,
+                instagram_id: creator?.instagram_id || '',
+                influencer_code: creator?.influencer_code || 'N/A',
+                amount: Number(w.amount || 0)
             };
         });
 
@@ -1749,7 +1807,20 @@ export async function handleAdminApproveWithdrawal(req, res) {
     try {
         const { id } = req.params;
         const local = readLocalStore();
-        const withdrawal = (local.withdrawals || []).find(w => w.id === id || w.withdrawal_reference === id);
+        let withdrawal = (local.withdrawals || []).find(w => w.id === id || w.withdrawal_reference === id);
+        if (!withdrawal) {
+            try {
+                let dbRows = await dbQuery('influencer_withdrawals', `id=eq.${encodeURIComponent(id)}&limit=1`, { useAdmin: true });
+                if (!dbRows || dbRows.length === 0) {
+                    dbRows = await dbQuery('influencer_withdrawals', `withdrawal_reference=eq.${encodeURIComponent(id)}&limit=1`, { useAdmin: true });
+                }
+                if (Array.isArray(dbRows) && dbRows.length > 0) {
+                    withdrawal = dbRows[0];
+                    local.withdrawals = local.withdrawals || [];
+                    local.withdrawals.push(withdrawal);
+                }
+            } catch (e) {}
+        }
 
         if (!withdrawal) {
             return res.status(404).json({ success: false, error: { message: 'Withdrawal not found.' } });
@@ -1870,12 +1941,166 @@ export async function handleAdminApproveWithdrawal(req, res) {
             await dbInsert('influencer_wallet_transactions', tx, { useAdmin: true });
         } catch (e) {}
 
+        const creatorObj = (local.influencers || []).find(i => (i.influencer_id || i.id) === withdrawal.influencer_id);
+        await logCreatorAudit({
+            action_type: 'payout_approved',
+            influencer_id: withdrawal.influencer_id,
+            influencer_name: creatorObj?.influencer_name || creatorObj?.name || '',
+            details: `Withdrawal of ₹${withdrawal.amount} approved by admin (${withdrawal.withdrawal_reference})`
+        });
+
         return res.json({
             success: true,
             message: `Withdrawal ${withdrawal.withdrawal_reference} approved and queued for payout.`,
             data: withdrawal
         });
     } catch (err) {
+        return res.status(500).json({ success: false, error: { message: err.message } });
+    }
+}
+
+/**
+ * PATCH /api/admin/creator-withdrawals/:id/complete
+ * Complete a payout (e.g. Manual Payout via UTR or offline bank transfer)
+ * Marks withdrawal completed, writes immutable ledger entry, updates wallet paid balance,
+ * and reconciles attributed orders to 'paid' state.
+ */
+export async function handleAdminCompleteWithdrawal(req, res) {
+    try {
+        const { id } = req.params;
+        const { payment_reference, admin_notes } = req.body || {};
+
+        if (!payment_reference || !String(payment_reference).trim()) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'PAYMENT_REFERENCE_REQUIRED',
+                    message: 'Payment reference / UTR is required to complete payout.'
+                }
+            });
+        }
+
+        const cleanRef = String(payment_reference).trim();
+        const cleanNotes = admin_notes ? String(admin_notes).trim() : null;
+
+        const local = readLocalStore();
+        local.withdrawals = local.withdrawals || [];
+        const withdrawal = local.withdrawals.find(w => w.id === id || w.withdrawal_reference === id);
+
+        if (!withdrawal) {
+            return res.status(404).json({ success: false, error: { message: 'Withdrawal not found.' } });
+        }
+
+        if (withdrawal.payout_status === 'completed') {
+            return res.status(400).json({
+                success: false,
+                error: { code: 'ALREADY_COMPLETED', message: 'Withdrawal is already marked completed.' }
+            });
+        }
+
+        if (['rejected', 'failed', 'reversed'].includes(withdrawal.payout_status)) {
+            return res.status(400).json({
+                success: false,
+                error: { code: 'INVALID_STATE', message: `Cannot complete withdrawal in '${withdrawal.payout_status}' status.` }
+            });
+        }
+
+        const nowIso = new Date().toISOString();
+        withdrawal.payout_status = 'completed';
+        withdrawal.completed_at = nowIso;
+        if (!withdrawal.approved_at) withdrawal.approved_at = nowIso;
+        if (!withdrawal.processing_at) withdrawal.processing_at = nowIso;
+        withdrawal.razorpay_payout_id = cleanRef;
+        withdrawal.payment_reference = cleanRef;
+        if (cleanNotes) withdrawal.admin_notes = cleanNotes;
+        withdrawal.updated_at = nowIso;
+
+        const wallet = await getOrCreateInfluencerWallet(withdrawal.influencer_id, local);
+        wallet.paid_balance = Number(((Number(wallet.paid_balance) || 0) + Number(withdrawal.amount)).toFixed(2));
+        wallet.lifetime_paid = Number(((Number(wallet.lifetime_paid) || 0) + Number(withdrawal.amount)).toFixed(2));
+        wallet.updated_at = nowIso;
+
+        // Record completed entry in immutable ledger
+        const compTx = {
+            id: randomUUID(),
+            influencer_id: withdrawal.influencer_id,
+            wallet_id: wallet.id,
+            transaction_type: 'withdrawal_completed',
+            amount: Number(withdrawal.amount),
+            currency: DEFAULT_CURRENCY,
+            direction: 'neutral',
+            status: 'completed',
+            reference_type: 'withdrawal',
+            reference_id: withdrawal.id,
+            description: `Manual payout completed via UTR/Ref ${cleanRef} (${withdrawal.withdrawal_reference})`,
+            metadata: {
+                payment_reference: cleanRef,
+                admin_notes: cleanNotes,
+                completed_by: 'Inventory Admin'
+            },
+            created_at: nowIso
+        };
+
+        local.wallet_transactions = local.wallet_transactions || [];
+        local.wallet_transactions.unshift(compTx);
+
+        // Reconcile and mark attributed orders as paid for this creator up to withdrawal amount
+        let remainingToMarkPaid = Number(withdrawal.amount);
+        local.order_attributions = local.order_attributions || [];
+        for (const attr of local.order_attributions) {
+            if (attr.influencer_id === withdrawal.influencer_id && attr.status === 'approved' && remainingToMarkPaid > 0) {
+                attr.status = 'paid';
+                attr.updated_at = nowIso;
+                remainingToMarkPaid -= Number(attr.commission_amount || 0);
+
+                try {
+                    await dbUpdate('influencer_order_attributions', 'id', attr.id, {
+                        status: 'paid',
+                        updated_at: nowIso
+                    }, { useAdmin: true }).catch(() => null);
+                } catch (e) {}
+            }
+        }
+
+        writeLocalStore(local);
+
+        try {
+            await dbUpdate('influencer_withdrawals', 'id', withdrawal.id, {
+                payout_status: 'completed',
+                completed_at: nowIso,
+                approved_at: withdrawal.approved_at,
+                processing_at: withdrawal.processing_at,
+                razorpay_payout_id: cleanRef,
+                admin_notes: withdrawal.admin_notes,
+                updated_at: nowIso
+            }, { useAdmin: true }).catch(() => null);
+
+            await dbInsert('influencer_wallet_transactions', compTx, { useAdmin: true }).catch(() => null);
+
+            await dbUpdate('influencer_wallets', 'id', wallet.id, {
+                paid_balance: wallet.paid_balance,
+                lifetime_paid: wallet.lifetime_paid,
+                updated_at: wallet.updated_at
+            }, { useAdmin: true }).catch(() => null);
+        } catch (e) {}
+
+        const creator = (local.influencers || []).find(i => (i.influencer_id || i.id) === withdrawal.influencer_id);
+
+        await logCreatorAudit({
+            action_type: 'payout_paid',
+            influencer_id: withdrawal.influencer_id,
+            influencer_name: creator?.influencer_name || creator?.name || '',
+            details: `Manual payout of ₹${withdrawal.amount} completed (UTR: ${cleanRef})`,
+            metadata: { withdrawal_id: withdrawal.id, amount: withdrawal.amount, reference: cleanRef }
+        });
+
+        return res.json({
+            success: true,
+            message: `Payout completed successfully. Commission ledger updated.`,
+            data: withdrawal
+        });
+    } catch (err) {
+        console.error('[Creator Wallet] handleAdminCompleteWithdrawal error:', err);
         return res.status(500).json({ success: false, error: { message: err.message } });
     }
 }
@@ -1967,7 +2192,20 @@ export async function handleAdminRetryWithdrawal(req, res) {
     try {
         const { id } = req.params;
         const local = readLocalStore();
-        const withdrawal = (local.withdrawals || []).find(w => w.id === id || w.withdrawal_reference === id);
+        let withdrawal = (local.withdrawals || []).find(w => w.id === id || w.withdrawal_reference === id);
+        if (!withdrawal) {
+            try {
+                let dbRows = await dbQuery('influencer_withdrawals', `id=eq.${encodeURIComponent(id)}&limit=1`, { useAdmin: true });
+                if (!dbRows || dbRows.length === 0) {
+                    dbRows = await dbQuery('influencer_withdrawals', `withdrawal_reference=eq.${encodeURIComponent(id)}&limit=1`, { useAdmin: true });
+                }
+                if (Array.isArray(dbRows) && dbRows.length > 0) {
+                    withdrawal = dbRows[0];
+                    local.withdrawals = local.withdrawals || [];
+                    local.withdrawals.push(withdrawal);
+                }
+            } catch (e) {}
+        }
 
         if (!withdrawal) {
             return res.status(404).json({ success: false, error: { message: 'Withdrawal not found.' } });

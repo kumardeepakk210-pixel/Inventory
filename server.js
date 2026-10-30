@@ -96,7 +96,11 @@ import {
     handleGetInfluencerOrdersEndpoint,
     handleGetInfluencerEarningsEndpoint,
     handleCreateOrder,
-    handleUpdateOrderStatus
+    handleUpdateOrderStatus,
+    handleAdminGetAttributions,
+    handleAdminApproveCommission,
+    handleAdminCancelCommission,
+    handleAdminRefundCommission
 } from './backend/influencers.js';
 import {
     requireCreatorAuth,
@@ -131,6 +135,7 @@ import {
     handleAdminGetWallets,
     handleAdminGetWithdrawals,
     handleAdminApproveWithdrawal,
+    handleAdminCompleteWithdrawal,
     handleAdminRejectWithdrawal,
     handleAdminRetryWithdrawal,
     handleAdminAdjustWallet,
@@ -141,6 +146,21 @@ import {
     handleAdminUpdateRedemption,
     handleRazorpayPayoutWebhook
 } from './backend/creator-wallet.js';
+import {
+    handleAdminGetCampaigns,
+    handleAdminCreateCampaign,
+    handleAdminUpdateCampaign,
+    handleAdminDeleteCampaign,
+    handleAdminGetContentSubmissions,
+    handleAdminCreateContentSubmission,
+    handleAdminUpdateContentStatus,
+    handleAdminGetTierRules,
+    handleAdminUpdateTierRules,
+    handleAdminGetDashboardSummary
+} from './backend/creator-campaigns.js';
+import {
+    handleGetCreatorAuditLogs
+} from './backend/creator-audit.js';
 import { 
     SUPABASE_URL,
     dbQuery, 
@@ -419,13 +439,37 @@ app.get('/api/creator/rewards/:id', requireCreatorAuth, handleGetCreatorRewardBy
 app.post('/api/creator/rewards/:id/redeem', requireCreatorAuth, handleRedeemReward);
 app.get('/api/creator/redemptions', requireCreatorAuth, handleGetCreatorRedemptions);
 
-// WishRite Creator Club — Phase 3B: Inventory Admin Management
+// WishRite Creator Club — Phase 3B & Pipeline: Inventory Admin Management
+app.get('/api/admin/creator-dashboard-summary', requireAdminAuth, handleAdminGetDashboardSummary);
 app.get('/api/admin/creator-wallets', requireAdminAuth, handleAdminGetWallets);
 app.post('/api/admin/creator-wallets/:id/adjust', requireAdminAuth, handleAdminAdjustWallet);
 app.get('/api/admin/creator-withdrawals', requireAdminAuth, handleAdminGetWithdrawals);
 app.patch('/api/admin/creator-withdrawals/:id/approve', requireAdminAuth, handleAdminApproveWithdrawal);
+app.patch('/api/admin/creator-withdrawals/:id/complete', requireAdminAuth, handleAdminCompleteWithdrawal);
 app.patch('/api/admin/creator-withdrawals/:id/reject', requireAdminAuth, handleAdminRejectWithdrawal);
 app.post('/api/admin/creator-withdrawals/:id/retry', requireAdminAuth, handleAdminRetryWithdrawal);
+
+// Attribution & Commission Ledger Management (Phases 5, 6, 7)
+app.get('/api/admin/creator-attributions', requireAdminAuth, handleAdminGetAttributions);
+app.patch('/api/admin/creator-attributions/:id/approve', requireAdminAuth, handleAdminApproveCommission);
+app.patch('/api/admin/creator-attributions/:id/cancel', requireAdminAuth, handleAdminCancelCommission);
+app.patch('/api/admin/creator-attributions/:id/refund', requireAdminAuth, handleAdminRefundCommission);
+
+// Campaigns & Content Management (Phases 10, 11)
+app.get('/api/admin/creator-campaigns', requireAdminAuth, handleAdminGetCampaigns);
+app.post('/api/admin/creator-campaigns', requireAdminAuth, handleAdminCreateCampaign);
+app.put('/api/admin/creator-campaigns/:id', requireAdminAuth, handleAdminUpdateCampaign);
+app.delete('/api/admin/creator-campaigns/:id', requireAdminAuth, handleAdminDeleteCampaign);
+app.get('/api/admin/creator-content', requireAdminAuth, handleAdminGetContentSubmissions);
+app.post('/api/admin/creator-content', requireAdminAuth, handleAdminCreateContentSubmission);
+app.patch('/api/admin/creator-content/:id/status', requireAdminAuth, handleAdminUpdateContentStatus);
+
+// Tiers & Reward Rules (Phases 12, 13)
+app.get('/api/admin/creator-tier-rules', requireAdminAuth, handleAdminGetTierRules);
+app.put('/api/admin/creator-tier-rules', requireAdminAuth, handleAdminUpdateTierRules);
+
+// Audit Logs (Phase 19)
+app.get('/api/admin/creator-audit-logs', requireAdminAuth, handleGetCreatorAuditLogs);
 
 app.get('/api/admin/creator-rewards', requireAdminAuth, handleAdminGetRewards);
 app.post('/api/admin/creator-rewards', requireAdminAuth, handleAdminCreateReward);

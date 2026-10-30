@@ -1,6 +1,29 @@
 {
   "influencers": [
     {
+      "id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "influencer_code": "WR-INF-000099",
+      "influencer_name": "E2E Test Creator",
+      "name": "E2E Test Creator",
+      "email": "creator.e2e.1793257271118@example.com",
+      "email_id": "creator.e2e.1793257271118@example.com",
+      "phone": null,
+      "phone_number": "",
+      "instagram_id": "creator_e2e_1793257271118",
+      "instagram_url": "https://instagram.com/creator_e2e_1793257271118",
+      "public_slug": "creator_e2e_1793257271118",
+      "public_profile_url": "https://wishrite.in/influencer/creator_e2e_1793257271118",
+      "profile_image": "https://ui-avatars.com/api/?name=E2E%20Test%20Creator&background=4f46e5&color=fff",
+      "category": "Jewelry & Lifestyle",
+      "bio": "Fashion & Jewelry styling connoisseur",
+      "commission_rate": 10,
+      "tier": "starter",
+      "status": "active",
+      "created_at": "2026-10-29T07:01:13.483Z",
+      "updated_at": "2026-10-30T17:59:23.867Z"
+    },
+    {
       "id": "ea51c2ea-f094-4ca8-b9ef-067f4ab3b1e9",
       "influencer_code": "WR-INF-000027",
       "name": "Remediation Creator Beta",
@@ -914,6 +937,316 @@
       "last_login_at": "2026-10-26T17:11:03.807Z",
       "created_at": "2026-10-26T17:11:03.695Z",
       "updated_at": "2026-10-26T17:11:03.807Z"
+    },
+    {
+      "id": "1f6043b4-1ba6-4d7b-96d8-31c221090ee0",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "auth_user_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "email": "creator.e2e.1793257271118@example.com",
+      "password_hash": "pbkdf2:100000:e11e7ec2ca43df25cafe582ad1464744:a612d4ab9670c8ec204fb442cda6c05be84b1ba929f14712b9fef4befc4af668",
+      "is_active": true,
+      "last_login_at": "2026-10-29T07:01:13.507Z",
+      "created_at": "2026-10-29T07:01:13.507Z",
+      "updated_at": "2026-10-29T07:01:13.507Z"
+    }
+  ],
+  "influencer_accounts": [
+    {
+      "id": "2729c7e5-c62f-4695-8d37-b1d53c24e5cf",
+      "influencer_id": "1fd62120-b2ff-46fe-81f5-73b7ae092551",
+      "auth_user_id": null,
+      "email": "sec_a_1793017309505@example.com",
+      "password_hash": "pbkdf2:100000:26bfd15f48260f234ffacb20666010e2:c31351bd7796c1854fd2b4be3683e01f3df5f92e2eacd130094c8dfc8737587e",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:21:51.451Z",
+      "created_at": "2026-10-26T12:21:50.260Z",
+      "updated_at": "2026-10-26T12:21:51.451Z"
+    },
+    {
+      "id": "8a5a74f3-767c-447b-bf34-223bb5a386ab",
+      "influencer_id": "010a2455-b340-4dae-bd71-f82f63daeb8b",
+      "auth_user_id": null,
+      "email": "aarya_1793017309549@example.com",
+      "password_hash": "pbkdf2:100000:16ce68f4a42686db666dfebe62b9914d:15490c3054b38c5f47065895b207bee36df8a6844faeb06bf6375ea708ab1b56",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:21:53.057Z",
+      "created_at": "2026-10-26T12:21:50.274Z",
+      "updated_at": "2026-10-26T12:21:53.057Z"
+    },
+    {
+      "id": "1d0237e0-f8cc-473f-a530-f4abdf31eb26",
+      "influencer_id": "9cd77190-55dc-4d30-b209-32921c88735e",
+      "auth_user_id": null,
+      "email": "wth_tester_1793017309510@example.com",
+      "password_hash": "pbkdf2:100000:01db7b22537eba95212ededed342c6ef:92487f7ef7fd66dd4b19b0614a9a69efad6a16ab175f5c91623443e4311982f5",
+      "is_active": true,
+      "last_login_at": null,
+      "created_at": "2026-10-26T12:21:50.291Z",
+      "updated_at": "2026-10-26T12:21:50.291Z"
+    },
+    {
+      "id": "3c68f47b-766c-446a-9ad3-9404e4bbf458",
+      "influencer_id": "63a829ab-42f1-42ab-8735-8fe2b7609906",
+      "auth_user_id": null,
+      "email": "rohan_1793017309549@example.com",
+      "password_hash": "pbkdf2:100000:3d77a33a7e46a0113ba8657ada5a2d7b:e4f431beefe10adf9ec91f89d00fe5e096f1f75768340fd283086f6037f90aa0",
+      "is_active": true,
+      "last_login_at": null,
+      "created_at": "2026-10-26T12:21:50.563Z",
+      "updated_at": "2026-10-26T12:21:50.563Z"
+    },
+    {
+      "id": "061735bc-25d7-4cac-955f-10386a552039",
+      "influencer_id": "9a7f9d42-a71d-408f-80ec-4a3422ddbabf",
+      "auth_user_id": null,
+      "email": "rem_beta_1793017309508@example.com",
+      "password_hash": "pbkdf2:100000:2c34e761276d13d1d3d9537bf82e13c5:da9995e8ae8fe403ad5a9210da1524507b7d0f47b4279eb57985a27ea6e3535b",
+      "is_active": true,
+      "last_login_at": null,
+      "created_at": "2026-10-26T12:21:50.582Z",
+      "updated_at": "2026-10-26T12:21:50.582Z"
+    },
+    {
+      "id": "4b52f69d-3700-4e76-9475-4b4475c46d7d",
+      "influencer_id": "adf7e7cb-1409-41a8-b778-8cdc2f51bd08",
+      "auth_user_id": null,
+      "email": "audit_b_1793017309525@example.com",
+      "password_hash": "pbkdf2:100000:b36a7900dcfca73a3f66fa22b3363037:89c04a9ea497231a1e8582d3f391ca72622d94188ecb3fb1a1339796afafb332",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:21:50.655Z",
+      "created_at": "2026-10-26T12:21:50.591Z",
+      "updated_at": "2026-10-26T12:21:50.655Z"
+    },
+    {
+      "id": "5b24a078-11df-47da-9b50-1d5ec8c2bfa3",
+      "influencer_id": "8f69f2c3-b1b8-4c65-8df1-56e432e70800",
+      "auth_user_id": null,
+      "email": "rzpx_sbx_b_1793017309494@wishrite-test.in",
+      "password_hash": "pbkdf2:100000:60d1693e1bd63830cf89cd285b19861a:5f2ab745b3af6ac3733fd65e91bb9e87bbd16bf32f35b7cc77679987477e0acb",
+      "is_active": true,
+      "last_login_at": null,
+      "created_at": "2026-10-26T12:21:50.605Z",
+      "updated_at": "2026-10-26T12:21:50.605Z"
+    },
+    {
+      "id": "091303ce-e522-423e-ad09-7cd98d8251e1",
+      "influencer_id": "be22a926-34d2-40ee-a4f9-40d996660099",
+      "auth_user_id": null,
+      "email": "sec_a_1793017346772@example.com",
+      "password_hash": "pbkdf2:100000:8868a3a833c1d19925a6ba7dec1fc06f:60a8680d450e56a1f73130cbd773d72267b3aa5addb513d63aa2b390923220ed",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:30.475Z",
+      "created_at": "2026-10-26T12:22:27.464Z",
+      "updated_at": "2026-10-26T12:22:30.475Z"
+    },
+    {
+      "id": "10d6f7b1-f7f8-4fd3-92ec-f74d00acee74",
+      "influencer_id": "0207ea5e-32ad-40b2-ac53-7141ff200216",
+      "auth_user_id": null,
+      "email": "sec_b_1793017346772@example.com",
+      "password_hash": "pbkdf2:100000:9b09e7a38aa87ad209fc588588182e6e:a584da1126bac31909ca8cf6d2a8f16f4a922da6afa90fac1eb5a00352fb61cb",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:29.169Z",
+      "created_at": "2026-10-26T12:22:27.770Z",
+      "updated_at": "2026-10-26T12:22:29.169Z"
+    },
+    {
+      "id": "5d609a19-ae52-41d5-994b-9de7077e8f2a",
+      "influencer_id": "12726bb7-7a3d-4417-920b-05ffdf059333",
+      "auth_user_id": null,
+      "email": "aarya_1793017350721@example.com",
+      "password_hash": "pbkdf2:100000:04a8648ef6eed227daab65a03a8f87dd:478d5028b645eb1e0031b3ea9589714116de6a2f68aac70587e1415eb49fce57",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:34.234Z",
+      "created_at": "2026-10-26T12:22:31.393Z",
+      "updated_at": "2026-10-26T12:22:34.234Z"
+    },
+    {
+      "id": "22efcec0-e1d1-4535-95d9-0d96e6455c41",
+      "influencer_id": "9ac78333-9eb6-4309-bc8f-1cecde79b306",
+      "auth_user_id": null,
+      "email": "rohan_1793017350721@example.com",
+      "password_hash": "pbkdf2:100000:e2bba0517d6b7d936862abdd7d93bd3b:0ad9f44b8b70cb01fd148eb3b50773972f9d9cc47fa5f7981c84334c1d985a50",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:34.323Z",
+      "created_at": "2026-10-26T12:22:31.682Z",
+      "updated_at": "2026-10-26T12:22:34.323Z"
+    },
+    {
+      "id": "67c20b65-5f42-4671-886d-74195fad97bc",
+      "influencer_id": "f0632f65-c740-4d38-979a-3ee7f19cb450",
+      "auth_user_id": null,
+      "email": "inactive_1793017350721@example.com",
+      "password_hash": "pbkdf2:100000:96deaa3d12f003f8a51edf13015d2fa6:5a3fb628d88cb3b187662fbd3a83387fdc666ba29c41838ef820990926d0b325",
+      "is_active": false,
+      "last_login_at": null,
+      "created_at": "2026-10-26T12:22:33.042Z",
+      "updated_at": "2026-10-26T12:22:33.042Z"
+    },
+    {
+      "id": "53a5352b-bde9-4a96-a4b1-3fa408c3a954",
+      "influencer_id": "3b1e9988-85ec-446e-98ab-1cefdde2ef92",
+      "auth_user_id": null,
+      "email": "sec_a_1793017355532@example.com",
+      "password_hash": "pbkdf2:100000:d1c754b19dffcb89032a14524cd4281e:e1d84d4df16e8f7412907fe492c79e0db991a90855703ab50b63c392567ad218",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:36.169Z",
+      "created_at": "2026-10-26T12:22:36.060Z",
+      "updated_at": "2026-10-26T12:22:36.169Z"
+    },
+    {
+      "id": "0ebbd1b5-5ee8-4425-963b-45f232af3957",
+      "influencer_id": "ad017405-9326-49ea-afa4-defe98ff6a28",
+      "auth_user_id": null,
+      "email": "sec_b_1793017355532@example.com",
+      "password_hash": "pbkdf2:100000:fa7bb18bb289b77cd37025970002d0db:066d7bb7fa3e499dfafb00b14b387c1de97db4fccb3e75756ef64911fc16009c",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:36.713Z",
+      "created_at": "2026-10-26T12:22:36.617Z",
+      "updated_at": "2026-10-26T12:22:36.713Z"
+    },
+    {
+      "id": "fe21a6a3-cd87-4d7f-8873-6cbdc1617130",
+      "influencer_id": "9a4049a5-8475-45ef-a5e7-94c6898f4128",
+      "auth_user_id": null,
+      "email": "points_tester_1793017358842@example.com",
+      "password_hash": "pbkdf2:100000:7717c11cfc8555e93785eb5627c6bec7:c55457b91fc9c0ae1d965af56b6e19f22a002363fbab4cb448c8264fb32835d3",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:39.395Z",
+      "created_at": "2026-10-26T12:22:39.301Z",
+      "updated_at": "2026-10-26T12:22:39.395Z"
+    },
+    {
+      "id": "6ddc5941-1297-4bd0-a2f0-d908fa89eadf",
+      "influencer_id": "d3e305d5-2618-477d-af18-2ad26150c68c",
+      "auth_user_id": null,
+      "email": "audit_a_1793017361999@example.com",
+      "password_hash": "pbkdf2:100000:d1e6198718fd2f41ce1eb1b642dc0c3f:a70271b2df5d7021c7dac0970b17dbee9e26247a40dedbf6f169cdb94f59d3e6",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:42.572Z",
+      "created_at": "2026-10-26T12:22:42.447Z",
+      "updated_at": "2026-10-26T12:22:42.572Z"
+    },
+    {
+      "id": "99798d9b-34ad-4db7-bd6e-1a31ed5052e1",
+      "influencer_id": "b2818f0b-7147-4935-9f19-6e5d83fb487c",
+      "auth_user_id": null,
+      "email": "audit_b_1793017361999@example.com",
+      "password_hash": "pbkdf2:100000:92ab35d3ff839b336bf2709295ae1785:3896fd119ea35b5e2ef0dfe677606d22c8bb70625f4a6c0bd666746597d8a6a2",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:42.998Z",
+      "created_at": "2026-10-26T12:22:42.879Z",
+      "updated_at": "2026-10-26T12:22:42.998Z"
+    },
+    {
+      "id": "a87efce3-4695-423f-ad05-9d05697cdbca",
+      "influencer_id": "d5aeb4d9-a531-4d8f-93bb-3d4b505e0a74",
+      "auth_user_id": null,
+      "email": "rem_alpha_1793017368654@example.com",
+      "password_hash": "pbkdf2:100000:03f381db7ad745fafb5b52bc637864e4:1a9a24ea216f40a9670ac7a3f895d77568571a2be373ce5cab2323c15922b952",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:49.679Z",
+      "created_at": "2026-10-26T12:22:49.601Z",
+      "updated_at": "2026-10-26T12:22:49.679Z"
+    },
+    {
+      "id": "c508d6f8-ed60-4baf-be6b-711c78343be8",
+      "influencer_id": "772773dc-a813-4e2e-9a99-2ed1b8d807af",
+      "auth_user_id": null,
+      "email": "rem_beta_1793017368654@example.com",
+      "password_hash": "pbkdf2:100000:39c5cb204910d7f4df7edf320b68de7f:5647aadec46d983b37f60cb4ff55315b7fc5697bd573f41f84409a64aa1c07d7",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:50.040Z",
+      "created_at": "2026-10-26T12:22:49.950Z",
+      "updated_at": "2026-10-26T12:22:50.040Z"
+    },
+    {
+      "id": "d1583f2c-3632-460c-964b-a68ed2df346f",
+      "influencer_id": "2bc98d76-a902-41c9-9d86-1427aeac2aa7",
+      "auth_user_id": null,
+      "email": "rzpx_sbx_a_1793017373105@wishrite-test.in",
+      "password_hash": "pbkdf2:100000:7e65da47c13e4b572c04516777a09f96:717ded718bf46b80cfa642058af0ebfa1e7042fe44a32c79a7f943e80e791c53",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:53.616Z",
+      "created_at": "2026-10-26T12:22:53.522Z",
+      "updated_at": "2026-10-26T12:22:53.616Z"
+    },
+    {
+      "id": "43265946-324f-42f8-b37d-3cafde16dfae",
+      "influencer_id": "3912ef5c-114c-4307-97f3-0bf0c749b087",
+      "auth_user_id": null,
+      "email": "rzpx_sbx_b_1793017373105@wishrite-test.in",
+      "password_hash": "pbkdf2:100000:7a78836f0279f4d7494c3fb1d932b4b5:fafacc56928350a18b2f3fbeeeafee6ae205b71bde9fb74285673b1c49a5dd95",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:54.025Z",
+      "created_at": "2026-10-26T12:22:53.943Z",
+      "updated_at": "2026-10-26T12:22:54.025Z"
+    },
+    {
+      "id": "95222473-b8ed-426e-8460-0868607458d3",
+      "influencer_id": "fc74a687-9a26-4087-be42-75100deabd2e",
+      "auth_user_id": null,
+      "email": "wallet_a_1793017376928@example.com",
+      "password_hash": "pbkdf2:100000:38ea9dd20fe0cb912cc91196c00c608a:22704d277a1a76b4af779834cca432cca912020841e2d00b955d73c86e20beae",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:58.198Z",
+      "created_at": "2026-10-26T12:22:57.667Z",
+      "updated_at": "2026-10-26T12:22:58.198Z"
+    },
+    {
+      "id": "f4eadb47-771e-4ddf-8154-be584df3267e",
+      "influencer_id": "d191dd26-a66c-4e8f-b701-33bb38a7bcbb",
+      "auth_user_id": null,
+      "email": "wallet_b_1793017376928@example.com",
+      "password_hash": "pbkdf2:100000:6cde3f5ee55dbe96fe1249ff8581f68c:f50a7cfa93a04c3784993e600aba54b9de8f6a2ddc4bb556fc9847dfbd269307",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:22:58.273Z",
+      "created_at": "2026-10-26T12:22:58.120Z",
+      "updated_at": "2026-10-26T12:22:58.273Z"
+    },
+    {
+      "id": "ab0afc19-4f6c-48c0-b6d2-7463d57ab6a9",
+      "influencer_id": "8e42c9f3-4a4b-4b35-955c-9f8363dfc7e9",
+      "auth_user_id": null,
+      "email": "wth_tester_1793017380632@example.com",
+      "password_hash": "pbkdf2:100000:5c28c08b9ffc997b0ca0375a5ea677bb:8fcf04ab60cb5e02004bdcb6072fdf62c15f189d1fb132d0849f199ba9acf9cb",
+      "is_active": true,
+      "last_login_at": "2026-10-26T12:23:01.304Z",
+      "created_at": "2026-10-26T12:23:01.170Z",
+      "updated_at": "2026-10-26T12:23:01.304Z"
+    },
+    {
+      "id": "cee2f01a-b83a-4bc3-804f-c5354ef639a0",
+      "influencer_id": "6127c406-9bd3-4771-856a-cf6ef93adb8d",
+      "auth_user_id": null,
+      "email": "rem_alpha_1793034659376@example.com",
+      "password_hash": "pbkdf2:100000:0556e11e6cb5218b1b5dcce6c3ef0fa1:199cdcc8cb5851cbd05508791a58ae5e86d2e03cb003cbe6ad90aea53f6a83ac",
+      "is_active": true,
+      "last_login_at": "2026-10-26T17:11:03.307Z",
+      "created_at": "2026-10-26T17:11:03.032Z",
+      "updated_at": "2026-10-26T17:11:03.307Z"
+    },
+    {
+      "id": "e57677d3-0c2c-434d-b32f-a78143224346",
+      "influencer_id": "ea51c2ea-f094-4ca8-b9ef-067f4ab3b1e9",
+      "auth_user_id": null,
+      "email": "rem_beta_1793034659376@example.com",
+      "password_hash": "pbkdf2:100000:d2fdc299b5c439421b5b2de5bec97b04:cd5849265f40e2ec3be7e9779dd12f947757d4c6daf1ad040d18fef8b2c8092f",
+      "is_active": true,
+      "last_login_at": "2026-10-26T17:11:03.807Z",
+      "created_at": "2026-10-26T17:11:03.695Z",
+      "updated_at": "2026-10-26T17:11:03.807Z"
+    },
+    {
+      "id": "1f6043b4-1ba6-4d7b-96d8-31c221090ee0",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "auth_user_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "email": "creator.e2e.1793257271118@example.com",
+      "password_hash": "pbkdf2:100000:e11e7ec2ca43df25cafe582ad1464744:a612d4ab9670c8ec204fb442cda6c05be84b1ba929f14712b9fef4befc4af668",
+      "is_active": true,
+      "last_login_at": "2026-10-29T07:01:13.507Z",
+      "created_at": "2026-10-29T07:01:13.507Z",
+      "updated_at": "2026-10-29T07:01:13.507Z"
     }
   ],
   "links": [
@@ -1684,6 +2017,19 @@
       "pending_earnings": 1000,
       "total_points": 0,
       "updated_at": "2026-10-26T17:11:05.762Z"
+    },
+    {
+      "id": "89dd6e89-aa17-44bd-91d5-a8db1fb8a407",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "total_clicks": 0,
+      "total_orders": 3,
+      "total_sales": 897,
+      "total_views": 0,
+      "total_earnings": 89.7,
+      "available_earnings": 0,
+      "pending_earnings": 269.7,
+      "total_points": 0,
+      "updated_at": "2026-10-30T17:59:29.023Z"
     }
   ],
   "clicks": [
@@ -2492,9 +2838,444 @@
       "lifetime_paid": 500,
       "created_at": "2026-10-26T17:11:05.878Z",
       "updated_at": "2026-10-26T17:11:07.266Z"
+    },
+    {
+      "id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "currency": "INR",
+      "pending_balance": 0,
+      "available_balance": 0,
+      "paid_balance": 0,
+      "lifetime_earned": 0,
+      "lifetime_paid": 0,
+      "created_at": "2026-10-29T20:03:56.978Z",
+      "updated_at": "2026-10-30T17:59:29.872Z"
     }
   ],
   "wallet_transactions": [
+    {
+      "id": "a9214809-b92a-469b-bbd6-512a79a3ac33",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "withdrawal_completed",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "neutral",
+      "status": "completed",
+      "reference_type": "withdrawal",
+      "reference_id": "wth_test_1793383169622",
+      "description": "Manual payout completed via UTR/Ref UTR-E2E-1793383169869 (WR-WTH-169622)",
+      "metadata": {
+        "payment_reference": "UTR-E2E-1793383169869",
+        "admin_notes": "Manual IMPS transfer confirmed via HDFC bank portal",
+        "completed_by": "Inventory Admin"
+      },
+      "created_at": "2026-10-30T17:59:29.872Z"
+    },
+    {
+      "id": "67848fb7-3a70-4728-a05f-fd9b1de1fbda",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "withdrawal_processing",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "neutral",
+      "status": "pending",
+      "reference_type": "withdrawal",
+      "reference_id": "wth_test_1793383169622",
+      "description": "Withdrawal approved & processing via RazorpayX (WR-WTH-169622)",
+      "metadata": {
+        "razorpay_payout_id": "pout_sbx_22cd1d950a504a"
+      },
+      "created_at": "2026-10-30T17:59:29.711Z"
+    },
+    {
+      "id": "db923501-337b-4b7d-af86-8b4f3476ef17",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_reversal",
+      "amount": 60,
+      "currency": "INR",
+      "direction": "debit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793383167846",
+      "description": "Commission reversed for order WR-ORD-REFUND-1793383167846",
+      "metadata": {
+        "original_tx_id": "992764b2-6636-4fd2-a5a7-8c2033da6f50"
+      },
+      "created_at": "2026-10-30T17:59:29.104Z"
+    },
+    {
+      "id": "992764b2-6636-4fd2-a5a7-8c2033da6f50",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_available",
+      "amount": 60,
+      "currency": "INR",
+      "direction": "credit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793383167846",
+      "description": "Commission cleared and available for order WR-ORD-REFUND-1793383167846",
+      "metadata": {},
+      "created_at": "2026-10-30T17:59:28.431Z"
+    },
+    {
+      "id": "16363d17-6ca4-4627-9df2-60c65723c64f",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_pending",
+      "amount": 60,
+      "currency": "INR",
+      "direction": "hold",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793383167846",
+      "description": "Commission pending for order WR-ORD-REFUND-1793383167846",
+      "metadata": {
+        "sales_amount": 600
+      },
+      "created_at": "2026-10-30T17:59:28.158Z"
+    },
+    {
+      "id": "2a9091ad-2f2b-4109-b039-657b567c9a9a",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_reversal",
+      "amount": 50,
+      "currency": "INR",
+      "direction": "debit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-CANCEL-1793383166053",
+      "description": "Commission reversed for order WR-ORD-CANCEL-1793383166053",
+      "metadata": {
+        "original_tx_id": "80c3dc2a-2bf7-4fd5-9d8d-b31d982eca72"
+      },
+      "created_at": "2026-10-30T17:59:27.423Z"
+    },
+    {
+      "id": "80c3dc2a-2bf7-4fd5-9d8d-b31d982eca72",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_pending",
+      "amount": 50,
+      "currency": "INR",
+      "direction": "hold",
+      "status": "pending",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-CANCEL-1793383166053",
+      "description": "Commission pending for order WR-ORD-CANCEL-1793383166053",
+      "metadata": {
+        "sales_amount": 500
+      },
+      "created_at": "2026-10-30T17:59:26.443Z"
+    },
+    {
+      "id": "6ea042e4-382a-44eb-8d86-1bc81ce5febb",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_available",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "credit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-E2E-1793383161766",
+      "description": "Commission cleared and available for order WR-ORD-E2E-1793383161766",
+      "metadata": {},
+      "created_at": "2026-10-30T17:59:25.591Z"
+    },
+    {
+      "id": "90098094-d18c-4f8b-ab13-dd085fd784cd",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_pending",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "hold",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-E2E-1793383161766",
+      "description": "Commission pending for order WR-ORD-E2E-1793383161766",
+      "metadata": {
+        "sales_amount": 299
+      },
+      "created_at": "2026-10-30T17:59:25.074Z"
+    },
+    {
+      "id": "72fc0580-e437-41ff-9173-012d59fae94c",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "withdrawal_completed",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "neutral",
+      "status": "completed",
+      "reference_type": "withdrawal",
+      "reference_id": "wth_test_1793356277438",
+      "description": "Manual payout completed via UTR/Ref UTR-E2E-1793356277771 (WR-WTH-277438)",
+      "metadata": {
+        "payment_reference": "UTR-E2E-1793356277771",
+        "admin_notes": "Manual IMPS transfer confirmed via HDFC bank portal",
+        "completed_by": "Inventory Admin"
+      },
+      "created_at": "2026-10-30T10:31:17.776Z"
+    },
+    {
+      "id": "9d6d04da-7fe5-4cc6-af04-52cbf2c11dfe",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "withdrawal_processing",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "neutral",
+      "status": "pending",
+      "reference_type": "withdrawal",
+      "reference_id": "wth_test_1793356277438",
+      "description": "Withdrawal approved & processing via RazorpayX (WR-WTH-277438)",
+      "metadata": {
+        "razorpay_payout_id": "pout_sbx_db32727e281347"
+      },
+      "created_at": "2026-10-30T10:31:17.574Z"
+    },
+    {
+      "id": "818fd318-2339-441e-a915-42a5c7006ea7",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_reversal",
+      "amount": 60,
+      "currency": "INR",
+      "direction": "debit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793356275187",
+      "description": "Commission reversed for order WR-ORD-REFUND-1793356275187",
+      "metadata": {
+        "original_tx_id": "56aabb9b-c82e-44df-ba19-eecbddc703cc"
+      },
+      "created_at": "2026-10-30T10:31:16.634Z"
+    },
+    {
+      "id": "56aabb9b-c82e-44df-ba19-eecbddc703cc",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_available",
+      "amount": 60,
+      "currency": "INR",
+      "direction": "credit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793356275187",
+      "description": "Commission cleared and available for order WR-ORD-REFUND-1793356275187",
+      "metadata": {},
+      "created_at": "2026-10-30T10:31:15.885Z"
+    },
+    {
+      "id": "6fd5dd6d-17c2-449a-8e28-bff25672ae5a",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_pending",
+      "amount": 60,
+      "currency": "INR",
+      "direction": "hold",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793356275187",
+      "description": "Commission pending for order WR-ORD-REFUND-1793356275187",
+      "metadata": {
+        "sales_amount": 600
+      },
+      "created_at": "2026-10-30T10:31:15.572Z"
+    },
+    {
+      "id": "b057faf5-b8b5-47a4-b2f2-e41147c8e8ef",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_reversal",
+      "amount": 50,
+      "currency": "INR",
+      "direction": "debit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-CANCEL-1793356273748",
+      "description": "Commission reversed for order WR-ORD-CANCEL-1793356273748",
+      "metadata": {
+        "original_tx_id": "b18a2e90-f2a5-4907-a34d-4370a76aa086"
+      },
+      "created_at": "2026-10-30T10:31:14.717Z"
+    },
+    {
+      "id": "b18a2e90-f2a5-4907-a34d-4370a76aa086",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_pending",
+      "amount": 50,
+      "currency": "INR",
+      "direction": "hold",
+      "status": "pending",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-CANCEL-1793356273748",
+      "description": "Commission pending for order WR-ORD-CANCEL-1793356273748",
+      "metadata": {
+        "sales_amount": 500
+      },
+      "created_at": "2026-10-30T10:31:14.138Z"
+    },
+    {
+      "id": "154034ef-521a-4e13-b5cf-fe48c2512677",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_available",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "credit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-E2E-1793356270449",
+      "description": "Commission cleared and available for order WR-ORD-E2E-1793356270449",
+      "metadata": {},
+      "created_at": "2026-10-30T10:31:13.288Z"
+    },
+    {
+      "id": "8030e718-314e-4f09-b7d1-fd8402dd3a24",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_pending",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "hold",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-E2E-1793356270449",
+      "description": "Commission pending for order WR-ORD-E2E-1793356270449",
+      "metadata": {
+        "sales_amount": 299
+      },
+      "created_at": "2026-10-30T10:31:12.758Z"
+    },
+    {
+      "id": "ddf9660d-82d5-4a09-b3be-79eb2d246678",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "withdrawal_completed",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "neutral",
+      "status": "completed",
+      "reference_type": "withdrawal",
+      "reference_id": "wth_test_1793356160277",
+      "description": "Manual payout completed via UTR/Ref UTR-E2E-1793356160542 (WR-WTH-160277)",
+      "metadata": {
+        "payment_reference": "UTR-E2E-1793356160542",
+        "admin_notes": "Manual IMPS transfer confirmed via HDFC bank portal",
+        "completed_by": "Inventory Admin"
+      },
+      "created_at": "2026-10-30T10:29:20.545Z"
+    },
+    {
+      "id": "e8448df8-3708-4b96-bdb3-a5029ffb6727",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "withdrawal_processing",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "neutral",
+      "status": "pending",
+      "reference_type": "withdrawal",
+      "reference_id": "wth_test_1793356160277",
+      "description": "Withdrawal approved & processing via RazorpayX (WR-WTH-160277)",
+      "metadata": {
+        "razorpay_payout_id": "pout_sbx_ed43353371d14b"
+      },
+      "created_at": "2026-10-30T10:29:20.360Z"
+    },
+    {
+      "id": "5440b00c-f673-4e51-ba50-b94c292ebfe1",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_reversal",
+      "amount": 60,
+      "currency": "INR",
+      "direction": "debit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793356158310",
+      "description": "Commission reversed for order WR-ORD-REFUND-1793356158310",
+      "metadata": {
+        "original_tx_id": "1da84d72-9959-4e89-a732-c6078f48287f"
+      },
+      "created_at": "2026-10-30T10:29:19.621Z"
+    },
+    {
+      "id": "1da84d72-9959-4e89-a732-c6078f48287f",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_pending",
+      "amount": 60,
+      "currency": "INR",
+      "direction": "hold",
+      "status": "pending",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793356158310",
+      "description": "Commission pending for order WR-ORD-REFUND-1793356158310",
+      "metadata": {
+        "sales_amount": 600
+      },
+      "created_at": "2026-10-30T10:29:18.660Z"
+    },
+    {
+      "id": "f9399aa0-b35e-4495-bcc0-350b5223de35",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_reversal",
+      "amount": 50,
+      "currency": "INR",
+      "direction": "debit",
+      "status": "completed",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-CANCEL-1793356156928",
+      "description": "Commission reversed for order WR-ORD-CANCEL-1793356156928",
+      "metadata": {
+        "original_tx_id": "ecbc1078-8502-422f-a3be-a9b54804534e"
+      },
+      "created_at": "2026-10-30T10:29:17.852Z"
+    },
+    {
+      "id": "ecbc1078-8502-422f-a3be-a9b54804534e",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_pending",
+      "amount": 50,
+      "currency": "INR",
+      "direction": "hold",
+      "status": "pending",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-CANCEL-1793356156928",
+      "description": "Commission pending for order WR-ORD-CANCEL-1793356156928",
+      "metadata": {
+        "sales_amount": 500
+      },
+      "created_at": "2026-10-30T10:29:17.278Z"
+    },
+    {
+      "id": "e4a91940-20fa-433b-84f7-de0d8afd8f55",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "wallet_id": "566f4d00-73a2-4961-ad3d-a7d2698da991",
+      "transaction_type": "commission_pending",
+      "amount": 29.9,
+      "currency": "INR",
+      "direction": "hold",
+      "status": "pending",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-E2E-1793356152671",
+      "description": "Commission pending for order WR-ORD-E2E-1793356152671",
+      "metadata": {
+        "sales_amount": 299
+      },
+      "created_at": "2026-10-30T10:29:15.791Z"
+    },
     {
       "id": "beee3a93-abda-499b-b4c3-b1b30af1af7d",
       "influencer_id": "ea51c2ea-f094-4ca8-b9ef-067f4ab3b1e9",
@@ -2857,9 +3638,243 @@
       "lifetime_points_spent": 0,
       "created_at": "2026-10-26T17:11:06.004Z",
       "updated_at": "2026-10-26T17:11:06.062Z"
+    },
+    {
+      "id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_balance": 6,
+      "lifetime_points_earned": 39,
+      "lifetime_points_spent": 0,
+      "created_at": "2026-10-30T10:29:16.023Z",
+      "updated_at": "2026-10-30T17:59:29.292Z"
     }
   ],
   "points_transactions": [
+    {
+      "id": "8c43de74-9ea1-4ad3-acb2-b2342df0ee0f",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "manual_debit",
+      "points": 6,
+      "direction": "debit",
+      "reference_type": "order",
+      "reference_id": "rev_WR-ORD-REFUND-1793383167846",
+      "description": "Reversed 6 points for cancelled order WR-ORD-REFUND-1793383167846",
+      "metadata": {
+        "original_pt_id": "a3a4cd00-08ff-46fe-ab8e-c50fa18c4c95"
+      },
+      "created_at": "2026-10-30T17:59:29.292Z"
+    },
+    {
+      "id": "a3a4cd00-08ff-46fe-ab8e-c50fa18c4c95",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "sale_bonus",
+      "points": 6,
+      "direction": "credit",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793383167846",
+      "description": "Earned 6 points on order WR-ORD-REFUND-1793383167846",
+      "metadata": {
+        "sales_amount": 600
+      },
+      "created_at": "2026-10-30T17:59:28.341Z"
+    },
+    {
+      "id": "ccc3a9a1-a2cc-426c-9704-e1d0d631bc2e",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "manual_debit",
+      "points": 5,
+      "direction": "debit",
+      "reference_type": "order",
+      "reference_id": "rev_WR-ORD-CANCEL-1793383166053",
+      "description": "Reversed 5 points for cancelled order WR-ORD-CANCEL-1793383166053",
+      "metadata": {
+        "original_pt_id": "e46c995d-a4ce-4a84-82aa-07aa829de3f1"
+      },
+      "created_at": "2026-10-30T17:59:27.583Z"
+    },
+    {
+      "id": "e46c995d-a4ce-4a84-82aa-07aa829de3f1",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "sale_bonus",
+      "points": 5,
+      "direction": "credit",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-CANCEL-1793383166053",
+      "description": "Earned 5 points on order WR-ORD-CANCEL-1793383166053",
+      "metadata": {
+        "sales_amount": 500
+      },
+      "created_at": "2026-10-30T17:59:27.076Z"
+    },
+    {
+      "id": "6f5931f4-b494-4273-a7f3-edcf925bc1b5",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "sale_bonus",
+      "points": 2,
+      "direction": "credit",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-E2E-1793383161766",
+      "description": "Earned 2 points on order WR-ORD-E2E-1793383161766",
+      "metadata": {
+        "sales_amount": 299
+      },
+      "created_at": "2026-10-30T17:59:25.246Z"
+    },
+    {
+      "id": "a8d2cde4-4acc-4434-9e8d-af6cbc33abde",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "manual_debit",
+      "points": 6,
+      "direction": "debit",
+      "reference_type": "order",
+      "reference_id": "rev_WR-ORD-REFUND-1793356275187",
+      "description": "Reversed 6 points for cancelled order WR-ORD-REFUND-1793356275187",
+      "metadata": {
+        "original_pt_id": "f357c197-1eae-4002-8187-25998192e3da"
+      },
+      "created_at": "2026-10-30T10:31:16.839Z"
+    },
+    {
+      "id": "f357c197-1eae-4002-8187-25998192e3da",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "sale_bonus",
+      "points": 6,
+      "direction": "credit",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793356275187",
+      "description": "Earned 6 points on order WR-ORD-REFUND-1793356275187",
+      "metadata": {
+        "sales_amount": 600
+      },
+      "created_at": "2026-10-30T10:31:15.782Z"
+    },
+    {
+      "id": "419ff1e1-a6c9-4f07-abfb-43f492d9f779",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "manual_debit",
+      "points": 5,
+      "direction": "debit",
+      "reference_type": "order",
+      "reference_id": "rev_WR-ORD-CANCEL-1793356273748",
+      "description": "Reversed 5 points for cancelled order WR-ORD-CANCEL-1793356273748",
+      "metadata": {
+        "original_pt_id": "425de5fa-4e82-440a-b7ec-d699c47c04a1"
+      },
+      "created_at": "2026-10-30T10:31:14.899Z"
+    },
+    {
+      "id": "425de5fa-4e82-440a-b7ec-d699c47c04a1",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "sale_bonus",
+      "points": 5,
+      "direction": "credit",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-CANCEL-1793356273748",
+      "description": "Earned 5 points on order WR-ORD-CANCEL-1793356273748",
+      "metadata": {
+        "sales_amount": 500
+      },
+      "created_at": "2026-10-30T10:31:14.339Z"
+    },
+    {
+      "id": "023a6285-e6b8-4482-b49b-c24655e7a692",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "sale_bonus",
+      "points": 2,
+      "direction": "credit",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-E2E-1793356270449",
+      "description": "Earned 2 points on order WR-ORD-E2E-1793356270449",
+      "metadata": {
+        "sales_amount": 299
+      },
+      "created_at": "2026-10-30T10:31:12.978Z"
+    },
+    {
+      "id": "6720796f-077d-4ec9-80b9-0969340de065",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "manual_debit",
+      "points": 6,
+      "direction": "debit",
+      "reference_type": "order",
+      "reference_id": "rev_WR-ORD-REFUND-1793356158310",
+      "description": "Reversed 6 points for cancelled order WR-ORD-REFUND-1793356158310",
+      "metadata": {
+        "original_pt_id": "abde866f-07bc-4f3e-85ec-da61d7ea506c"
+      },
+      "created_at": "2026-10-30T10:29:19.792Z"
+    },
+    {
+      "id": "abde866f-07bc-4f3e-85ec-da61d7ea506c",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "sale_bonus",
+      "points": 6,
+      "direction": "credit",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-REFUND-1793356158310",
+      "description": "Earned 6 points on order WR-ORD-REFUND-1793356158310",
+      "metadata": {
+        "sales_amount": 600
+      },
+      "created_at": "2026-10-30T10:29:18.827Z"
+    },
+    {
+      "id": "b19c3b59-cfcf-41a1-9774-26e7000a088e",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "manual_debit",
+      "points": 5,
+      "direction": "debit",
+      "reference_type": "order",
+      "reference_id": "rev_WR-ORD-CANCEL-1793356156928",
+      "description": "Reversed 5 points for cancelled order WR-ORD-CANCEL-1793356156928",
+      "metadata": {
+        "original_pt_id": "5bc444a6-4017-4dc6-93e3-609e6a262453"
+      },
+      "created_at": "2026-10-30T10:29:18.030Z"
+    },
+    {
+      "id": "5bc444a6-4017-4dc6-93e3-609e6a262453",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "sale_bonus",
+      "points": 5,
+      "direction": "credit",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-CANCEL-1793356156928",
+      "description": "Earned 5 points on order WR-ORD-CANCEL-1793356156928",
+      "metadata": {
+        "sales_amount": 500
+      },
+      "created_at": "2026-10-30T10:29:17.450Z"
+    },
+    {
+      "id": "5b3e815d-1445-4cc3-a7d8-9e99a8468527",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "points_account_id": "d7d45719-012a-4743-af45-d5d873f66752",
+      "transaction_type": "sale_bonus",
+      "points": 2,
+      "direction": "credit",
+      "reference_type": "order",
+      "reference_id": "WR-ORD-E2E-1793356152671",
+      "description": "Earned 2 points on order WR-ORD-E2E-1793356152671",
+      "metadata": {
+        "sales_amount": 299
+      },
+      "created_at": "2026-10-30T10:29:16.117Z"
+    },
     {
       "id": "45069423-a4bf-4afd-a91a-d17a51e93d4e",
       "influencer_id": "6127c406-9bd3-4771-856a-cf6ef93adb8d",
@@ -2906,7 +3921,68 @@
       "created_at": "2026-10-26T17:11:04.549Z"
     }
   ],
-  "rewards": [],
+  "rewards": [
+    {
+      "id": "rwd_001_earrings",
+      "reward_code": "WR-RWD-01",
+      "name": "WishRite Silver Stud Earrings",
+      "description": "Handcrafted 925 Sterling Silver classic solitaire studs.",
+      "image_url": "https://wishrite.in/images/rewards/silver-studs.jpg",
+      "points_cost": 250,
+      "reward_type": "product",
+      "inventory_quantity": 50,
+      "is_active": true,
+      "sort_order": 1,
+      "terms": "Complimentary shipping across India.",
+      "created_at": "2026-10-30T10:29:12.661Z",
+      "updated_at": "2026-10-30T10:29:12.662Z"
+    },
+    {
+      "id": "rwd_002_voucher",
+      "reward_code": "WR-RWD-02",
+      "name": "₹1,000 WishRite Shopping Voucher",
+      "description": "Instant discount code applicable on any fine jewelry order.",
+      "image_url": "https://wishrite.in/images/rewards/voucher-1000.jpg",
+      "points_cost": 500,
+      "reward_type": "voucher",
+      "inventory_quantity": 100,
+      "is_active": true,
+      "sort_order": 2,
+      "terms": "Valid for 12 months from redemption date.",
+      "created_at": "2026-10-30T10:29:12.662Z",
+      "updated_at": "2026-10-30T10:29:12.662Z"
+    },
+    {
+      "id": "rwd_003_pendant",
+      "reward_code": "WR-RWD-03",
+      "name": "Custom Engraved Gold-Plated Pendant",
+      "description": "18K Gold Vermeil initial pendant with signature WishRite gift box.",
+      "image_url": "https://wishrite.in/images/rewards/gold-pendant.jpg",
+      "points_cost": 1000,
+      "reward_type": "product",
+      "inventory_quantity": 25,
+      "is_active": true,
+      "sort_order": 3,
+      "terms": "Custom initial confirmation required upon dispatch.",
+      "created_at": "2026-10-30T10:29:12.662Z",
+      "updated_at": "2026-10-30T10:29:12.662Z"
+    },
+    {
+      "id": "rwd_004_styling",
+      "reward_code": "WR-RWD-04",
+      "name": "VIP Salon & Jewelry Styling Session",
+      "description": "Exclusive 1-on-1 virtual or in-person styling consultation.",
+      "image_url": "https://wishrite.in/images/rewards/vip-styling.jpg",
+      "points_cost": 2500,
+      "reward_type": "experience",
+      "inventory_quantity": 10,
+      "is_active": true,
+      "sort_order": 4,
+      "terms": "Booking slot confirmation within 7 working days.",
+      "created_at": "2026-10-30T10:29:12.662Z",
+      "updated_at": "2026-10-30T10:29:12.662Z"
+    }
+  ],
   "reward_redemptions": [],
   "payout_webhooks": [
     {
@@ -2971,6 +4047,84 @@
       },
       "processed": true,
       "created_at": "2026-10-26T17:11:07.011Z"
+    }
+  ],
+  "creator_audit_logs": [
+    {
+      "id": "8efc706c-040e-42f7-af18-2a480356698c",
+      "action_type": "payout_paid",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "influencer_name": "E2E Test Creator",
+      "details": "Manual payout of ₹29.9 completed (UTR: UTR-E2E-1793383169869)",
+      "metadata": {
+        "withdrawal_id": "wth_test_1793383169622",
+        "amount": 29.9,
+        "reference": "UTR-E2E-1793383169869"
+      },
+      "performed_by": "Inventory Admin",
+      "created_at": "2026-10-30T17:59:30.215Z"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "f692b9be-9ce8-408f-83ae-6de9f71ebfb3",
+      "campaign_name": "Festive Sparkle 1793383170323",
+      "start_date": "2026-11-01",
+      "end_date": "2026-11-15",
+      "products": [],
+      "creators": [],
+      "required_content": "1 Reel + 2 Stories",
+      "content_deadline": null,
+      "target_views": 50000,
+      "target_sales": 100000,
+      "commission_rate": 12,
+      "gift_reward": "",
+      "status": "ACTIVE",
+      "created_at": "2026-10-30T17:59:30.325Z",
+      "updated_at": "2026-10-30T17:59:30.413Z"
+    }
+  ],
+  "content_submissions": [
+    {
+      "id": "e971c2b4-3a1c-4e2d-886e-36ead62b4151",
+      "influencer_id": "bc16eb55-99f8-408a-a6a8-bdc85fc0882d",
+      "influencer_name": "E2E Test Creator",
+      "campaign_id": "f692b9be-9ce8-408f-83ae-6de9f71ebfb3",
+      "campaign_name": "Festive Sparkle 1793383170323",
+      "platform": "Instagram",
+      "content_type": "Reel",
+      "content_url": "https://www.instagram.com/reel/C8_test_wishrite/",
+      "published_date": "2026-10-30T17:59:30.503Z",
+      "views": 12000,
+      "likes": 850,
+      "comments": 42,
+      "shares": 19,
+      "saves": 65,
+      "engagement_rate": 8.13,
+      "verification_status": "APPROVED",
+      "instagram_sync_status": "Awaiting Instagram sync",
+      "rejection_reason": null,
+      "created_at": "2026-10-30T17:59:30.503Z",
+      "updated_at": "2026-10-30T17:59:30.581Z"
+    }
+  ],
+  "reward_rules": [
+    {
+      "id": "rule-views-100k",
+      "metric": "views",
+      "threshold": 100000,
+      "reward_type": "gift",
+      "reward_name": "Silver Charm Bracelet Gift",
+      "is_active": true
+    },
+    {
+      "id": "rule-sales-25k",
+      "metric": "sales",
+      "threshold": 25000,
+      "reward_type": "bonus",
+      "bonus_amount": 1000,
+      "reward_name": "₹1,000 Milestone Bonus",
+      "is_active": true
     }
   ]
 }
