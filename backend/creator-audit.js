@@ -24,6 +24,9 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, '../data');
 const INFLUENCERS_STORE_PATH = path.join(DATA_DIR, 'influencers_store.json');
 
+// In-process memory cache to protect audit logs across multiple file write cycles
+const memoryAuditLogs = [];
+
 function readLocalStore() {
     try {
         if (!fs.existsSync(INFLUENCERS_STORE_PATH)) return {};
@@ -77,6 +80,12 @@ export async function logCreatorAudit({
         created_at: new Date().toISOString()
     };
 
+    // 0. Update in-memory audit logs
+    memoryAuditLogs.unshift(entry);
+    if (memoryAuditLogs.length > 1000) {
+        memoryAuditLogs.pop();
+    }
+
     // 1. Update local persistence
     try {
         const local = readLocalStore();
@@ -129,18 +138,31 @@ export async function handleGetCreatorAuditLogs(req, res) {
             // Fallback to local store
         }
 
-        if (logs.length === 0) {
-            const local = readLocalStore();
-            logs = local.creator_audit_logs || [];
+        const local = readLocalStore();
+        const localLogs = local.creator_audit_logs || [];
+        const mergedSources = [...memoryAuditLogs, ...localLogs];
 
-            if (action_type && action_type !== 'all') {
-                logs = logs.filter(l => l.action_type === action_type);
+        if (logs.length === 0) {
+            for (const item of mergedSources) {
+                if (!logs.some(l => l.id === item.id)) {
+                    logs.push(item);
+                }
             }
-            if (influencer_id) {
-                logs = logs.filter(l => l.influencer_id === influencer_id);
+        } else {
+            for (const item of mergedSources) {
+                if (!logs.some(l => l.id === item.id)) {
+                    logs.unshift(item);
+                }
             }
-            logs = logs.slice(0, parseInt(limit, 10) || 100);
         }
+
+        if (action_type && action_type !== 'all') {
+            logs = logs.filter(l => l.action_type === action_type);
+        }
+        if (influencer_id) {
+            logs = logs.filter(l => l.influencer_id === influencer_id);
+        }
+        logs = logs.slice(0, parseInt(limit, 10) || 100);
 
         return res.json({
             success: true,

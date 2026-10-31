@@ -719,6 +719,7 @@
 
         async updateCreatorContentStatus(id, verification_status, rejection_reason = null) {
             return await this.patch(`/admin/creator-content/${encodeURIComponent(id)}/status`, {
+                status: verification_status,
                 verification_status,
                 rejection_reason
             });

@@ -335,6 +335,25 @@ export async function getOrCreateInfluencerWallet(influencer_id, localStore = nu
  * Get or create creator points account
  */
 export async function getOrCreateInfluencerPointsAccount(influencer_id, localStore = null) {
+    // 1. Check Supabase first
+    try {
+        const rows = await dbQuery('influencer_points_accounts', `influencer_id=eq.${encodeURIComponent(influencer_id)}`, { useAdmin: true });
+        if (Array.isArray(rows) && rows.length > 0) {
+            const dbAcct = rows[0];
+            const local = localStore || readLocalStore();
+            local.points_accounts = local.points_accounts || [];
+            const idx = local.points_accounts.findIndex(p => p.influencer_id === influencer_id || p.id === dbAcct.id);
+            if (idx >= 0) {
+                local.points_accounts[idx] = dbAcct;
+            } else {
+                local.points_accounts.push(dbAcct);
+            }
+            if (!localStore) writeLocalStore(local);
+            return dbAcct;
+        }
+    } catch (e) {}
+
+    // 2. Fallback to local store
     const local = localStore || readLocalStore();
     local.points_accounts = local.points_accounts || [];
     let account = local.points_accounts.find(p => p.influencer_id === influencer_id);

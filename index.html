@@ -3909,6 +3909,42 @@
         </div>
     </div>
 
+    <!-- REJECT CONTENT MODAL -->
+    <div id="reject-content-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden animate-fadeIn">
+        <div class="bg-white rounded-3xl max-w-md w-full flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-lg">
+                        ✕
+                    </div>
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-900">Reject Creator Content</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Please provide a clear reason for the rejection.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeRejectContentModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="reject-content-form" onsubmit="submitContentRejection(event)" class="p-5 md:p-6 space-y-4">
+                <input type="hidden" id="reject-content-id" value="">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Rejection Reason <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea id="reject-content-reason" required rows="3" placeholder="e.g. Video does not showcase the product clearly, missing @wishrite_in tag, or audio issues..."
+                        class="w-full border border-slate-200 rounded-xl p-3 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-rose-500"></textarea>
+                    <p class="text-[11px] text-slate-400 mt-1">This feedback helps the creator understand why their content was not approved.</p>
+                </div>
+                <div id="reject-content-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium"></div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeRejectContentModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition">Cancel</button>
+                    <button type="submit" id="reject-content-submit-btn" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs">Confirm Rejection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MAIN APP CONTAINER -->
     <div id="app-container" class="h-full w-full flex overflow-hidden">
 
@@ -5647,26 +5683,66 @@
 
                         <!-- Content Submissions Section -->
                         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div>
-                                    <h3 class="font-extrabold text-slate-900 text-base">Creator Content Submissions</h3>
-                                    <p class="text-xs text-slate-500 mt-0.5">Reels, posts & videos registered for verification and engagement tracking.</p>
+                                    <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                                        <span>🎬 Creator Content Submissions</span>
+                                        <span id="inf-content-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-pink-700">0</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Instagram Reels & Posts registered for review, verification (+100 pts), and metrics tracking.</p>
                                 </div>
-                                <button onclick="openContentModal()" class="px-4 py-2 bg-pink-700 hover:bg-pink-800 text-white rounded-xl text-xs font-bold shadow-xs">
-                                    + Submit Content
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="loadCreatorContentSubmissions()" class="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50">
+                                        🔄 Refresh
+                                    </button>
+                                    <button onclick="openContentModal()" class="px-4 py-2 bg-pink-700 hover:bg-pink-800 text-white rounded-xl text-xs font-bold shadow-xs">
+                                        + Submit Content
+                                    </button>
+                                </div>
                             </div>
+
+                            <!-- Filter & Search Bar -->
+                            <div class="px-5 py-3 bg-slate-50/70 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-slate-500 font-bold uppercase text-[10px] tracking-wider">Status:</span>
+                                        <div class="inline-flex rounded-xl bg-white p-0.5 border border-slate-200 shadow-2xs" id="inf-content-status-filters">
+                                            <button onclick="filterCreatorContentStatus('all')" class="inf-cnt-filter-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-700 text-white" data-status="all">All</button>
+                                            <button onclick="filterCreatorContentStatus('submitted')" class="inf-cnt-filter-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900" data-status="submitted">Submitted</button>
+                                            <button onclick="filterCreatorContentStatus('under_review')" class="inf-cnt-filter-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900" data-status="under_review">Under Review</button>
+                                            <button onclick="filterCreatorContentStatus('approved')" class="inf-cnt-filter-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900" data-status="approved">Approved</button>
+                                            <button onclick="filterCreatorContentStatus('rejected')" class="inf-cnt-filter-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900" data-status="rejected">Rejected</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-slate-500 font-bold uppercase text-[10px] tracking-wider">Type:</span>
+                                        <div class="inline-flex rounded-xl bg-white p-0.5 border border-slate-200 shadow-2xs" id="inf-content-type-filters">
+                                            <button onclick="filterCreatorContentType('all')" class="inf-cnt-type-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-700 text-white" data-type="all">All</button>
+                                            <button onclick="filterCreatorContentType('reel')" class="inf-cnt-type-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900" data-type="reel">Reels</button>
+                                            <button onclick="filterCreatorContentType('post')" class="inf-cnt-type-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900" data-type="post">Posts</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="relative w-full sm:w-64">
+                                    <input type="text" id="inf-content-search" oninput="handleCreatorContentSearch(this.value)" placeholder="Search creator, product, URL..."
+                                        class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-pink-600">
+                                    <span class="absolute left-2.5 top-2 text-slate-400">🔍</span>
+                                </div>
+                            </div>
+
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left text-xs">
                                     <thead>
                                         <tr class="bg-slate-50 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
                                             <th class="py-3 px-4">Platform & Type</th>
                                             <th class="py-3 px-4">Creator</th>
-                                            <th class="py-3 px-4">Campaign</th>
-                                            <th class="py-3 px-4">Content URL</th>
+                                            <th class="py-3 px-4">Product</th>
+                                            <th class="py-3 px-4">Instagram URL</th>
                                             <th class="py-3 px-4 text-center">Metrics</th>
                                             <th class="py-3 px-4 text-center">Instagram Sync</th>
-                                            <th class="py-3 px-4 text-center">Verification</th>
+                                            <th class="py-3 px-4 text-center">Status</th>
                                             <th class="py-3 px-4 text-center">Actions</th>
                                         </tr>
                                     </thead>
@@ -11231,66 +11307,228 @@
             }
         }
 
+        let currentContentFilterStatus = 'all';
+        let currentContentFilterType = 'all';
+        let currentContentSearchQuery = '';
+
+        function filterCreatorContentStatus(status) {
+            currentContentFilterStatus = status;
+            document.querySelectorAll('#inf-content-status-filters button').forEach(b => {
+                if (b.getAttribute('data-status') === status) {
+                    b.className = 'inf-cnt-filter-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-700 text-white';
+                } else {
+                    b.className = 'inf-cnt-filter-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900';
+                }
+            });
+            loadCreatorContentSubmissions();
+        }
+
+        function filterCreatorContentType(type) {
+            currentContentFilterType = type;
+            document.querySelectorAll('#inf-content-type-filters button').forEach(b => {
+                if (b.getAttribute('data-type') === type) {
+                    b.className = 'inf-cnt-type-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-700 text-white';
+                } else {
+                    b.className = 'inf-cnt-type-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900';
+                }
+            });
+            loadCreatorContentSubmissions();
+        }
+
+        let contentSearchTimeout = null;
+        function handleCreatorContentSearch(val) {
+            clearTimeout(contentSearchTimeout);
+            contentSearchTimeout = setTimeout(() => {
+                currentContentSearchQuery = val;
+                loadCreatorContentSubmissions();
+            }, 250);
+        }
+
         async function loadCreatorContentSubmissions() {
             const tbody = document.getElementById('inf-content-tbody');
+            const countBadge = document.getElementById('inf-content-count-badge');
             if (!tbody) return;
             tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">Loading content submissions...</td></tr>';
 
             try {
-                const submissions = await WishRiteAPI.getAdminCreatorContent();
-                if (submissions.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">No creator content submissions registered yet.</td></tr>';
+                const params = {};
+                if (currentContentFilterStatus !== 'all') params.status = currentContentFilterStatus;
+                if (currentContentFilterType !== 'all') params.type = currentContentFilterType;
+                if (currentContentSearchQuery && currentContentSearchQuery.trim()) params.search = currentContentSearchQuery.trim();
+
+                const submissions = await WishRiteAPI.getAdminCreatorContent(params);
+                if (countBadge) countBadge.innerText = String(submissions.length);
+
+                if (!submissions || submissions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">No creator content submissions found.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = submissions.map(s => {
-                    const cName = escapeHtml(s.influencer_name || 'Creator');
-                    const camp = escapeHtml(s.campaign_name || 'General Promotion');
-                    const url = escapeHtml(s.content_url || '#');
-                    const type = escapeHtml(s.content_type || 'Reel');
-                    const platform = escapeHtml(s.platform || 'Instagram');
-                    const views = (s.views || 0).toLocaleString('en-IN');
-                    const likes = (s.likes || 0).toLocaleString('en-IN');
-                    const er = `${Number(s.engagement_rate || 0).toFixed(1)}%`;
+                    const cName = escapeHtml(s.creator_name || 'Creator');
+                    const cEmail = escapeHtml(s.creator_email || '');
+                    const prodName = escapeHtml(s.product_name || 'Royal Gemstone Product');
+                    const prodCode = escapeHtml(s.product_code || '');
+                    const thumbUrl = s.thumbnail_url || s.product_image;
+                    const url = escapeHtml(s.url || s.instagram_permalink || '#');
+                    const isReel = Boolean(s.is_reel || s.content_type === 'reel');
+                    const platform = escapeHtml(s.platform ? (s.platform.charAt(0).toUpperCase() + s.platform.slice(1)) : 'Instagram');
+                    const views = Number(s.views || 0).toLocaleString('en-IN');
+                    const likes = Number(s.likes || 0).toLocaleString('en-IN');
+                    const comments = Number(s.comments || 0).toLocaleString('en-IN');
+                    const shares = Number(s.shares || 0).toLocaleString('en-IN');
 
-                    let statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Submitted</span>';
-                    if (s.verification_status === 'APPROVED') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Approved</span>';
-                    if (s.verification_status === 'UNDER_REVIEW') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">Under Review</span>';
-                    if (s.verification_status === 'REJECTED') statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">Rejected</span>';
+                    // Status Badge
+                    let statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Submitted</span>';
+                    if (s.status === 'Approved') {
+                        statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">✓ Approved</span>${s.points_awarded ? '<div class="text-[9px] text-emerald-700 font-extrabold mt-0.5">+100 pts</div>' : ''}`;
+                    } else if (s.status === 'Under Review') {
+                        statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">⧖ Under Review</span>';
+                    } else if (s.status === 'Rejected') {
+                        statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">✕ Rejected</span>';
+                    }
+
+                    // Action buttons per lifecycle state
+                    let actionsHtml = '';
+                    if (s.status === 'Submitted') {
+                        actionsHtml = `
+                            <div class="inline-flex items-center gap-1">
+                                <button onclick="updateContentVerification('${s.id}', 'Under Review')" class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-[10px] font-bold" title="Mark Under Review">Review</button>
+                                <button onclick="updateContentVerification('${s.id}', 'Approved')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-bold" title="Approve Reel (+100 pts)">Approve</button>
+                                <button onclick="openRejectContentModal('${s.id}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-md text-[10px] font-bold" title="Reject with Reason">Reject</button>
+                            </div>
+                        `;
+                    } else if (s.status === 'Under Review') {
+                        actionsHtml = `
+                            <div class="inline-flex items-center gap-1">
+                                <button onclick="updateContentVerification('${s.id}', 'Approved')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-bold" title="Approve Reel (+100 pts)">Approve</button>
+                                <button onclick="openRejectContentModal('${s.id}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-md text-[10px] font-bold" title="Reject with Reason">Reject</button>
+                            </div>
+                        `;
+                    } else if (s.status === 'Approved') {
+                        actionsHtml = `
+                            <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
+                                ✓ Approved
+                            </span>
+                        `;
+                    } else if (s.status === 'Rejected') {
+                        const safeReason = escapeHtml(s.rejection_reason || 'No reason provided');
+                        actionsHtml = `
+                            <div class="inline-flex items-center gap-1">
+                                <button onclick="showRejectionReason('${safeReason}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[10px] font-bold" title="View Reason">Reason</button>
+                                <button onclick="updateContentVerification('${s.id}', 'Under Review')" class="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-md text-[10px] font-medium" title="Re-evaluate">Re-evaluate</button>
+                            </div>
+                        `;
+                    }
+
+                    // Content Type Badge
+                    const typeBadge = isReel
+                        ? '<span class="px-2 py-0.5 bg-pink-100 text-pink-800 font-extrabold rounded-md text-[10px] ml-1 inline-flex items-center gap-1">🎬 REEL</span>'
+                        : '<span class="px-2 py-0.5 bg-slate-100 text-slate-700 font-bold rounded-md text-[9px] ml-1">POST</span>';
+
+                    // Clean URL for display
+                    const displayUrl = url.replace('https://www.instagram.com', '').replace('https://instagram.com', '') || url;
 
                     return `
                         <tr class="hover:bg-slate-50/70 transition-colors">
-                            <td class="py-3 px-4">
+                            <td class="py-3 px-4 whitespace-nowrap">
                                 <span class="font-bold text-slate-800">${platform}</span>
-                                <span class="px-2 py-0.5 bg-pink-50 text-pink-700 font-bold rounded-md text-[9px] ml-1">${type}</span>
+                                ${typeBadge}
                             </td>
-                            <td class="py-3 px-4 font-bold text-slate-900">${cName}</td>
-                            <td class="py-3 px-4 text-slate-600 text-[11px]">${camp}</td>
                             <td class="py-3 px-4">
-                                <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-mono text-[11px] truncate max-w-[150px] inline-block" title="${url}">
-                                    ${url.replace('https://', '')}
+                                <div class="font-bold text-slate-900">${cName}</div>
+                                ${cEmail ? `<div class="text-[10px] text-slate-400 font-mono truncate max-w-[140px]" title="${cEmail}">${cEmail}</div>` : ''}
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-2">
+                                    ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 flex-shrink-0" alt="Product" onerror="this.style.display='none'">` : '<div class="w-8 h-8 rounded-lg bg-pink-50 text-pink-600 flex items-center justify-center text-xs flex-shrink-0">💎</div>'}
+                                    <div class="max-w-[150px]">
+                                        <div class="font-bold text-slate-800 truncate" title="${prodName}">${prodName}</div>
+                                        ${prodCode ? `<div class="text-[10px] text-slate-400 font-mono truncate" title="${prodCode}">${prodCode}</div>` : ''}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:text-indigo-800 hover:underline font-mono text-[11px] truncate max-w-[140px] inline-block" title="${url}">
+                                    ${displayUrl}
                                 </a>
                             </td>
-                            <td class="py-3 px-4 text-center text-[11px]">
-                                <strong>${views}</strong> views • <strong>${likes}</strong> likes • <span class="text-emerald-700 font-bold">${er} ER</span>
+                            <td class="py-3 px-4 text-center text-[11px] whitespace-nowrap">
+                                <strong>${views}</strong> views • <strong>${likes}</strong> likes
+                                <div class="text-[10px] text-slate-400 mt-0.5"><strong>${comments}</strong> comments • <strong>${shares}</strong> shares</div>
                             </td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold rounded-md whitespace-nowrap">
-                                    Awaiting Instagram sync
+                            <td class="py-3 px-4 text-center whitespace-nowrap">
+                                <span class="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-bold rounded-md whitespace-nowrap inline-flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Awaiting sync
                                 </span>
                             </td>
-                            <td class="py-3 px-4 text-center">${statusBadge}</td>
-                            <td class="py-3 px-4 text-center">
-                                <div class="inline-flex items-center gap-1">
-                                    <button onclick="updateContentVerification('${s.id}', 'APPROVED')" class="px-2 py-1 bg-emerald-600 text-white rounded-md text-[10px] font-bold">Approve</button>
-                                    <button onclick="updateContentVerification('${s.id}', 'REJECTED')" class="px-2 py-1 bg-rose-50 text-rose-700 rounded-md text-[10px] font-bold">Reject</button>
-                                </div>
+                            <td class="py-3 px-4 text-center whitespace-nowrap">${statusBadge}</td>
+                            <td class="py-3 px-4 text-center whitespace-nowrap">
+                                ${actionsHtml}
                             </td>
                         </tr>
                     `;
                 }).join('');
             } catch (err) {
                 tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-rose-500 text-xs font-bold">Failed to load content: ${escapeHtml(err.message)}</td></tr>`;
+            }
+        }
+
+        function openRejectContentModal(id) {
+            document.getElementById('reject-content-id').value = id;
+            document.getElementById('reject-content-reason').value = '';
+            const errEl = document.getElementById('reject-content-error');
+            if (errEl) { errEl.innerText = ''; errEl.classList.add('hidden'); }
+            const modal = document.getElementById('reject-content-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeRejectContentModal() {
+            const modal = document.getElementById('reject-content-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function submitContentRejection(event) {
+            event.preventDefault();
+            const id = document.getElementById('reject-content-id').value;
+            const reason = (document.getElementById('reject-content-reason').value || '').trim();
+            const btn = document.getElementById('reject-content-submit-btn');
+
+            if (!reason) {
+                const errEl = document.getElementById('reject-content-error');
+                if (errEl) { errEl.innerText = 'Please provide a non-empty rejection reason.'; errEl.classList.remove('hidden'); }
+                return;
+            }
+
+            if (btn) { btn.disabled = true; btn.innerText = 'Rejecting...'; }
+
+            try {
+                await WishRiteAPI.updateCreatorContentStatus(id, 'Rejected', reason);
+                closeRejectContentModal();
+                await loadCreatorContentSubmissions();
+                await loadCreatorDashboardSummary();
+            } catch (err) {
+                const errEl = document.getElementById('reject-content-error');
+                if (errEl) { errEl.innerText = err.message || 'Failed to reject content'; errEl.classList.remove('hidden'); }
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'Confirm Rejection'; }
+            }
+        }
+
+        function showRejectionReason(reason) {
+            alert(`Rejection Reason:\n\n${reason}`);
+        }
+
+        async function updateContentVerification(id, status) {
+            try {
+                const res = await WishRiteAPI.updateCreatorContentStatus(id, status);
+                if (status === 'Approved' && res?.data?.points_awarded) {
+                    alert(`✓ Reel Approved! +100 Points successfully awarded to creator.`);
+                }
+                await loadCreatorContentSubmissions();
+                await loadCreatorDashboardSummary();
+            } catch (err) {
+                alert(`Failed to update status: ${err.message}`);
             }
         }
 

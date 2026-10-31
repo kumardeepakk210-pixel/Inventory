@@ -292,6 +292,25 @@ export const tableColumnsCache = {
         'order_id', 'inventory_id', 'influencer_id', 'influencer_code',
         'influencer_attribution_id', 'influencer_commission_rate', 'influencer_commission_amount',
         'created_at'
+    ]),
+    creator_content: new Set([
+        'id', 'influencer_id', 'customer_id', 'creator_name', 'creator_email',
+        'content_type', 'platform', 'url', 'caption', 'product_category',
+        'product_code', 'product_name', 'product_image', 'thumbnail_url',
+        'tags', 'status', 'rejection_reason', 'views', 'views_count',
+        'likes_count', 'comments_count', 'shares_count', 'instagram_media_id',
+        'instagram_media_type', 'instagram_account_id', 'instagram_permalink',
+        'last_synced_at', 'insights_status', 'insights_error', 'clicks',
+        'orders', 'commission_amount', 'created_at', 'updated_at'
+    ]),
+    influencer_points_accounts: new Set([
+        'id', 'influencer_id', 'points_balance', 'lifetime_points_earned',
+        'lifetime_points_spent', 'created_at', 'updated_at'
+    ]),
+    influencer_points_transactions: new Set([
+        'id', 'influencer_id', 'points_account_id', 'transaction_type',
+        'points', 'direction', 'reference_type', 'reference_id',
+        'description', 'metadata', 'created_at'
     ])
 };
 
