@@ -100,7 +100,8 @@ import {
     handleAdminGetAttributions,
     handleAdminApproveCommission,
     handleAdminCancelCommission,
-    handleAdminRefundCommission
+    handleAdminRefundCommission,
+    handleRefreshInfluencerProfile
 } from './backend/influencers.js';
 import {
     requireCreatorAuth,
@@ -156,7 +157,8 @@ import {
     handleAdminUpdateContentStatus,
     handleAdminGetTierRules,
     handleAdminUpdateTierRules,
-    handleAdminGetDashboardSummary
+    handleAdminGetDashboardSummary,
+    handleAdminGetEligibleCampaignCreators
 } from './backend/creator-campaigns.js';
 import {
     handleGetCreatorAuditLogs
@@ -388,6 +390,8 @@ app.put('/api/influencers/:id', handleUpdateInfluencer);
 app.patch('/api/influencers/:id/status', handleUpdateInfluencerStatus);
 app.delete('/api/influencers/:id', handleDeleteInfluencer);
 app.post('/api/influencers/:id/regenerate-profile-url', handleRegenerateProfileUrl);
+app.post('/api/influencers/:id/refresh-profile', handleRefreshInfluencerProfile);
+app.post('/api/admin/influencers/:id/refresh-profile', requireAdminAuth, handleRefreshInfluencerProfile);
 
 // Public Storefront, Attribution & Click Tracking (Phase 2)
 app.get('/api/public/influencers/:slug', handleGetPublicInfluencer);
@@ -457,6 +461,7 @@ app.patch('/api/admin/creator-attributions/:id/refund', requireAdminAuth, handle
 
 // Campaigns & Content Management (Phases 10, 11)
 app.get('/api/admin/creator-campaigns', requireAdminAuth, handleAdminGetCampaigns);
+app.get('/api/admin/creator-campaigns/eligible-creators', requireAdminAuth, handleAdminGetEligibleCampaignCreators);
 app.post('/api/admin/creator-campaigns', requireAdminAuth, handleAdminCreateCampaign);
 app.put('/api/admin/creator-campaigns/:id', requireAdminAuth, handleAdminUpdateCampaign);
 app.delete('/api/admin/creator-campaigns/:id', requireAdminAuth, handleAdminDeleteCampaign);

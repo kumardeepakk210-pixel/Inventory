@@ -463,6 +463,10 @@
             return await this.post(`/influencers/${encodeURIComponent(id)}/regenerate-profile-url`, {});
         }
 
+        async refreshInfluencerProfile(id) {
+            return await this.post(`/admin/influencers/${encodeURIComponent(id)}/refresh-profile`, {});
+        }
+
         // ==============================================================================
         // WISHRITE CREATOR CLUB (INFLUENCERS PHASE 2)
         // Public Storefront, Referral Links & Order Attribution
@@ -693,6 +697,11 @@
 
         async getAdminCreatorCampaigns(params = {}) {
             const res = await this.get('/admin/creator-campaigns', params);
+            return res.data || [];
+        }
+
+        async getEligibleCampaignCreators(params = {}) {
+            const res = await this.get('/admin/creator-campaigns/eligible-creators', params);
             return res.data || [];
         }
 

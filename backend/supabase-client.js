@@ -246,6 +246,10 @@ export const tableColumnsCache = {
         'id', 'influencer_id', 'influencer_code', 'influencer_name', 'name', 'email', 'email_id', 'phone', 'phone_number',
         'instagram_id', 'instagram_url', 'public_slug', 'public_profile_url',
         'profile_image', 'category', 'bio', 'commission_rate', 'tier', 'status',
+        'instagram_connection', 'instagram_followers_count', 'instagram_following_count',
+        'instagram_media_count', 'instagram_profile_picture', 'instagram_category',
+        'creator_niche', 'instagram_profile_synced_at', 'instagram_validation_status',
+        'followers', 'no_of_posts', 'address', 'city', 'state', 'country', 'pin_code',
         'created_at', 'updated_at'
     ]),
     influencer_accounts: new Set([
@@ -311,6 +315,16 @@ export const tableColumnsCache = {
         'id', 'influencer_id', 'points_account_id', 'transaction_type',
         'points', 'direction', 'reference_type', 'reference_id',
         'description', 'metadata', 'created_at'
+    ]),
+    creator_campaigns: new Set([
+        'id', 'campaign_name', 'start_date', 'end_date', 'products', 'creators',
+        'required_content', 'content_deadline', 'target_views', 'target_sales',
+        'commission_rate', 'gift_reward', 'status', 'creator_niche_filter',
+        'min_followers', 'created_at', 'updated_at'
+    ]),
+    creator_audit_logs: new Set([
+        'id', 'action_type', 'influencer_id', 'influencer_name', 'details',
+        'metadata', 'performed_by', 'created_at'
     ])
 };
 

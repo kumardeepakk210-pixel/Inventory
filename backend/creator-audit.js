@@ -55,7 +55,10 @@ export const VALID_AUDIT_ACTIONS = [
     'payout_requested',
     'payout_approved',
     'payout_paid',
-    'reward_issued'
+    'reward_issued',
+    'profile_refreshed',
+    'profile_synced',
+    'creator_onboarded'
 ];
 
 /**

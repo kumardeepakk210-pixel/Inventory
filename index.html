@@ -3495,18 +3495,31 @@
                                 <h3 id="inf-view-name" class="text-lg font-extrabold text-slate-900">Name</h3>
                                 <span id="inf-view-code" class="font-mono text-[10px] font-bold bg-slate-200/70 text-slate-700 px-2 py-0.5 rounded">WR-INF-000001</span>
                             </div>
-                            <div class="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                            <div class="font-mono text-[10px] text-slate-400 mt-0.5" id="inf-view-id">ID: —</div>
+                            <div class="flex flex-wrap items-center gap-3 mt-1 text-xs text-slate-500">
                                 <a id="inf-view-instagram-link" href="#" target="_blank" class="font-bold text-pink-600 hover:underline flex items-center gap-1">
                                     <span>📸</span> <span id="inf-view-instagram">@handle</span>
                                 </a>
                                 <span>•</span>
                                 <span id="inf-view-category" class="text-slate-600 font-medium">Category</span>
+                                <span>•</span>
+                                <span id="inf-view-followers" class="text-slate-700 font-semibold">0 followers</span>
+                            </div>
+                            <div class="flex items-center gap-2 mt-1.5 text-[10px]">
+                                <span id="inf-view-validation"></span>
+                                <span id="inf-view-synced" class="text-slate-400"></span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span id="inf-view-tier" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">STARTER</span>
-                        <span id="inf-view-status" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">ACTIVE</span>
+                    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                        <div class="flex items-center gap-2">
+                            <span id="inf-view-tier" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">STARTER</span>
+                            <span id="inf-view-status" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">ACTIVE</span>
+                        </div>
+                        <button type="button" onclick="refreshCurrentViewingCreator()"
+                            class="px-3 py-1.5 bg-white hover:bg-slate-100 text-blue-700 text-xs font-bold rounded-xl transition border border-slate-200 shadow-2xs flex items-center gap-1.5">
+                            <span>🔄</span> Refresh IG Profile
+                        </button>
                     </div>
                 </div>
 
@@ -5424,21 +5437,44 @@
                                     class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
                                     <option value="all">All Tiers</option>
                                     <option value="starter">Starter</option>
+                                    <option value="growth">Growth</option>
                                     <option value="silver">Silver</option>
                                     <option value="gold">Gold</option>
                                     <option value="platinum">Platinum</option>
                                     <option value="elite">Elite</option>
                                 </select>
 
-                                <select id="inf-filter-category" onchange="onInfluencerFilterChange()"
+                                <select id="inf-filter-niche" onchange="onInfluencerFilterChange()"
                                     class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
-                                    <option value="all">All Categories</option>
-                                    <option value="Jewelry & Lifestyle">Jewelry & Lifestyle</option>
-                                    <option value="Fashion & Apparel">Fashion & Apparel</option>
-                                    <option value="Beauty & Makeup">Beauty & Makeup</option>
-                                    <option value="Luxury & Bridal">Luxury & Bridal</option>
-                                    <option value="Traditional & Sarees">Traditional & Sarees</option>
-                                    <option value="Digital Creator">Digital Creator</option>
+                                    <option value="all">All Niches</option>
+                                    <option value="Fashion & Lifestyle">Fashion & Lifestyle</option>
+                                    <option value="Beauty & Skincare">Beauty & Skincare</option>
+                                    <option value="Jewellery & Accessories">Jewellery & Accessories</option>
+                                    <option value="Parenting & Kids">Parenting & Kids</option>
+                                    <option value="Travel">Travel</option>
+                                    <option value="Food">Food</option>
+                                    <option value="Fitness & Health">Fitness & Health</option>
+                                    <option value="Technology">Technology</option>
+                                    <option value="Home & Decor">Home & Decor</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+
+                                <select id="inf-filter-followers" onchange="onInfluencerFilterChange()"
+                                    class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="all">All Followers</option>
+                                    <option value="<10k">&lt; 10k Followers</option>
+                                    <option value="10k-50k">10k – 50k</option>
+                                    <option value="50k-100k">50k – 100k</option>
+                                    <option value="100k+">100k+ Followers</option>
+                                </select>
+
+                                <select id="inf-filter-verification" onchange="onInfluencerFilterChange()"
+                                    class="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 bg-white outline-none focus:ring-2 focus:ring-[#5E3435]">
+                                    <option value="all">All Verification</option>
+                                    <option value="verified">Verified</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="unverified">Unverified</option>
                                 </select>
                             </div>
                         </div>
@@ -10779,13 +10815,17 @@
                 const searchEl = document.getElementById('inf-search');
                 const statusEl = document.getElementById('inf-filter-status');
                 const tierEl = document.getElementById('inf-filter-tier');
-                const categoryEl = document.getElementById('inf-filter-category');
+                const nicheEl = document.getElementById('inf-filter-niche');
+                const followersEl = document.getElementById('inf-filter-followers');
+                const verificationEl = document.getElementById('inf-filter-verification');
 
                 const params = {};
                 if (searchEl && searchEl.value.trim()) params.search = searchEl.value.trim();
                 if (statusEl && statusEl.value !== 'all') params.status = statusEl.value;
                 if (tierEl && tierEl.value !== 'all') params.tier = tierEl.value;
-                if (categoryEl && categoryEl.value !== 'all') params.category = categoryEl.value;
+                if (nicheEl && nicheEl.value !== 'all') params.niche = nicheEl.value;
+                if (followersEl && followersEl.value !== 'all') params.followers_range = followersEl.value;
+                if (verificationEl && verificationEl.value !== 'all') params.verification_status = verificationEl.value;
 
                 const res = await WishRiteAPI.getInfluencers(params);
                 if (res && res.success) {
@@ -11749,7 +11789,7 @@
                 const publicUrl = inf.public_profile_url || buildInfluencerPublicUrl(inf.public_slug);
                 const instaUrl = inf.instagram_url || `https://instagram.com/${inf.instagram_id}`;
                 const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(inf.name || 'Creator')}&background=4f46e5&color=fff`;
-                const avatar = inf.profile_image || fallbackAvatar;
+                const avatar = inf.instagram_profile_picture || inf.profile_image || fallbackAvatar;
 
                 const clicks = Number(inf.stats?.total_clicks || 0);
                 const orders = Number(inf.stats?.total_orders || 0);
@@ -11758,29 +11798,52 @@
                 const availEarnings = formatInr(inf.stats?.available_earnings || 0);
                 const cvr = clicks > 0 ? ((orders / clicks) * 100).toFixed(1) : '0';
                 const comm = Number(inf.commission_rate || 10).toFixed(1);
+                const infId = inf.influencer_id || inf.id;
+
+                const followers = Number(inf.instagram_followers_count ?? inf.followers ?? 0);
+                const following = Number(inf.instagram_following_count || 0);
+                const posts = Number(inf.instagram_media_count ?? inf.no_of_posts ?? 0);
+
+                let validationBadge = `<span class="inline-block text-[9px] text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200 mt-0.5">Unlinked</span>`;
+                if ((inf.instagram_validation_status || '').toLowerCase() === 'verified') {
+                    validationBadge = `<span class="inline-block text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 mt-0.5">✓ Verified</span>`;
+                } else if ((inf.instagram_validation_status || '').toLowerCase() === 'pending') {
+                    validationBadge = `<span class="inline-block text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 mt-0.5">⏳ Pending</span>`;
+                }
+
+                const lastSyncedStr = inf.instagram_profile_synced_at 
+                    ? `Synced ${new Date(inf.instagram_profile_synced_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                    : 'Never synced';
 
                 return `
                     <tr class="hover:bg-slate-50/70 transition-colors">
                         <td class="py-3 px-4">
-                            <img src="${avatar}" alt="${escapeHtml(inf.name)}"
-                                class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-2xs bg-slate-100"
-                                onerror="this.src='${fallbackAvatar}'">
+                            <div class="relative w-10">
+                                <img src="${avatar}" alt="${escapeHtml(inf.name)}"
+                                    class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-2xs bg-slate-100"
+                                    onerror="this.src='${fallbackAvatar}'">
+                                <div class="mt-1">${validationBadge}</div>
+                            </div>
                         </td>
                         <td class="py-3 px-4">
                             <div class="font-bold text-slate-900 leading-tight">${escapeHtml(inf.name)}</div>
                             <div class="font-mono text-[10px] text-slate-400 font-semibold mt-0.5">${escapeHtml(inf.influencer_code || '—')}</div>
+                            <div class="font-mono text-[9px] text-slate-400 truncate max-w-[85px]" title="${escapeHtml(infId)}">${escapeHtml(infId ? infId.slice(0, 8) + '...' : '')}</div>
                         </td>
                         <td class="py-3 px-4">
                             <a href="${instaUrl}" target="_blank" rel="noopener noreferrer"
                                 class="font-bold text-pink-600 hover:text-pink-700 hover:underline flex items-center gap-1">
-                                <span>📸</span> @${escapeHtml(inf.instagram_id)}
+                                <span>📸</span> @${escapeHtml(inf.instagram_id || '')}
                             </a>
-                            <span class="text-[10px] text-slate-400 block">${escapeHtml(inf.category || 'General')}</span>
+                            <div class="text-[10px] text-slate-600 font-semibold mt-0.5">${followers.toLocaleString('en-IN')} followers</div>
+                            <div class="text-[9px] text-slate-400">${following.toLocaleString('en-IN')} following • ${posts} posts</div>
+                            <div class="text-[9px] text-[#5E3435] font-semibold mt-0.5">${escapeHtml(inf.creator_niche || inf.category || 'General')}</div>
+                            <div class="text-[8px] text-slate-400">${lastSyncedStr}</div>
                         </td>
                         <td class="py-3 px-4">
                             <div class="flex items-center gap-1.5">
                                 <a href="${publicUrl}" target="_blank" rel="noopener noreferrer"
-                                    class="font-mono text-xs text-[#5E3435] font-semibold hover:underline truncate max-w-[150px]"
+                                    class="font-mono text-xs text-[#5E3435] font-semibold hover:underline truncate max-w-[130px]"
                                     title="${publicUrl}">
                                     ${escapeHtml(publicUrl.replace('https://', ''))}
                                 </a>
@@ -11820,17 +11883,22 @@
                         </td>
                         <td class="py-3 px-4 text-center">
                             <div class="inline-flex items-center gap-1">
-                                <button type="button" onclick="viewInfluencerDetails('${inf.influencer_id || inf.id}')"
+                                <button type="button" id="btn-refresh-${infId}" onclick="refreshCreatorProfile('${infId}')"
+                                    class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition"
+                                    title="Refresh Instagram Profile">
+                                    🔄
+                                </button>
+                                <button type="button" onclick="viewInfluencerDetails('${infId}')"
                                     class="p-1.5 text-slate-500 hover:text-[#5E3435] hover:bg-slate-100 rounded-lg transition"
                                     title="View Creator Details & Statistics">
                                     👁️
                                 </button>
-                                <button type="button" onclick="openEditInfluencerModal('${inf.influencer_id || inf.id}')"
+                                <button type="button" onclick="openEditInfluencerModal('${infId}')"
                                     class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition"
                                     title="Edit Creator Profile">
                                     ✏️
                                 </button>
-                                <button type="button" onclick="toggleInfluencerStatus('${inf.influencer_id || inf.id}', '${inf.status}')"
+                                <button type="button" onclick="toggleInfluencerStatus('${infId}', '${inf.status}')"
                                     class="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition"
                                     title="${inf.status === 'active' ? 'Deactivate Creator' : 'Activate Creator'}">
                                     ${inf.status === 'active' ? '⏸️' : '▶️'}
@@ -11852,6 +11920,49 @@
          */
         function onInfluencerFilterChange() {
             loadInfluencers(false);
+        }
+
+        /**
+         * Refresh Creator Instagram Profile
+         */
+        async function refreshCreatorProfile(id) {
+            if (!id) return;
+            const btn = document.getElementById(`btn-refresh-${id}`);
+            const origHtml = btn ? btn.innerHTML : '🔄';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="inline-block animate-spin">🔄</span>';
+            }
+            try {
+                const res = await WishRiteAPI.refreshInfluencerProfile(id);
+                if (res && res.success) {
+                    await loadInfluencers(true);
+                    if (currentViewingCreator && (currentViewingCreator.influencer_id === id || currentViewingCreator.id === id)) {
+                        await viewInfluencerDetails(id);
+                    }
+                    alert('Instagram profile refreshed successfully!');
+                } else {
+                    await loadInfluencers(true);
+                    alert(res?.warning || res?.error?.message || 'Profile refresh completed.');
+                }
+            } catch (err) {
+                console.error('[Creator Club] Error refreshing creator profile:', err);
+                alert(err.message || 'Failed to refresh Instagram profile.');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        /**
+         * Refresh Currently Viewing Creator Profile
+         */
+        async function refreshCurrentViewingCreator() {
+            if (!currentViewingCreator) return;
+            const id = currentViewingCreator.influencer_id || currentViewingCreator.id;
+            await refreshCreatorProfile(id);
         }
 
         /**
@@ -12081,8 +12192,36 @@
 
             document.getElementById('inf-view-name').innerText = creator.name || 'Creator';
             document.getElementById('inf-view-code').innerText = creator.influencer_code || 'WR-INF-000000';
+            const idEl = document.getElementById('inf-view-id');
+            if (idEl) idEl.innerText = `ID: ${creatorId}`;
+
             document.getElementById('inf-view-instagram').innerText = `@${creator.instagram_id || ''}`;
-            document.getElementById('inf-view-category').innerText = creator.category || 'Jewelry & Lifestyle';
+            document.getElementById('inf-view-category').innerText = creator.creator_niche || creator.category || 'Jewelry & Lifestyle';
+
+            const followersEl = document.getElementById('inf-view-followers');
+            const fCount = Number(creator.instagram_followers_count ?? creator.followers ?? 0);
+            const fFollowing = Number(creator.instagram_following_count || 0);
+            const fPosts = Number(creator.instagram_media_count ?? creator.no_of_posts ?? 0);
+            if (followersEl) followersEl.innerText = `${fCount.toLocaleString('en-IN')} followers • ${fFollowing.toLocaleString('en-IN')} following • ${fPosts} posts`;
+
+            const valEl = document.getElementById('inf-view-validation');
+            if (valEl) {
+                const vStatus = (creator.instagram_validation_status || '').toLowerCase();
+                if (vStatus === 'verified') {
+                    valEl.innerHTML = `<span class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">✓ IG Verified</span>`;
+                } else if (vStatus === 'pending') {
+                    valEl.innerHTML = `<span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold">⏳ IG Pending</span>`;
+                } else {
+                    valEl.innerHTML = `<span class="text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Unlinked</span>`;
+                }
+            }
+
+            const syncEl = document.getElementById('inf-view-synced');
+            if (syncEl) {
+                syncEl.innerText = creator.instagram_profile_synced_at
+                    ? `Last synced: ${new Date(creator.instagram_profile_synced_at).toLocaleString('en-IN')}`
+                    : 'Never synced with Instagram';
+            }
 
             const instaLink = document.getElementById('inf-view-instagram-link');
             if (instaLink) instaLink.href = creator.instagram_url || `https://instagram.com/${creator.instagram_id}`;

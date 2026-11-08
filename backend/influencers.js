@@ -16,6 +16,12 @@ import {
     hasServerAdminCredential 
 } from './supabase-client.js';
 import { logCreatorAudit } from './creator-audit.js';
+import {
+    mapCreatorToInventory,
+    sanitizeInfluencerRecord,
+    refreshCreatorInstagramProfile,
+    ALLOWED_CREATOR_NICHES
+} from './creator-inventory-sync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -192,16 +198,8 @@ async function getAllInfluencersFromDB() {
     for (const item of (local.influencers || [])) {
         const infId = item.influencer_id || item.id;
         if (infId) {
-            const infName = item.influencer_name || item.name || '';
-            map.set(infId, {
-                ...item,
-                influencer_id: infId,
-                id: infId,
-                influencer_name: infName,
-                name: infName,
-                email: item.email || item.email_id || null,
-                phone: item.phone || item.phone_number || null
-            });
+            const mapped = mapCreatorToInventory(item);
+            if (mapped) map.set(infId, mapped);
         }
     }
     // Then merge with DB rows if present
@@ -209,18 +207,9 @@ async function getAllInfluencersFromDB() {
         const infId = item.influencer_id || item.id;
         if (infId) {
             const localItem = map.get(infId);
-            const infName = item.influencer_name || item.name || localItem?.influencer_name || '';
-            const normalized = {
-                ...item,
-                influencer_id: infId,
-                id: infId,
-                influencer_name: infName,
-                name: infName,
-                email: item.email || item.email_id || null,
-                phone: item.phone || item.phone_number || null
-            };
+            const mapped = mapCreatorToInventory(item);
             if (!localItem || new Date(item.updated_at || 0) >= new Date(localItem.updated_at || 0)) {
-                map.set(infId, normalized);
+                map.set(infId, mapped);
             }
         }
     }
@@ -317,7 +306,18 @@ async function getInfluencerLinks(influencerId) {
  */
 export async function handleGetInfluencers(req, res) {
     try {
-        const { search, status, tier } = req.query || {};
+        const { 
+            search, 
+            status, 
+            tier, 
+            niche, 
+            creator_niche,
+            followers_min, 
+            followers_max, 
+            followers_range,
+            verification_status,
+            instagram_validation_status 
+        } = req.query || {};
 
         const { data: rawInfluencers } = await getAllInfluencersFromDB();
         const local = readLocalStore();
@@ -390,12 +390,28 @@ export async function handleGetInfluencers(req, res) {
             const totalOrders = Number(stats.total_orders || 0);
             const convRate = totalClicks > 0 ? Number(((totalOrders / totalClicks) * 100).toFixed(2)) : 0;
 
-            return {
+            const item = {
                 ...inf,
                 influencer_id: creatorId,
                 id: creatorId,
                 name: inf.influencer_name || inf.name || '',
                 influencer_name: inf.influencer_name || inf.name || '',
+                email: inf.email_id || inf.email || null,
+                email_id: inf.email_id || inf.email || null,
+                phone: inf.phone_number || inf.phone || null,
+                phone_number: inf.phone_number || inf.phone || null,
+                instagram_followers_count: Number(inf.instagram_followers_count ?? inf.followers ?? 0),
+                followers: Number(inf.instagram_followers_count ?? inf.followers ?? 0),
+                instagram_following_count: Number(inf.instagram_following_count ?? 0),
+                instagram_media_count: Number(inf.instagram_media_count ?? inf.no_of_posts ?? 0),
+                no_of_posts: Number(inf.instagram_media_count ?? inf.no_of_posts ?? 0),
+                instagram_profile_picture: inf.instagram_profile_picture || inf.profile_image || null,
+                profile_image: inf.instagram_profile_picture || inf.profile_image || null,
+                creator_niche: inf.creator_niche || inf.category || null,
+                category: inf.creator_niche || inf.category || inf.instagram_category || 'General',
+                instagram_category: inf.instagram_category || null,
+                instagram_validation_status: inf.instagram_validation_status || 'pending',
+                instagram_profile_synced_at: inf.instagram_profile_synced_at || null,
                 public_profile_url: inf.public_profile_url || buildInfluencerPublicUrl(inf.public_slug),
                 instagram_url: inf.instagram_url || buildInstagramUrl(inf.instagram_id),
                 total_clicks: totalClicks,
@@ -422,6 +438,8 @@ export async function handleGetInfluencers(req, res) {
                 default_link: defaultLink.url,
                 links_count: links.length
             };
+
+            return sanitizeInfluencerRecord(item);
         });
 
         // Filtering
@@ -435,12 +453,54 @@ export async function handleGetInfluencers(req, res) {
             enriched = enriched.filter(i => (i.tier || 'starter').toLowerCase() === tLower);
         }
 
+        // Niche filter
+        const targetNiche = (niche || creator_niche || '').toLowerCase().trim();
+        if (targetNiche && targetNiche !== 'all') {
+            enriched = enriched.filter(i => {
+                const cn = (i.creator_niche || i.category || '').toLowerCase().trim();
+                return cn === targetNiche || cn.includes(targetNiche);
+            });
+        }
+
+        // Verification status filter
+        const vFilter = (verification_status || instagram_validation_status || '').toLowerCase().trim();
+        if (vFilter && vFilter !== 'all') {
+            enriched = enriched.filter(i => (i.instagram_validation_status || 'pending').toLowerCase() === vFilter);
+        }
+
+        // Followers range filter
+        let minF = Number(followers_min) || 0;
+        let maxF = followers_max ? Number(followers_max) : Infinity;
+
+        if (followers_range && followers_range !== 'all') {
+            const fr = followers_range.toLowerCase().trim();
+            if (fr === '<10k' || fr === 'under-10k' || fr === '0-10000') {
+                minF = 0; maxF = 10000;
+            } else if (fr === '10k-50k' || fr === '10000-50000') {
+                minF = 10000; maxF = 50000;
+            } else if (fr === '50k-100k' || fr === '50000-100000') {
+                minF = 50000; maxF = 100000;
+            } else if (fr === '100k+' || fr === 'over-100k' || fr === '100000+') {
+                minF = 100000; maxF = Infinity;
+            }
+        }
+
+        if (minF > 0 || (maxF !== Infinity && !isNaN(maxF))) {
+            enriched = enriched.filter(i => {
+                const fCount = Number(i.instagram_followers_count ?? i.followers ?? 0);
+                return fCount >= minF && (maxF === Infinity || fCount <= maxF);
+            });
+        }
+
         if (search) {
             const q = search.toLowerCase().trim();
             enriched = enriched.filter(i => 
                 (i.name && i.name.toLowerCase().includes(q)) ||
+                (i.influencer_name && i.influencer_name.toLowerCase().includes(q)) ||
                 (i.instagram_id && i.instagram_id.toLowerCase().includes(q)) ||
                 (i.influencer_code && i.influencer_code.toLowerCase().includes(q)) ||
+                (i.influencer_id && i.influencer_id.toLowerCase().includes(q)) ||
+                (i.creator_niche && i.creator_niche.toLowerCase().includes(q)) ||
                 (i.category && i.category.toLowerCase().includes(q)) ||
                 (i.public_slug && i.public_slug.toLowerCase().includes(q))
             );
@@ -504,7 +564,7 @@ export async function handleGetInfluencerById(req, res) {
 
         return res.json({
             success: true,
-            data: {
+            data: sanitizeInfluencerRecord({
                 ...found,
                 influencer_id: creatorId,
                 id: creatorId,
@@ -529,11 +589,38 @@ export async function handleGetInfluencerById(req, res) {
                     is_default: Boolean(l.is_default),
                     created_at: l.created_at
                 }))
-            }
+            })
         });
     } catch (err) {
         console.error('[Influencers API] handleGetInfluencerById error:', err);
         return res.status(500).json({ success: false, error: { message: err.message } });
+    }
+}
+
+/**
+ * POST /api/influencers/:id/refresh-profile
+ * POST /api/admin/influencers/:id/refresh-profile
+ * Refresh Instagram profile metrics from Meta Graph API using secure server-side connection
+ */
+export async function handleRefreshInfluencerProfile(req, res) {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ success: false, error: { message: 'Influencer identifier is required' } });
+        }
+
+        const result = await refreshCreatorInstagramProfile(id);
+        return res.json({
+            success: true,
+            message: 'Instagram profile refreshed successfully',
+            data: result.data,
+            warning: result.warning || undefined,
+            outcome: result.outcome
+        });
+    } catch (err) {
+        console.error('[Influencers API] handleRefreshInfluencerProfile error:', err);
+        const status = err.status || 500;
+        return res.status(status).json({ success: false, error: { message: err.message } });
     }
 }
 

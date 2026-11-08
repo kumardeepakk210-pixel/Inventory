@@ -15,6 +15,7 @@ import { randomUUID } from 'crypto';
 import { dbQuery, dbInsert, dbUpdate } from './supabase-client.js';
 import { logCreatorAudit } from './creator-audit.js';
 import { getOrCreateInfluencerPointsAccount } from './creator-wallet.js';
+import { filterEligibleCampaignCreators } from './creator-inventory-sync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -178,7 +179,9 @@ export async function handleAdminCreateCampaign(req, res) {
             target_sales = 0,
             commission_rate = 10,
             gift_reward = '',
-            status = 'DRAFT'
+            status = 'DRAFT',
+            creator_niche_filter,
+            min_followers
         } = body;
 
         if (!campaign_name || !String(campaign_name).trim()) {
@@ -204,6 +207,8 @@ export async function handleAdminCreateCampaign(req, res) {
             commission_rate: Number(commission_rate) || 10,
             gift_reward: String(gift_reward || '').trim(),
             status: validStatus,
+            creator_niche_filter: creator_niche_filter || null,
+            min_followers: min_followers ? Number(min_followers) : null,
             created_at: nowIso,
             updated_at: nowIso
         };
@@ -224,6 +229,56 @@ export async function handleAdminCreateCampaign(req, res) {
         });
     } catch (err) {
         console.error('[Creator Campaigns] handleAdminCreateCampaign error:', err);
+        return res.status(500).json({ success: false, error: { message: err.message } });
+    }
+}
+
+/**
+ * GET /api/admin/creator-campaigns/eligible-creators
+ * Filters creators by niche, followers, tier, status for campaign assignment
+ */
+export async function handleAdminGetEligibleCampaignCreators(req, res) {
+    try {
+        const { niche, minFollowers, maxFollowers, tier, status } = req.query || {};
+
+        let creators = [];
+        try {
+            const rows = await dbQuery('influencers', 'order=created_at.desc', { useAdmin: true });
+            if (Array.isArray(rows) && rows.length > 0) {
+                creators = rows;
+            }
+        } catch (_) {}
+
+        if (creators.length === 0) {
+            const local = readLocalStore();
+            creators = local.influencers || [];
+        }
+
+        const eligible = filterEligibleCampaignCreators(creators, {
+            niche,
+            minFollowers,
+            maxFollowers,
+            tier,
+            status: status || 'all'
+        });
+
+        return res.json({
+            success: true,
+            count: eligible.length,
+            data: eligible.map(c => ({
+                influencer_id: c.influencer_id || c.id,
+                name: c.influencer_name || c.name || '',
+                instagram_id: c.instagram_id || '',
+                creator_niche: c.creator_niche || c.category || 'General',
+                followers: Number(c.instagram_followers_count ?? c.followers ?? 0),
+                tier: c.tier || 'starter',
+                commission_rate: Number(c.commission_rate || 10),
+                status: c.status || 'pending',
+                profile_image: c.instagram_profile_picture || c.profile_image || null
+            }))
+        });
+    } catch (err) {
+        console.error('[Creator Campaigns] handleAdminGetEligibleCampaignCreators error:', err);
         return res.status(500).json({ success: false, error: { message: err.message } });
     }
 }
