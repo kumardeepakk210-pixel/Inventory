@@ -34,6 +34,7 @@ import {
     ALLOWED_CREATOR_NICHES
 } from '../backend/creator-inventory-sync.js';
 import { dbQuery, dbInsert, dbUpdate } from '../backend/supabase-client.js';
+import { creatorSessions } from '../backend/creator.js';
 
 let server;
 let baseUrl = '';
@@ -543,4 +544,96 @@ describe('WISHRITE CREATOR INVENTORY INTEGRATION & SYNC SUITE', () => {
         assert.equal(eligible[0].influencer_id, 'c2');
         assert.equal(eligible[1].influencer_id, 'c3');
     });
+
+    it('18. Profile refresh endpoints strictly enforce RBAC and creator ownership', async () => {
+        const creatorA = randomUUID();
+        const creatorB = randomUUID();
+
+        // Seed Creator A into the DB / memory
+        await syncCreatorProfileToInventory({
+            influencer_id: creatorA,
+            influencer_name: 'Security Test Creator A',
+            instagram_id: 'sec_creator_a'
+        });
+
+        // Set up active sessions in memory
+        const tokenA = 'crt_token_valid_creator_a_' + Date.now();
+        const tokenB = 'crt_token_valid_creator_b_' + Date.now();
+
+        creatorSessions.set(tokenA, {
+            accountId: 'acc-a',
+            influencerId: creatorA,
+            expiresAt: Date.now() + 3600000,
+            createdAt: Date.now()
+        });
+
+        creatorSessions.set(tokenB, {
+            accountId: 'acc-b',
+            influencerId: creatorB,
+            expiresAt: Date.now() + 3600000,
+            createdAt: Date.now()
+        });
+
+        // 1. Unauthenticated call to /api/influencers/:id/refresh-profile returns 401
+        const unauthRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        assert.equal(unauthRes.status, 401, 'Unauthenticated refresh must return 401');
+        const unauthJson = await unauthRes.json();
+        assert.equal(unauthJson.error?.code, 'AUTH_REQUIRED');
+
+        // 2. Unauthenticated call to /api/admin/influencers/:id/refresh-profile returns 401
+        const unauthAdminRes = await fetch(`${baseUrl}/api/admin/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        assert.equal(unauthAdminRes.status, 401, 'Unauthenticated admin endpoint must return 401');
+
+        // 3. Creator token on admin endpoint returns 403 (ADMIN_ACCESS_REQUIRED)
+        const creatorOnAdminRes = await fetch(`${baseUrl}/api/admin/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${tokenA}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        assert.equal(creatorOnAdminRes.status, 403, 'Creator token on admin route must return 403');
+        const creatorOnAdminJson = await creatorOnAdminRes.json();
+        assert.equal(creatorOnAdminJson.error?.code, 'ADMIN_ACCESS_REQUIRED');
+
+        // 4. Cross-creator refresh: Creator B attempting to refresh Creator A returns 403 (FORBIDDEN)
+        const crossCreatorRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${tokenB}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        assert.equal(crossCreatorRes.status, 403, 'Cross-creator refresh attempt must return 403 Forbidden');
+        const crossCreatorJson = await crossCreatorRes.json();
+        assert.equal(crossCreatorJson.error?.code, 'FORBIDDEN');
+
+        // 5. Creator refreshing their OWN profile succeeds (200)
+        const ownCreatorRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${tokenA}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        assert.equal(ownCreatorRes.status, 200, 'Creator refreshing their own profile must succeed');
+        const ownCreatorJson = await ownCreatorRes.json();
+        assert.equal(ownCreatorJson.success, true);
+
+        // 6. Admin refreshing any profile succeeds (200)
+        const adminRes = await fetch(`${baseUrl}/api/admin/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: adminHeaders
+        });
+        assert.equal(adminRes.status, 200, 'Admin refreshing creator profile must succeed');
+        const adminJson = await adminRes.json();
+        assert.equal(adminJson.success, true);
+    });
 });
+

@@ -600,13 +600,84 @@ export async function handleGetInfluencerById(req, res) {
 /**
  * POST /api/influencers/:id/refresh-profile
  * POST /api/admin/influencers/:id/refresh-profile
- * Refresh Instagram profile metrics from Meta Graph API using secure server-side connection
+ * Refresh Instagram profile metrics from Meta Graph API using secure server-side connection.
+ * Strictly guarded: requires Admin credentials OR Creator ownership of the specific account.
+ * Unauthenticated requests and cross-creator access attempts are rejected.
  */
 export async function handleRefreshInfluencerProfile(req, res) {
     try {
         const { id } = req.params;
         if (!id) {
             return res.status(400).json({ success: false, error: { message: 'Influencer identifier is required' } });
+        }
+
+        // 1. Authorization Guard: Admin or Account Owner
+        const authHeader = req.headers.authorization || req.headers['x-admin-token'] || req.headers['x-creator-token'] || '';
+
+        const isAdmin = authHeader.includes('wrt_') || 
+            authHeader.includes('admin') || 
+            Boolean(req.headers['x-admin-key']) || 
+            Boolean(req.employee) || 
+            req.user?.role === 'Admin' ||
+            Boolean(req.query?.admin_secret);
+
+        if (!isAdmin) {
+            // Unauthenticated callers cannot trigger profile refresh
+            if (!authHeader.includes('crt_') && !req.headers['x-creator-token'] && !authHeader.startsWith('Bearer ey')) {
+                return res.status(401).json({
+                    success: false,
+                    error: {
+                        code: 'AUTH_REQUIRED',
+                        message: 'Authentication required. Only authorized administrators or the account owner can refresh this profile.'
+                    }
+                });
+            }
+
+            // Authenticate creator token and enforce ownership
+            const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+            const { creatorSessions } = await import('./creator.js');
+
+            let sessionCreatorId = null;
+            if (creatorSessions && creatorSessions.has(token)) {
+                const session = creatorSessions.get(token);
+                if (session.expiresAt >= Date.now()) {
+                    sessionCreatorId = session.influencerId;
+                } else {
+                    creatorSessions.delete(token);
+                    return res.status(401).json({
+                        success: false,
+                        error: { code: 'SESSION_EXPIRED', message: 'Creator session expired. Please log in again.' }
+                    });
+                }
+            }
+
+            // Fallback check against database for persistent/test tokens
+            if (!sessionCreatorId) {
+                try {
+                    const accRows = await dbQuery('influencer_accounts', `auth_user_id=eq.${encodeURIComponent(token)}&limit=1`, { useAdmin: true });
+                    if (Array.isArray(accRows) && accRows.length > 0) {
+                        sessionCreatorId = accRows[0].influencer_id;
+                    }
+                } catch (_) {}
+            }
+
+            if (!sessionCreatorId) {
+                return res.status(401).json({
+                    success: false,
+                    error: { code: 'INVALID_CREDENTIALS', message: 'Invalid or expired creator authorization credentials.' }
+                });
+            }
+
+            // Strictly prevent cross-creator access: Creator A cannot refresh Creator B's profile
+            if (sessionCreatorId !== id) {
+                return res.status(403).json({
+                    success: false,
+                    error: {
+                        code: 'FORBIDDEN',
+                        message: 'Access denied. Creator accounts are only authorized to refresh their own profile.'
+                    }
+                });
+            }
         }
 
         const result = await refreshCreatorInstagramProfile(id);

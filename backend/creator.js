@@ -24,7 +24,7 @@ const DATA_DIR = path.join(__dirname, '../data');
 const INFLUENCERS_STORE_PATH = path.join(DATA_DIR, 'influencers_store.json');
 
 // In-memory active creator sessions (token -> { accountId, influencerId, expiresAt, createdAt })
-const creatorSessions = new Map();
+export const creatorSessions = new Map();
 
 // Session duration: 7 days
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
