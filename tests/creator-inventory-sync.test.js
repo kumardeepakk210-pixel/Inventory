@@ -34,13 +34,14 @@ import {
     ALLOWED_CREATOR_NICHES
 } from '../backend/creator-inventory-sync.js';
 import { dbQuery, dbInsert, dbUpdate } from '../backend/supabase-client.js';
-import { creatorSessions } from '../backend/creator.js';
+import { creatorSessions, signCreatorSessionToken } from '../backend/creator.js';
 
 let server;
 let baseUrl = '';
 
+const validAdminToken = 'wrt_' + Buffer.from(`DEWR00001:${Date.now()}`).toString('base64');
 const adminHeaders = {
-    'Authorization': 'Bearer wrt_inventory_admin_token',
+    'Authorization': `Bearer ${validAdminToken}`,
     'Content-Type': 'application/json'
 };
 
@@ -545,7 +546,7 @@ describe('WISHRITE CREATOR INVENTORY INTEGRATION & SYNC SUITE', () => {
         assert.equal(eligible[1].influencer_id, 'c3');
     });
 
-    it('18. Profile refresh endpoints strictly enforce RBAC and creator ownership', async () => {
+    it('18. Profile refresh endpoints strictly enforce RBAC, creator ownership and reject unsafe auth vectors', async () => {
         const creatorA = randomUUID();
         const creatorB = randomUUID();
 
@@ -574,35 +575,78 @@ describe('WISHRITE CREATOR INVENTORY INTEGRATION & SYNC SUITE', () => {
             createdAt: Date.now()
         });
 
-        // 1. Unauthenticated call to /api/influencers/:id/refresh-profile returns 401
-        const unauthRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
+        // --- Regression Test 1: Authorization: Bearer admin MUST BE REJECTED ---
+        const bearerAdminRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer admin', 'Content-Type': 'application/json' }
+        });
+        assert.equal(bearerAdminRes.status, 401, 'Bearer admin must be strictly rejected');
+        const bearerAdminAdminRes = await fetch(`${baseUrl}/api/admin/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer admin', 'Content-Type': 'application/json' }
+        });
+        assert.equal(bearerAdminAdminRes.status, 401, 'Bearer admin on admin endpoint must be strictly rejected');
+
+        // --- Regression Test 2: Authorization: Bearer wrt_fake MUST BE REJECTED ---
+        const wrtFakeRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer wrt_fake', 'Content-Type': 'application/json' }
+        });
+        assert.equal(wrtFakeRes.status, 401, 'Bearer wrt_fake must be strictly rejected');
+        const wrtFakeAdminRes = await fetch(`${baseUrl}/api/admin/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer wrt_fake', 'Content-Type': 'application/json' }
+        });
+        assert.equal(wrtFakeAdminRes.status, 401, 'Bearer wrt_fake on admin endpoint must be strictly rejected');
+
+        // --- Regression Test 3: Arbitrary x-admin-key header MUST BE REJECTED ---
+        const arbKeyRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: { 'x-admin-key': 'attacker_secret_key_123', 'Content-Type': 'application/json' }
+        });
+        assert.equal(arbKeyRes.status, 401, 'Arbitrary x-admin-key header must be strictly rejected');
+
+        // --- Regression Test 4: Arbitrary admin_secret query parameter MUST BE REJECTED ---
+        const arbSecretRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile?admin_secret=attacker_bypass`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
-        assert.equal(unauthRes.status, 401, 'Unauthenticated refresh must return 401');
-        const unauthJson = await unauthRes.json();
-        assert.equal(unauthJson.error?.code, 'AUTH_REQUIRED');
+        assert.equal(arbSecretRes.status, 401, 'Arbitrary admin_secret query parameter must be strictly rejected');
 
-        // 2. Unauthenticated call to /api/admin/influencers/:id/refresh-profile returns 401
-        const unauthAdminRes = await fetch(`${baseUrl}/api/admin/influencers/${creatorA}/refresh-profile`, {
+        // --- Regression Test 5: Known creator auth_user_id supplied as token MUST BE REJECTED ---
+        const knownAuthUserId = randomUUID();
+        const authUserIdAsTokenRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Authorization': `Bearer ${knownAuthUserId}`, 'Content-Type': 'application/json' }
         });
-        assert.equal(unauthAdminRes.status, 401, 'Unauthenticated admin endpoint must return 401');
+        assert.equal(authUserIdAsTokenRes.status, 401, 'Raw auth_user_id cannot be treated as an authentication token');
+        const authUserIdJson = await authUserIdAsTokenRes.json();
+        assert.equal(authUserIdJson.error?.code, 'INVALID_CREDENTIALS');
 
-        // 3. Creator token on admin endpoint returns 403 (ADMIN_ACCESS_REQUIRED)
-        const creatorOnAdminRes = await fetch(`${baseUrl}/api/admin/influencers/${creatorA}/refresh-profile`, {
+        // --- Regression Test 6: Expired or forged Creator session MUST BE REJECTED ---
+        const expiredToken = 'crt_expired_session_' + Date.now();
+        creatorSessions.set(expiredToken, {
+            accountId: 'acc-exp',
+            influencerId: creatorA,
+            expiresAt: Date.now() - 5000, // expired 5 seconds ago
+            createdAt: Date.now() - 10000
+        });
+        const expiredRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${tokenA}`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Authorization': `Bearer ${expiredToken}`, 'Content-Type': 'application/json' }
         });
-        assert.equal(creatorOnAdminRes.status, 403, 'Creator token on admin route must return 403');
-        const creatorOnAdminJson = await creatorOnAdminRes.json();
-        assert.equal(creatorOnAdminJson.error?.code, 'ADMIN_ACCESS_REQUIRED');
+        assert.equal(expiredRes.status, 401, 'Expired session must return 401');
+        const expiredJson = await expiredRes.json();
+        assert.equal(expiredJson.error?.code, 'SESSION_EXPIRED');
 
-        // 4. Cross-creator refresh: Creator B attempting to refresh Creator A returns 403 (FORBIDDEN)
+        const forgedToken = 'crt_forged_payload_12345.tampered_hmac_signature';
+        const forgedRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${forgedToken}`, 'Content-Type': 'application/json' }
+        });
+        assert.equal(forgedRes.status, 401, 'Forged token must return 401');
+
+        // --- Regression Test 7: Creator B attempting to refresh Creator A's profile MUST BE REJECTED ---
         const crossCreatorRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
             method: 'POST',
             headers: {
@@ -614,7 +658,19 @@ describe('WISHRITE CREATOR INVENTORY INTEGRATION & SYNC SUITE', () => {
         const crossCreatorJson = await crossCreatorRes.json();
         assert.equal(crossCreatorJson.error?.code, 'FORBIDDEN');
 
-        // 5. Creator refreshing their OWN profile succeeds (200)
+        // --- Creator token on Admin route returns 403 (ADMIN_ACCESS_REQUIRED) ---
+        const creatorOnAdminRes = await fetch(`${baseUrl}/api/admin/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${tokenA}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        assert.equal(creatorOnAdminRes.status, 403, 'Creator token on admin route must return 403');
+        const creatorOnAdminJson = await creatorOnAdminRes.json();
+        assert.equal(creatorOnAdminJson.error?.code, 'ADMIN_ACCESS_REQUIRED');
+
+        // --- Legitimate Creator A refreshing their OWN profile succeeds (200) ---
         const ownCreatorRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
             method: 'POST',
             headers: {
@@ -626,7 +682,18 @@ describe('WISHRITE CREATOR INVENTORY INTEGRATION & SYNC SUITE', () => {
         const ownCreatorJson = await ownCreatorRes.json();
         assert.equal(ownCreatorJson.success, true);
 
-        // 6. Admin refreshing any profile succeeds (200)
+        // --- Legitimate signed serverless token refreshing own profile succeeds (200) ---
+        const serverlessToken = signCreatorSessionToken('acc-a', creatorA);
+        const serverlessRes = await fetch(`${baseUrl}/api/influencers/${creatorA}/refresh-profile`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${serverlessToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        assert.equal(serverlessRes.status, 200, 'Cryptographically signed serverless token must succeed');
+
+        // --- Legitimate Admin refreshing any profile succeeds (200) ---
         const adminRes = await fetch(`${baseUrl}/api/admin/influencers/${creatorA}/refresh-profile`, {
             method: 'POST',
             headers: adminHeaders

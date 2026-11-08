@@ -289,16 +289,157 @@ export async function getOrLinkInfluencerAccount({ email, influencer_id, auth_us
     return newAccount;
 }
 
+const AUTH_SECRET = process.env.CREATOR_AUTH_SECRET || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'wishrite-creator-club-auth-secret-2026';
+
+/**
+ * Creates a cryptographically signed, stateless creator session token compatible with
+ * independent serverless function instances (e.g., Vercel Serverless Functions).
+ */
+export function signCreatorSessionToken(accountId, influencerId, expiresAt = Date.now() + SESSION_DURATION_MS) {
+    const payload = `${accountId}:${influencerId}:${expiresAt}`;
+    const sig = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('hex');
+    return `crt_${Buffer.from(payload).toString('base64url')}.${sig}`;
+}
+
+/**
+ * Authenticates a creator credential securely and deterministically.
+ * Supports:
+ *  1. Cryptographically signed stateless tokens (crt_<base64url>.<hmac>) - 100% serverless compatible
+ *  2. In-memory active creator sessions (creatorSessions Map) - local dev/cache
+ *  3. Supabase Auth JWTs (Bearer ey...) - verified via adminClient.auth.getUser
+ *
+ * Explicitly rejects:
+ *  - Raw auth_user_id or arbitrary UUID supplied as a token
+ *  - Forged tokens with invalid HMAC signatures
+ *  - Expired tokens
+ *  - Arbitrary strings
+ */
+export async function authenticateCreatorCredential(authHeaderOrToken) {
+    if (!authHeaderOrToken || typeof authHeaderOrToken !== 'string') {
+        return { success: false, code: 'AUTH_REQUIRED', message: 'Authentication required. Please log in to your Creator Club account.' };
+    }
+
+    const cleanToken = authHeaderOrToken.startsWith('Bearer ') ? authHeaderOrToken.slice(7).trim() : authHeaderOrToken.trim();
+    if (!cleanToken) {
+        return { success: false, code: 'AUTH_REQUIRED', message: 'Authentication required. Please log in to your Creator Club account.' };
+    }
+
+    // Explicitly reject if caller passes a UUID (such as auth_user_id) directly as a token
+    const isRawUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+    if (isRawUuid) {
+        return {
+            success: false,
+            code: 'INVALID_CREDENTIALS',
+            message: 'Invalid authorization token format. User ID cannot be used as an authentication credential.'
+        };
+    }
+
+    // 1. Check in-memory creator session (fast lookup for active sessions)
+    if (creatorSessions.has(cleanToken)) {
+        const session = creatorSessions.get(cleanToken);
+        if (session.expiresAt < Date.now()) {
+            creatorSessions.delete(cleanToken);
+            return {
+                success: false,
+                code: 'SESSION_EXPIRED',
+                message: 'Creator session expired. Please log in again.'
+            };
+        }
+        return {
+            success: true,
+            influencerId: session.influencerId,
+            accountId: session.accountId
+        };
+    }
+
+    // 2. Check cryptographically signed serverless token (crt_<b64Payload>.<sig>)
+    if (cleanToken.startsWith('crt_') && cleanToken.includes('.')) {
+        try {
+            const rawBody = cleanToken.slice(4);
+            const [b64Payload, sig] = rawBody.split('.');
+            if (b64Payload && sig) {
+                const payload = Buffer.from(b64Payload, 'base64url').toString('utf8');
+                const expectedSig = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('hex');
+                if (sig === expectedSig) {
+                    const [accountId, influencerId, expStr] = payload.split(':');
+                    const expiresAt = parseInt(expStr, 10);
+                    if (!isNaN(expiresAt) && expiresAt < Date.now()) {
+                        return {
+                            success: false,
+                            code: 'SESSION_EXPIRED',
+                            message: 'Creator session expired. Please log in again.'
+                        };
+                    }
+                    if (influencerId) {
+                        return {
+                            success: true,
+                            influencerId,
+                            accountId
+                        };
+                    }
+                }
+            }
+        } catch (_) {}
+    }
+
+    // 3. Supabase Auth JWT (format ey...) verified via trusted Supabase Auth service
+    if (cleanToken.startsWith('ey') && adminClient?.auth) {
+        try {
+            const { data: userData, error: userError } = await adminClient.auth.getUser(cleanToken);
+            if (!userError && userData?.user) {
+                const authUserId = userData.user.id;
+                const authEmail = userData.user.email?.toLowerCase();
+
+                let matchedAccount = null;
+                const local = readLocalStore();
+                matchedAccount = local.accounts.find(a => 
+                    a.auth_user_id === authUserId || 
+                    (authEmail && a.email?.toLowerCase() === authEmail)
+                );
+
+                if (!matchedAccount) {
+                    try {
+                        const accRows = await dbQuery('influencer_accounts', `auth_user_id=eq.${encodeURIComponent(authUserId)}&limit=1`, { useAdmin: true });
+                        if (Array.isArray(accRows) && accRows.length > 0) {
+                            matchedAccount = accRows[0];
+                        }
+                    } catch (_) {}
+                }
+
+                if (matchedAccount && matchedAccount.influencer_id) {
+                    return {
+                        success: true,
+                        influencerId: matchedAccount.influencer_id,
+                        accountId: matchedAccount.id,
+                        user: userData.user
+                    };
+                }
+            }
+        } catch (e) {
+            console.warn('[Creator Auth] Supabase auth check notice:', e.message);
+        }
+    }
+
+    return {
+        success: false,
+        code: 'INVALID_CREDENTIALS',
+        message: 'Invalid or expired creator authorization credentials.'
+    };
+}
+
 /**
  * Creates an active creator session token
  */
 export function issueCreatorSession(account, influencer) {
-    const token = `crt_${randomUUID().replace(/-/g, '')}${crypto.randomBytes(8).toString('hex')}`;
+    const influencerId = influencer.influencer_id || influencer.id;
     const expiresAt = Date.now() + SESSION_DURATION_MS;
+    
+    // Generate stateless signed token compatible with serverless instances
+    const token = signCreatorSessionToken(account.id, influencerId, expiresAt);
     
     creatorSessions.set(token, {
         accountId: account.id,
-        influencerId: influencer.influencer_id || influencer.id,
+        influencerId: influencerId,
         email: account.email,
         expiresAt,
         createdAt: Date.now()
@@ -328,100 +469,40 @@ export function revokeCreatorSession(token) {
 export async function requireCreatorAuth(req, res, next) {
     try {
         const authHeader = req.headers.authorization || req.headers['x-creator-token'] || '';
-        let token = '';
+        const authResult = await authenticateCreatorCredential(authHeader);
 
-        if (authHeader.startsWith('Bearer ')) {
-            token = authHeader.slice(7).trim();
-        } else if (authHeader) {
-            token = authHeader.trim();
-        }
-
-        if (!token) {
+        if (!authResult.success) {
             return res.status(401).json({
                 success: false,
                 error: {
-                    code: 'AUTH_REQUIRED',
-                    message: 'Authentication required. Please log in to your Creator Club account.'
+                    code: authResult.code || 'SESSION_EXPIRED',
+                    message: authResult.message || 'Session expired or invalid. Please log in again.'
                 }
             });
         }
 
-        let matchedAccount = null;
-        let matchedCreator = null;
-
-        // 1. Check in-memory creator session
-        if (creatorSessions.has(token)) {
-            const session = creatorSessions.get(token);
-            if (session.expiresAt < Date.now()) {
-                creatorSessions.delete(token);
-                return res.status(401).json({
-                    success: false,
-                    error: {
-                        code: 'SESSION_EXPIRED',
-                        message: 'Session expired. Please log in again.'
-                    }
-                });
-            }
-
-            const local = readLocalStore();
-            matchedAccount = local.accounts.find(a => a.id === session.accountId);
-            matchedCreator = local.influencers.find(i => (i.influencer_id || i.id) === session.influencerId);
-
-            if (!matchedCreator) {
-                try {
-                    const infRows = await dbQuery('influencers', `influencer_id=eq.${encodeURIComponent(session.influencerId)}`, { useAdmin: true });
-                    if (Array.isArray(infRows) && infRows.length > 0) {
-                        const inf = infRows[0];
-                        const infId = inf.influencer_id || inf.id;
-                        matchedCreator = { ...inf, influencer_id: infId, id: infId };
-                    }
-                } catch (e) {}
-            }
-        }
-
-        // 2. If not found in memory, check if it's a Supabase JWT (format ey...)
-        if (!matchedAccount && token.startsWith('ey') && adminClient?.auth) {
+        const local = readLocalStore();
+        let matchedAccount = local.accounts.find(a => a.id === authResult.accountId);
+        if (!matchedAccount && authResult.accountId) {
             try {
-                const { data: userData, error: userError } = await adminClient.auth.getUser(token);
-                if (!userError && userData?.user) {
-                    const authUserId = userData.user.id;
-                    const authEmail = userData.user.email?.toLowerCase();
-
-                    const local = readLocalStore();
-                    matchedAccount = local.accounts.find(a => 
-                        a.auth_user_id === authUserId || 
-                        (authEmail && a.email?.toLowerCase() === authEmail)
-                    );
-
-                    if (!matchedAccount) {
-                        try {
-                            const accRows = await dbQuery('influencer_accounts', `auth_user_id=eq.${encodeURIComponent(authUserId)}`, { useAdmin: true });
-                            if (Array.isArray(accRows) && accRows.length > 0) {
-                                matchedAccount = accRows[0];
-                            }
-                        } catch (e) {}
-                    }
-
-                    if (matchedAccount) {
-                        matchedCreator = local.influencers.find(i => (i.influencer_id || i.id) === matchedAccount.influencer_id);
-                        if (!matchedCreator) {
-                            try {
-                                const infRows = await dbQuery('influencers', `influencer_id=eq.${encodeURIComponent(matchedAccount.influencer_id)}`, { useAdmin: true });
-                                if (Array.isArray(infRows) && infRows.length > 0) {
-                                    const inf = infRows[0];
-                                    const infId = inf.influencer_id || inf.id;
-                                    matchedCreator = { ...inf, influencer_id: infId, id: infId };
-                                }
-                            } catch (e) {}
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn('[Creator Auth] Supabase auth check notice:', e.message);
-            }
+                const accRows = await dbQuery('influencer_accounts', `id=eq.${encodeURIComponent(authResult.accountId)}&limit=1`, { useAdmin: true });
+                if (Array.isArray(accRows) && accRows.length > 0) matchedAccount = accRows[0];
+            } catch (_) {}
         }
 
-        // 3. Reject any token that is not a valid active session or validated JWT
+        let matchedCreator = local.influencers.find(i => (i.influencer_id || i.id) === authResult.influencerId);
+        if (!matchedCreator && authResult.influencerId) {
+            try {
+                const infRows = await dbQuery('influencers', `influencer_id=eq.${encodeURIComponent(authResult.influencerId)}&limit=1`, { useAdmin: true });
+                if (Array.isArray(infRows) && infRows.length > 0) {
+                    const inf = infRows[0];
+                    const infId = inf.influencer_id || inf.id;
+                    matchedCreator = { ...inf, influencer_id: infId, id: infId };
+                }
+            } catch (_) {}
+        }
+
+        // 3. Reject any token where account or creator cannot be found
         if (!matchedAccount || !matchedCreator) {
             return res.status(401).json({
                 success: false,
